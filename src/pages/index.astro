@@ -3,11 +3,47 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowCore from '../components/FlowCore.astro';
 import { services } from '../data/services.js';
-import flowImage from '../assets/generated/flow-core.png';
-import voiceImage from '../assets/generated/voice-sculpture.png';
-import knowledgeImage from '../assets/generated/knowledge-grid.png';
+import systemHeroImage from '../assets/generated/v2/system-hero.png';
+import valueBlueprintImage from '../assets/generated/v2/value-blueprint.png';
+import chatInterfaceImage from '../assets/generated/v2/chat-interface.png';
+import voiceChamberImage from '../assets/generated/v2/voice-chamber.png';
+import careObservatoryImage from '../assets/generated/v2/care-observatory.png';
+import searchCitationFieldImage from '../assets/generated/v2/search-citation-field.png';
+import agentOrchestrationImage from '../assets/generated/v2/agent-orchestration.png';
+import processEngineImage from '../assets/generated/v2/process-engine.png';
 
 const marquee = ['Agenci AI', 'Voiceboty', 'Chatboty', 'Automatyzacje', 'SEO + GEO', 'Strony WWW', 'Opieka AI', 'Dane w UE'];
+const serviceVisuals = {
+  core: { src: valueBlueprintImage, alt: 'Warstwowa architektura strategii i wartości wdrożenia AI' },
+  chat: { src: chatInterfaceImage, alt: 'Modułowy interfejs inteligentnego chatbota dla firmy' },
+  search: { src: searchCitationFieldImage, alt: 'Źródła treści prowadzące do odpowiedzi cytowanej przez systemy AI' },
+  voice: { src: voiceChamberImage, alt: 'Przestrzenna komora głosowa symbolizująca rozmowę z voicebotem AI' },
+  agent: { src: agentOrchestrationImage, alt: 'Orkiestracja agenta AI od sygnału do kontrolowanego działania' },
+  automation: { src: processEngineImage, alt: 'Precyzyjny silnik automatyzacji procesów i przepływu danych' },
+  care: { src: careObservatoryImage, alt: 'Centrum monitorowania agentów i automatyzacji w ramach Opieki AI' },
+};
+const cinematicFrames = [
+  { src: agentOrchestrationImage, alt: 'Agent AI porządkujący sygnały i działania', label: 'Sygnał / decyzja', side: 'right' },
+  { src: voiceChamberImage, alt: 'System głosowy reagujący na naturalną rozmowę', label: 'Głos / intencja', side: 'left' },
+  { src: searchCitationFieldImage, alt: 'Architektura treści widoczna dla systemów AI', label: 'Wiedza / widoczność', side: 'right' },
+  { src: careObservatoryImage, alt: 'Stały monitoring systemów AI', label: 'Kontrola / rozwój', side: 'left' },
+];
+const sequenceFrames = [
+  { src: valueBlueprintImage, label: '01 / Kierunek' },
+  { src: chatInterfaceImage, label: '02 / Rozmowa' },
+  { src: voiceChamberImage, label: '03 / Intencja' },
+  { src: searchCitationFieldImage, label: '04 / Wiedza' },
+  { src: agentOrchestrationImage, label: '05 / Decyzja' },
+  { src: processEngineImage, label: '06 / Działanie' },
+  { src: careObservatoryImage, label: '07 / Kontrola' },
+  { src: systemHeroImage, label: '08 / Skala' },
+];
+const insightArticles = [
+  { meta: 'Agenci AI / 08 min', title: 'Agent AI czy automatyzacja — od czego zacząć?', text: 'Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.', image: agentOrchestrationImage, alt: 'Modułowa architektura agenta AI' },
+  { meta: 'SEO + GEO / 11 min', title: 'Jak być widocznym w odpowiedziach ChatGPT?', text: 'Co na stronie pomaga systemom AI właściwie zrozumieć markę.', image: searchCitationFieldImage, alt: 'Wizualizacja źródeł cytowanych w odpowiedziach AI' },
+  { meta: 'Operacje / 06 min', title: '7 zadań, które agent może przejąć w tym kwartale.', text: 'Praktyczna lista dla sprzedaży, obsługi i back office.', image: processEngineImage, alt: 'Silnik automatyzacji z kontrolowanym przepływem danych' },
+];
+const serviceLoop = [...services, ...services];
 const schema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -48,11 +84,11 @@ const schema = {
         </div>
 
         <ul class="hero-side-list" aria-label="Zakres usług">
-          <li>Architektura wartości</li>
-          <li>Agenci AI</li>
-          <li>Voice + chat</li>
-          <li>Automatyzacja</li>
-          <li>Web / SEO / GEO</li>
+          <li><span data-scramble>Architektura wartości</span></li>
+          <li><span data-scramble>Agenci AI</span></li>
+          <li><span data-scramble>Voice + chat</span></li>
+          <li><span data-scramble>Automatyzacja</span></li>
+          <li><span data-scramble>Web / SEO / GEO</span></li>
         </ul>
 
         <div class="hero-scenes" aria-hidden="true">
@@ -90,10 +126,56 @@ const schema = {
       </div>
     </section>
 
+    <section class="cinematic-system" data-cinematic aria-label="System AI w ruchu">
+      <div class="cinematic-sticky">
+        <div class="cinematic-curtain" data-cinematic-curtain></div>
+        <div class="cinematic-chapter"><span>[ System / 01—04 ]</span><span>Scroll to orchestrate</span></div>
+        <div class="cinematic-frames">
+          {cinematicFrames.map((frame, index) => (
+            <figure class:list={['cinematic-frame', `cinematic-frame-${index + 1}`, `is-${frame.side}`]} data-cinematic-frame={index}>
+              <Image src={frame.src} alt={frame.alt} widths={[540, 820, 1100]} sizes="(max-width: 760px) 82vw, 38vw" format="webp" quality={84} />
+              <figcaption>{frame.label}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <h2 class="cinematic-title" aria-label="Od pierwszego sygnału do działania pod kontrolą">
+          <span>Od pierwszego <em>sygnału</em></span>
+          <span>do działania</span>
+          <span>pod kontrolą.</span>
+        </h2>
+        <div class="cinematic-progress" aria-hidden="true"><i data-cinematic-progress></i></div>
+      </div>
+    </section>
+
+    <section class="sequence-lab">
+      <div class="sequence-grid section-shell">
+        <div class="sequence-copy">
+          <p class="mono-label">/ Jedno wdrożenie. Wiele perspektyw.</p>
+          <h2 data-reveal>Najedź. Zobacz, jak system dojrzewa.</h2>
+          <p>To nie film. Każda klatka pokazuje kolejny etap: od znalezienia wartości, przez rozmowę i decyzję, po kontrolowane działanie.</p>
+        </div>
+        <div class="image-sequence" data-image-sequence tabindex="0" role="button" aria-pressed="false" aria-label="Uruchom interaktywną sekwencję ośmiu etapów systemu AI">
+          <div class="sequence-frames">
+            {sequenceFrames.map((frame, index) => (
+              <figure class:list={['sequence-frame', index === 0 && 'is-active']} data-sequence-frame={index} data-label={frame.label}>
+                <Image src={frame.src} alt="" widths={[720, 1080, 1440]} sizes="(max-width: 760px) 100vw, 58vw" format="webp" quality={82} />
+              </figure>
+            ))}
+          </div>
+          <div class="sequence-interface">
+            <span data-sequence-label>{sequenceFrames[0].label}</span>
+            <span>Hover / hold</span>
+            <div class="sequence-ticks">{sequenceFrames.map((_, index) => <i class:list={[index === 0 && 'is-active']}></i>)}</div>
+          </div>
+          <div class="sequence-cursor" aria-hidden="true"><span>Uruchom<br />sekwencję</span></div>
+        </div>
+      </div>
+    </section>
+
     <section class="system-story">
       <div class="story-grid">
         <div class="story-media">
-          <Image src={knowledgeImage} alt="Abstrakcyjna mapa połączonych informacji" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={82} />
+          <Image src={agentOrchestrationImage} alt="Architektura agenta AI prowadząca zadanie od sygnału do wyniku" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
           <div class="story-media-copy"><span>Flow architecture</span><span>Scroll / 01—03</span></div>
         </div>
         <div class="story-steps">
@@ -146,33 +228,11 @@ const schema = {
                 <h3>{service.title}</h3>
                 <p class="service-card-desc">{service.short}</p>
                 <div class="service-card-outcome"><span>Rezultat</span><p>{service.outcome}</p></div>
-                <a class="service-card-link" href={`/uslugi/${service.slug}/`}><i>↗</i> Zobacz usługę</a>
+                <a class="service-card-link" href={`/uslugi/${service.slug}/`}><i>↗</i> <span data-scramble>Zobacz usługę</span></a>
               </div>
               <div class="service-card-media">
-                {service.visual === 'core' && <Image src={flowImage} alt="Rzeźbiarska wizualizacja połączonych agentów AI" widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={82} />}
-                {service.visual === 'search' && <Image src={knowledgeImage} alt="Wizualizacja uporządkowanej wiedzy i ścieżek widoczności" widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={82} />}
-                {service.visual === 'voice' && <Image src={voiceImage} alt="Abstrakcyjna postać i fala głosu" widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={82} />}
-                {service.visual === 'chat' && (
-                  <div class="visual-chat" aria-hidden="true">
-                    <span>Chcę umówić konsultację jutro.</span>
-                    <span>Sprawdzam kalendarz — 11:30 lub 15:00?</span>
-                    <span><b></b><b></b><b></b></span>
-                  </div>
-                )}
-                {service.visual === 'agent' && (
-                  <div class="visual-agent" aria-hidden="true">
-                    <svg viewBox="0 0 800 700"><path d="M180 180 C350 80 470 270 620 320 S420 570 270 535 S145 350 180 180" /></svg>
-                    <span class="agent-node agent-node-a">Sygnał</span><span class="agent-node agent-node-b">Agent</span><span class="agent-node agent-node-c">Wynik</span>
-                  </div>
-                )}
-                {service.visual === 'automation' && (
-                  <div class="visual-automation" aria-hidden="true">
-                    {[0,1,2,3,4].map((column) => <div class="automation-column">{[0,1,2,3].map((cell) => <span class:list={[(column + cell) % 4 === 0 && 'is-live']}></span>)}</div>)}
-                  </div>
-                )}
-                {service.visual === 'care' && (
-                  <div class="visual-care" aria-hidden="true"><div class="care-radar"><span class="care-sweep"></span></div><span class="care-status">Wszystkie systemy działają</span></div>
-                )}
+                <Image src={serviceVisuals[service.visual].src} alt={serviceVisuals[service.visual].alt} widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={84} />
+                <div class="service-media-ui" aria-hidden="true"><span>System / {service.index}</span><i></i><span>Live architecture</span></div>
                 <span class="media-label">SimpleFast / {service.index}</span>
               </div>
             </article>
@@ -189,7 +249,7 @@ const schema = {
         </div>
         <div class="proof-grid">
           <a class="proof-card" href="/uslugi/voiceboty-ai/">
-            <div class="proof-card-media"><Image src={voiceImage} alt="Voicebot prowadzący rozmowę" widths={[760,1100,1500]} sizes="(max-width:760px) 100vw, 54vw" format="webp" quality={82} /></div>
+            <div class="proof-card-media"><Image src={voiceChamberImage} alt="Przestrzenna komora głosowa symbolizująca rozmowę voicebota AI" widths={[760,1100,1500]} sizes="(max-width:760px) 100vw, 54vw" format="webp" quality={84} /></div>
             <div class="proof-card-copy">
               <p class="mono-label">Scenariusz / Obsługa klienta</p>
               <h3>Telefon odebrany. Termin zapisany. Zespół nadal pracuje.</h3>
@@ -197,7 +257,7 @@ const schema = {
             </div>
           </a>
           <a class="proof-card" href="/uslugi/strony-www-seo-ai/">
-            <div class="proof-card-media"><Image src={knowledgeImage} alt="Sieć treści połączona w system wiedzy" widths={[640,960,1280]} sizes="(max-width:760px) 100vw, 46vw" format="webp" quality={82} /></div>
+            <div class="proof-card-media"><Image src={searchCitationFieldImage} alt="Sieć treści i źródeł połączona w system wiedzy dla AI" widths={[640,960,1280]} sizes="(max-width:760px) 100vw, 46vw" format="webp" quality={84} /></div>
             <div class="proof-card-copy">
               <p class="mono-label">Scenariusz / Widoczność</p>
               <h3>Jedna strona. Dwa ekosystemy wyszukiwania.</h3>
@@ -224,7 +284,31 @@ const schema = {
       </div>
     </section>
 
+    <section class="services-reel-section">
+      <div class="reel-heading section-shell">
+        <p class="mono-label">/ Porozmawiajmy o usługach</p>
+        <h2 data-reveal>Jeden partner.<br />Cały ekosystem AI.</h2>
+        <p>Najedź na wybraną usługę albo przesuń karuzelę na telefonie. Każda ma własną podstronę, zakres i architekturę treści pod dalsze pozycjonowanie.</p>
+      </div>
+      <div class="services-reel" data-services-reel>
+        <div class="services-reel-track">
+          {serviceLoop.map((service, loopIndex) => (
+            <a class="reel-card" href={`/uslugi/${service.slug}/`} aria-hidden={loopIndex >= services.length ? 'true' : undefined} tabindex={loopIndex >= services.length ? -1 : undefined}>
+              <div class="reel-card-media">
+                <Image src={serviceVisuals[service.visual].src} alt={loopIndex < services.length ? serviceVisuals[service.visual].alt : ''} widths={[480, 720, 960]} sizes="(max-width: 760px) 76vw, 30vw" format="webp" quality={82} />
+              </div>
+              <div class="reel-card-copy"><span>{service.index}</span><h3 data-scramble>{service.title}</h3><i>↗</i></div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
     <section class="care-callout">
+      <div class="care-callout-visual" aria-hidden="true">
+        <Image src={careObservatoryImage} alt="" widths={[720,1080,1440]} sizes="(max-width:760px) 100vw, 58vw" format="webp" quality={84} />
+        <span>[ 07 systems / monitored ]</span>
+      </div>
       <div class="care-callout-inner section-shell">
         <p class="mono-label">/ Opieka AI</p>
         <h2 data-reveal>Twój dział AI. <em>Bez rekrutacji.</em></h2>
@@ -242,10 +326,19 @@ const schema = {
           <h2 data-reveal>Co działa w AI dla firm.</h2>
           <p>Konkretnie o procesach, kosztach, bezpieczeństwie i widoczności.</p>
         </div>
-        <div class="insights-grid">
-          <a class="insight-card" href="/wiedza/"><time>Przewodnik / 08 min</time><div class="insight-visual"></div><h3>Agent AI czy automatyzacja — od czego zacząć?</h3><p>Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.</p></a>
-          <a class="insight-card" href="/wiedza/"><time>SEO + GEO / 11 min</time><div class="insight-visual"></div><h3>Jak być widocznym w odpowiedziach ChatGPT?</h3><p>Co na stronie pomaga systemom AI właściwie zrozumieć markę.</p></a>
-          <a class="insight-card" href="/wiedza/"><time>Operacje / 06 min</time><div class="insight-visual"></div><h3>7 zadań, które agent może przejąć w tym kwartale.</h3><p>Praktyczna lista dla sprzedaży, obsługi i back office.</p></a>
+        <div class="insights-list">
+          {insightArticles.map((article, index) => (
+            <a class="insight-row" href="/wiedza/" data-insight-row={index + 1}>
+              <time>{article.meta}</time>
+              <h3>{article.title}</h3>
+              <p>{article.text}</p>
+              <span class="insight-row-arrow">↗</span>
+              <div class="insight-preview" data-insight-preview={index + 1}>
+                <Image src={article.image} alt={article.alt} widths={[420, 640, 840]} sizes="(max-width:760px) 100vw, 30rem" format="webp" quality={82} />
+                <span class="insight-preview-cta" aria-hidden="true">Czytaj<br />post</span>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </section>

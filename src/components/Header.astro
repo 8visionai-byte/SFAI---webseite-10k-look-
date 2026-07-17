@@ -16,11 +16,11 @@ const nav = [
 
   <nav class="desktop-nav" aria-label="Główna nawigacja">
     {nav.map(([href, label]) => (
-      <a class:list={[path.startsWith(href) && 'is-active']} href={href}>{label}</a>
+      <a class:list={[path.startsWith(href) && 'is-active']} href={href}><span data-scramble>{label}</span></a>
     ))}
   </nav>
 
-  <a class="header-cta magnetic" href="/kontakt/">Porozmawiajmy <span aria-hidden="true">↗</span></a>
+  <a class="header-cta magnetic" href="/kontakt/"><span data-scramble>Porozmawiajmy</span> <span aria-hidden="true">↗</span></a>
 
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu" data-menu-toggle>
     <span></span><span></span>
@@ -30,11 +30,11 @@ const nav = [
     <div class="mobile-menu-grid">
       <p class="mono-label">/ Nawigacja</p>
       <nav aria-label="Menu mobilne">
-        <a href="/">Start</a>
+        <a href="/"><span data-scramble>Start</span></a>
         {nav.map(([href, label], index) => (
-          <a href={href}><small>0{index + 1}</small>{label}</a>
+          <a href={href}><small>0{index + 1}</small><span data-scramble>{label}</span></a>
         ))}
-        <a href="/kontakt/"><small>06</small>Kontakt</a>
+        <a href="/kontakt/"><small>06</small><span data-scramble>Kontakt</span></a>
       </nav>
       <div class="mobile-menu-contact">
         <a href="mailto:kontakt@simplefast.ai">kontakt@simplefast.ai</a>

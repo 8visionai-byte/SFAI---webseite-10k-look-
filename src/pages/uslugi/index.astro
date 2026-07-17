@@ -1,6 +1,50 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { services } from '../../data/services.js';
+import valueBlueprintImage from '../../assets/generated/v2/value-blueprint.png';
+import chatInterfaceImage from '../../assets/generated/v2/chat-interface.png';
+import searchCitationFieldImage from '../../assets/generated/v2/search-citation-field.png';
+import voiceChamberImage from '../../assets/generated/v2/voice-chamber.png';
+import agentOrchestrationImage from '../../assets/generated/v2/agent-orchestration.png';
+import processEngineImage from '../../assets/generated/v2/process-engine.png';
+import careObservatoryImage from '../../assets/generated/v2/care-observatory.png';
+
+const serviceVisuals = {
+  core: {
+    src: valueBlueprintImage,
+    alt: 'Warstwowa architektura strategii i wartości wdrożenia AI',
+  },
+  chat: {
+    src: chatInterfaceImage,
+    alt: 'Modułowy interfejs inteligentnego chatbota dla firmy',
+  },
+  search: {
+    src: searchCitationFieldImage,
+    alt: 'Wizualizacja treści prowadzących do odpowiedzi cytowanej przez systemy AI',
+  },
+  voice: {
+    src: voiceChamberImage,
+    alt: 'Przestrzenna komora głosowa symbolizująca rozmowę z voicebotem AI',
+  },
+  agent: {
+    src: agentOrchestrationImage,
+    alt: 'Schemat orkiestracji agenta AI od sygnału do kontrolowanego działania',
+  },
+  automation: {
+    src: processEngineImage,
+    alt: 'Precyzyjny silnik automatyzacji procesów i przepływu danych',
+  },
+  care: {
+    src: careObservatoryImage,
+    alt: 'Centrum monitorowania agentów i automatyzacji w ramach Opieki AI',
+  },
+};
+
+const serviceCards = services.map((service) => ({
+  ...service,
+  visualAsset: serviceVisuals[service.visual] ?? serviceVisuals.core,
+}));
 ---
 <BaseLayout
   title="Usługi AI dla firm — SimpleFast.ai"
@@ -20,8 +64,19 @@ import { services } from '../../data/services.js';
         <h2 data-reveal>Zaczynamy od problemu, nie od narzędzia.</h2>
         <p class="lead">Nie musisz wiedzieć, czy potrzebujesz agenta, voicebota czy automatyzacji. Na diagnozie mapujemy proces i rekomendujemy najprostsze rozwiązanie, które dowiezie efekt.</p>
         <div class="listing-grid">
-          {services.map((service) => (
+          {serviceCards.map((service) => (
             <article class="listing-card" data-reveal>
+              <div class="listing-card-visual">
+                <Image
+                  src={service.visualAsset.src}
+                  alt={service.visualAsset.alt}
+                  widths={[480, 720, 960]}
+                  sizes="(max-width: 760px) 100vw, 33vw"
+                  format="webp"
+                  quality={82}
+                  loading="lazy"
+                />
+              </div>
               <p class="mono-label">{service.index} / {service.kicker}</p>
               <h3>{service.title}</h3>
               <p>{service.short}</p>

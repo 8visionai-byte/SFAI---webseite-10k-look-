@@ -1,12 +1,32 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import agentOrchestration from '../assets/generated/v2/agent-orchestration.png';
+import processEngine from '../assets/generated/v2/process-engine.png';
+import searchCitationField from '../assets/generated/v2/search-citation-field.png';
+
 const articles = [
-  ['Agenci AI', 'Agent AI czy chatbot — różnica, którą widać w procesie', 'Agent nie kończy na odpowiedzi. Sprawdza, zapisuje i wykonuje kolejny krok.'],
-  ['Automatyzacja', 'Jak wybrać pierwszy proces do automatyzacji?', 'Pięć sygnałów, że zadanie jest dobrym kandydatem i trzy, że jeszcze nie.'],
-  ['SEO + GEO', 'Jak przygotować stronę do cytowania przez systemy AI', 'Architektura treści, dane strukturalne i wiarygodność marki bez skrótów.'],
-  ['Voiceboty', 'Co powinien umieć dobry voicebot po polsku?', 'Naturalność to dopiero początek. Liczy się kontekst, integracja i bezpieczne wyjątki.'],
-  ['Bezpieczeństwo', 'RODO i AI Act w codziennym wdrożeniu', 'Praktyczne granice działania, informowanie użytkownika i kontrola danych.'],
-  ['Opieka AI', 'Dlaczego agent potrzebuje opieki po wdrożeniu?', 'Zmienia się wiedza, procesy i narzędzia. System musi zmieniać się razem z nimi.'],
+  {
+    category: 'Agenci AI',
+    title: 'Agent AI czy chatbot — różnica, którą widać w procesie',
+    description: 'Agent nie kończy na odpowiedzi. Sprawdza, zapisuje i wykonuje kolejny krok.',
+    image: agentOrchestration,
+    alt: 'Wizualizacja przepływu zadań pomiędzy modułami autonomicznego agenta AI',
+  },
+  {
+    category: 'Automatyzacja',
+    title: 'Jak wybrać pierwszy proces do automatyzacji?',
+    description: 'Pięć sygnałów, że zadanie jest dobrym kandydatem i trzy, że jeszcze nie.',
+    image: processEngine,
+    alt: 'Precyzyjny silnik automatyzacji prowadzący dane przez kolejne etapy procesu',
+  },
+  {
+    category: 'SEO + GEO',
+    title: 'Jak przygotować stronę do cytowania przez systemy AI',
+    description: 'Architektura treści, dane strukturalne i wiarygodność marki bez skrótów.',
+    image: searchCitationField,
+    alt: 'Struktury treści zbiegające się w wyróżnioną odpowiedź cytowaną przez system AI',
+  },
 ];
 ---
 <BaseLayout title="Wiedza o AI dla firm — SimpleFast.ai" description="Praktyczne materiały o agentach AI, automatyzacji, voicebotach, chatbotach, SEO/GEO i bezpieczeństwie.">
@@ -16,8 +36,25 @@ const articles = [
       <div class="content-grid section-shell">
         <p class="mono-label">/ Tematy</p><h2 data-reveal>O technologii językiem wyniku.</h2>
         <div class="listing-grid">
-          {articles.map(([category, title, description], index) => (
-            <article class="listing-card" data-reveal><p class="mono-label">0{index + 1} / {category}</p><h3>{title}</h3><p>{description}</p><a class="text-link" href="/kontakt/">Zapytaj o ten temat <span>↗</span></a></article>
+          {articles.map(({ category, title, description, image, alt }, index) => (
+            <article class="listing-card" data-insight-row={index + 1} data-reveal>
+              <div class="listing-card-copy">
+                <p class="mono-label">0{index + 1} / {category}</p>
+                <h3>{title}</h3>
+                <p>{description}</p>
+                <a class="text-link" href="/kontakt/">Zapytaj o ten temat <span>↗</span></a>
+              </div>
+              <div class="insight-preview" data-insight-preview={index + 1}>
+                <Image
+                  src={image}
+                  alt={alt}
+                  widths={[360, 540, 720]}
+                  sizes="(max-width: 760px) 78vw, 28rem"
+                  loading="lazy"
+                />
+                <span class="insight-preview-cta" aria-hidden="true">Czytaj<br />post</span>
+              </div>
+            </article>
           ))}
         </div>
       </div>

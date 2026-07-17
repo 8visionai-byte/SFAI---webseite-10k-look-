@@ -2,16 +2,50 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { services } from '../../data/services.js';
-import flowImage from '../../assets/generated/flow-core.png';
-import voiceImage from '../../assets/generated/voice-sculpture.png';
-import knowledgeImage from '../../assets/generated/knowledge-grid.png';
+import valueBlueprintImage from '../../assets/generated/v2/value-blueprint.png';
+import chatInterfaceImage from '../../assets/generated/v2/chat-interface.png';
+import searchCitationFieldImage from '../../assets/generated/v2/search-citation-field.png';
+import voiceChamberImage from '../../assets/generated/v2/voice-chamber.png';
+import agentOrchestrationImage from '../../assets/generated/v2/agent-orchestration.png';
+import processEngineImage from '../../assets/generated/v2/process-engine.png';
+import careObservatoryImage from '../../assets/generated/v2/care-observatory.png';
 
 export function getStaticPaths() {
   return services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
 
 const { service } = Astro.props;
-const heroImage = service.visual === 'voice' ? voiceImage : service.visual === 'search' ? knowledgeImage : flowImage;
+const serviceVisuals = {
+  core: {
+    src: valueBlueprintImage,
+    alt: 'Warstwowa architektura strategii i wartości wdrożenia AI',
+  },
+  chat: {
+    src: chatInterfaceImage,
+    alt: 'Modułowy interfejs inteligentnego chatbota dla firmy',
+  },
+  search: {
+    src: searchCitationFieldImage,
+    alt: 'Wizualizacja treści prowadzących do odpowiedzi cytowanej przez systemy AI',
+  },
+  voice: {
+    src: voiceChamberImage,
+    alt: 'Przestrzenna komora głosowa symbolizująca rozmowę z voicebotem AI',
+  },
+  agent: {
+    src: agentOrchestrationImage,
+    alt: 'Schemat orkiestracji agenta AI od sygnału do kontrolowanego działania',
+  },
+  automation: {
+    src: processEngineImage,
+    alt: 'Precyzyjny silnik automatyzacji procesów i przepływu danych',
+  },
+  care: {
+    src: careObservatoryImage,
+    alt: 'Centrum monitorowania agentów i automatyzacji w ramach Opieki AI',
+  },
+};
+const heroVisual = serviceVisuals[service.visual] ?? serviceVisuals.core;
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'Service',
@@ -31,7 +65,7 @@ const schema = {
         <p>{service.short}</p>
       </div>
       <div class="service-hero-visual">
-        <Image src={heroImage} alt={`Autorska wizualizacja usługi ${service.title}`} widths={[720, 1080, 1500]} sizes="(max-width: 760px) 100vw, 53vw" format="webp" quality={82} loading="eager" />
+        <Image src={heroVisual.src} alt={heroVisual.alt} widths={[720, 1080, 1500]} sizes="(max-width: 760px) 100vw, 53vw" format="webp" quality={82} loading="eager" />
       </div>
       <div class="service-meta"><span>SimpleFast.ai / {service.index}</span><span>{service.kicker}</span><span>Dane w UE / RODO</span></div>
     </section>
