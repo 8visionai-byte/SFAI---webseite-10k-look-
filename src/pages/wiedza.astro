@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const articles = [
+  ['Agenci AI', 'Agent AI czy chatbot — różnica, którą widać w procesie', 'Agent nie kończy na odpowiedzi. Sprawdza, zapisuje i wykonuje kolejny krok.'],
+  ['Automatyzacja', 'Jak wybrać pierwszy proces do automatyzacji?', 'Pięć sygnałów, że zadanie jest dobrym kandydatem i trzy, że jeszcze nie.'],
+  ['SEO + GEO', 'Jak przygotować stronę do cytowania przez systemy AI', 'Architektura treści, dane strukturalne i wiarygodność marki bez skrótów.'],
+  ['Voiceboty', 'Co powinien umieć dobry voicebot po polsku?', 'Naturalność to dopiero początek. Liczy się kontekst, integracja i bezpieczne wyjątki.'],
+  ['Bezpieczeństwo', 'RODO i AI Act w codziennym wdrożeniu', 'Praktyczne granice działania, informowanie użytkownika i kontrola danych.'],
+  ['Opieka AI', 'Dlaczego agent potrzebuje opieki po wdrożeniu?', 'Zmienia się wiedza, procesy i narzędzia. System musi zmieniać się razem z nimi.'],
+];
+---
+<BaseLayout title="Wiedza o AI dla firm — SimpleFast.ai" description="Praktyczne materiały o agentach AI, automatyzacji, voicebotach, chatbotach, SEO/GEO i bezpieczeństwie.">
+  <main id="main" class="subpage-main">
+    <section class="subhero"><p class="mono-label">/ Baza wiedzy</p><span class="subhero-orb" aria-hidden="true"></span><h1>AI bez hype’u.<br /><em>Z kontekstem.</em></h1><p class="subhero-copy">Materiały dla osób, które chcą podejmować lepsze decyzje o AI: co wdrażać, jak mierzyć, gdzie uważać i kiedy odpuścić.</p></section>
+    <section class="content-section">
+      <div class="content-grid section-shell">
+        <p class="mono-label">/ Tematy</p><h2 data-reveal>O technologii językiem wyniku.</h2>
+        <div class="listing-grid">
+          {articles.map(([category, title, description], index) => (
+            <article class="listing-card" data-reveal><p class="mono-label">0{index + 1} / {category}</p><h3>{title}</h3><p>{description}</p><a class="text-link" href="/kontakt/">Zapytaj o ten temat <span>↗</span></a></article>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

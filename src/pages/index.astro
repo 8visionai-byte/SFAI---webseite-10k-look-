@@ -1,0 +1,253 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FlowCore from '../components/FlowCore.astro';
+import { services } from '../data/services.js';
+import flowImage from '../assets/generated/flow-core.png';
+import voiceImage from '../assets/generated/voice-sculpture.png';
+import knowledgeImage from '../assets/generated/knowledge-grid.png';
+
+const marquee = ['Agenci AI', 'Voiceboty', 'Chatboty', 'Automatyzacje', 'SEO + GEO', 'Strony WWW', 'Opieka AI', 'Dane w UE'];
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://www.simplefast.ai/#organization',
+      name: 'SimpleFast.ai',
+      url: 'https://www.simplefast.ai',
+      email: 'kontakt@simplefast.ai',
+      telephone: '+48696674874',
+    },
+    {
+      '@type': 'ItemList',
+      name: 'Usługi SimpleFast.ai',
+      itemListElement: services.map((service, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `https://www.simplefast.ai/uslugi/${service.slug}/`,
+        name: service.title,
+      })),
+    },
+  ],
+};
+---
+<BaseLayout title="SimpleFast.ai — AI, które dowozi" schema={schema}>
+  <main id="main">
+    <section class="home-hero" data-hero>
+      <div class="hero-sticky">
+        <div class="hero-grid-lines"></div>
+        <FlowCore />
+
+        <div class="hero-copy">
+          <div class="hero-kicker eyebrow"><i></i> Systemy AI dla firm / Polska + UE</div>
+          <h1 class="hero-title">
+            <span class="line"><span>AI, które</span></span>
+            <span class="line"><span><em>dowozi.</em></span></span>
+          </h1>
+        </div>
+
+        <ul class="hero-side-list" aria-label="Zakres usług">
+          <li>Architektura wartości</li>
+          <li>Agenci AI</li>
+          <li>Voice + chat</li>
+          <li>Automatyzacja</li>
+          <li>Web / SEO / GEO</li>
+        </ul>
+
+        <div class="hero-scenes" aria-hidden="true">
+          <div class="hero-scene" data-hero-scene><span>01 / Sygnał</span><b>Słucha</b></div>
+          <div class="hero-scene" data-hero-scene><span>02 / Kontekst</span><b>Rozumie</b></div>
+          <div class="hero-scene" data-hero-scene><span>03 / Proces</span><b>Działa</b></div>
+          <div class="hero-scene" data-hero-scene><span>04 / Wynik</span><b>Dowozi</b></div>
+        </div>
+
+        <div class="hero-bottom">
+          <p class="hero-intro">Projektujemy agentów, automatyzacje i cyfrowe doświadczenia, które zdejmują z zespołu realną pracę — nie tylko robią wrażenie na demo.</p>
+          <div class="hero-actions">
+            <a class="button button-primary magnetic" href="/kontakt/"><span>Umów diagnozę AI</span><span>↗</span></a>
+            <a class="button magnetic" href="#uslugi"><span>Zobacz usługi</span><span>↓</span></a>
+          </div>
+          <a class="hero-scroll" href="#manifest">Przewiń</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="marquee-band" aria-label="Zakres kompetencji">
+      <div class="marquee-track">
+        {[...marquee, ...marquee].map((item) => <span>{item}</span>)}
+      </div>
+    </div>
+
+    <section class="manifesto" id="manifest">
+      <div class="manifesto-grid section-shell">
+        <p class="mono-label">/ Nasze podejście</p>
+        <h2 data-reveal>Nie wdrażamy AI dla efektu wow. <span>Wdrażamy efekt, który widać w pracy.</span></h2>
+        <div class="manifesto-copy" data-reveal>
+          <p>Najpierw znajdujemy proces, w którym znika czas lub sprzedaż. Dopiero potem dobieramy model, narzędzia i integracje.</p>
+          <p>Budujemy mały, działający system, mierzymy efekt i rozwijamy go wtedy, kiedy biznes jest na to gotowy.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="system-story">
+      <div class="story-grid">
+        <div class="story-media">
+          <Image src={knowledgeImage} alt="Abstrakcyjna mapa połączonych informacji" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={82} />
+          <div class="story-media-copy"><span>Flow architecture</span><span>Scroll / 01—03</span></div>
+        </div>
+        <div class="story-steps">
+          <div class="story-intro">
+            <p class="mono-label">/ Od chaosu do wyniku</p>
+            <h2>Jeden przepływ. Zero ręcznego pilnowania.</h2>
+            <p>Agent łączy telefon, czat, e-mail, dokumenty i systemy firmy w proces, który ma początek, kontrolę i konkretny koniec.</p>
+          </div>
+          <article class="story-step" data-story-step>
+            <span>01</span>
+            <div>
+              <h3>Słucha sygnału</h3>
+              <p>Odbiera telefon, czyta wiadomość, dokument lub zmianę statusu w systemie.</p>
+              <strong>Telefon · e-mail · formularz · CRM</strong>
+            </div>
+          </article>
+          <article class="story-step" data-story-step>
+            <span>02</span>
+            <div>
+              <h3>Rozumie kontekst</h3>
+              <p>Korzysta z firmowej wiedzy i reguł, sprawdza dane oraz rozpoznaje, co wymaga decyzji człowieka.</p>
+              <strong>Wiedza · zasady · bezpieczeństwo</strong>
+            </div>
+          </article>
+          <article class="story-step" data-story-step>
+            <span>03</span>
+            <div>
+              <h3>Wykonuje pracę</h3>
+              <p>Umawia termin, aktualizuje CRM, tworzy dokument, przekazuje wyjątek i zapisuje każdą akcję.</p>
+              <strong>Akcja · kontrola · wynik</strong>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="services-section" id="uslugi">
+      <div class="section-shell">
+        <div class="section-heading">
+          <p class="mono-label">/ 07 specjalizacji</p>
+          <h2 data-reveal>Budujemy cały system AI.</h2>
+          <p data-reveal>Od znalezienia wartości, przez wdrożenie, aż po codzienną opiekę i rozwój.</p>
+        </div>
+
+        <div class="services-stack">
+          {services.map((service, index) => (
+            <article class="service-card" data-accent={service.accent} style={`--index:${index}`}>
+              <div class="service-card-copy">
+                <div class="service-card-head"><span>{service.index}</span><span>{service.kicker}</span></div>
+                <h3>{service.title}</h3>
+                <p class="service-card-desc">{service.short}</p>
+                <div class="service-card-outcome"><span>Rezultat</span><p>{service.outcome}</p></div>
+                <a class="service-card-link" href={`/uslugi/${service.slug}/`}><i>↗</i> Zobacz usługę</a>
+              </div>
+              <div class="service-card-media">
+                {service.visual === 'core' && <Image src={flowImage} alt="Rzeźbiarska wizualizacja połączonych agentów AI" widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={82} />}
+                {service.visual === 'search' && <Image src={knowledgeImage} alt="Wizualizacja uporządkowanej wiedzy i ścieżek widoczności" widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={82} />}
+                {service.visual === 'voice' && <Image src={voiceImage} alt="Abstrakcyjna postać i fala głosu" widths={[640, 960, 1280]} sizes="(max-width: 760px) 100vw, 50vw" format="webp" quality={82} />}
+                {service.visual === 'chat' && (
+                  <div class="visual-chat" aria-hidden="true">
+                    <span>Chcę umówić konsultację jutro.</span>
+                    <span>Sprawdzam kalendarz — 11:30 lub 15:00?</span>
+                    <span><b></b><b></b><b></b></span>
+                  </div>
+                )}
+                {service.visual === 'agent' && (
+                  <div class="visual-agent" aria-hidden="true">
+                    <svg viewBox="0 0 800 700"><path d="M180 180 C350 80 470 270 620 320 S420 570 270 535 S145 350 180 180" /></svg>
+                    <span class="agent-node agent-node-a">Sygnał</span><span class="agent-node agent-node-b">Agent</span><span class="agent-node agent-node-c">Wynik</span>
+                  </div>
+                )}
+                {service.visual === 'automation' && (
+                  <div class="visual-automation" aria-hidden="true">
+                    {[0,1,2,3,4].map((column) => <div class="automation-column">{[0,1,2,3].map((cell) => <span class:list={[(column + cell) % 4 === 0 && 'is-live']}></span>)}</div>)}
+                  </div>
+                )}
+                {service.visual === 'care' && (
+                  <div class="visual-care" aria-hidden="true"><div class="care-radar"><span class="care-sweep"></span></div><span class="care-status">Wszystkie systemy działają</span></div>
+                )}
+                <span class="media-label">SimpleFast / {service.index}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="proof-section">
+      <div class="section-shell">
+        <div class="proof-head">
+          <p class="mono-label">/ Efekt w procesie</p>
+          <h2 data-reveal>Technologia znika. Zostaje lepsza praca.</h2>
+        </div>
+        <div class="proof-grid">
+          <a class="proof-card" href="/uslugi/voiceboty-ai/">
+            <div class="proof-card-media"><Image src={voiceImage} alt="Voicebot prowadzący rozmowę" widths={[760,1100,1500]} sizes="(max-width:760px) 100vw, 54vw" format="webp" quality={82} /></div>
+            <div class="proof-card-copy">
+              <p class="mono-label">Scenariusz / Obsługa klienta</p>
+              <h3>Telefon odebrany. Termin zapisany. Zespół nadal pracuje.</h3>
+              <div class="proof-metrics"><div><strong>24/7</strong><span>dostępność</span></div><div><strong>PL</strong><span>naturalna rozmowa</span></div><div><strong>CRM</strong><span>zapis wyniku</span></div></div>
+            </div>
+          </a>
+          <a class="proof-card" href="/uslugi/strony-www-seo-ai/">
+            <div class="proof-card-media"><Image src={knowledgeImage} alt="Sieć treści połączona w system wiedzy" widths={[640,960,1280]} sizes="(max-width:760px) 100vw, 46vw" format="webp" quality={82} /></div>
+            <div class="proof-card-copy">
+              <p class="mono-label">Scenariusz / Widoczność</p>
+              <h3>Jedna strona. Dwa ekosystemy wyszukiwania.</h3>
+              <div class="proof-metrics"><div><strong>SEO</strong><span>Google</span></div><div><strong>GEO</strong><span>odpowiedzi AI</span></div><div><strong>UX</strong><span>konwersja</span></div></div>
+            </div>
+          </a>
+          <div class="proof-note"><p>Nie publikujemy zmyślonych wskaźników. W realizacjach pokazujemy tylko efekty, które można przypisać do konkretnego procesu i potwierdzić z klientem.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="process-section">
+      <div class="section-shell">
+        <div class="process-title">
+          <p class="mono-label">/ Jak pracujemy</p>
+          <h2 data-reveal>Mały krok. Szybki dowód. Stały rozwój.</h2>
+        </div>
+        <div class="process-list">
+          <article class="process-item"><span>01</span><h3>Diagnoza wartości</h3><p>Wybieramy proces, w którym efekt będzie widoczny i mierzalny.</p></article>
+          <article class="process-item"><span>02</span><h3>Pierwszy system</h3><p>Budujemy najmniejszą wersję, która naprawdę wykonuje pracę.</p></article>
+          <article class="process-item"><span>03</span><h3>Test na żywo</h3><p>Sprawdzamy wyjątki, bezpieczeństwo i zachowanie w realnym procesie.</p></article>
+          <article class="process-item"><span>04</span><h3>Opieka i skala</h3><p>Monitorujemy wynik, poprawiamy i dodajemy następne zadania.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="care-callout">
+      <div class="care-callout-inner section-shell">
+        <p class="mono-label">/ Opieka AI</p>
+        <h2 data-reveal>Twój dział AI. <em>Bez rekrutacji.</em></h2>
+        <div class="care-callout-copy" data-reveal>
+          <p>Po wdrożeniu nie zostajesz z panelem, hasłem i instrukcją. Pilnujemy jakości, aktualizujemy wiedzę, rozwijamy integracje i reagujemy na zmiany w firmie.</p>
+          <a class="text-link" href="/uslugi/opieka-ai/">Zobacz stałą opiekę <span>↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="insights-section">
+      <div class="section-shell">
+        <div class="section-heading">
+          <p class="mono-label">/ Wiedza bez hype’u</p>
+          <h2 data-reveal>Co działa w AI dla firm.</h2>
+          <p>Konkretnie o procesach, kosztach, bezpieczeństwie i widoczności.</p>
+        </div>
+        <div class="insights-grid">
+          <a class="insight-card" href="/wiedza/"><time>Przewodnik / 08 min</time><div class="insight-visual"></div><h3>Agent AI czy automatyzacja — od czego zacząć?</h3><p>Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.</p></a>
+          <a class="insight-card" href="/wiedza/"><time>SEO + GEO / 11 min</time><div class="insight-visual"></div><h3>Jak być widocznym w odpowiedziach ChatGPT?</h3><p>Co na stronie pomaga systemom AI właściwie zrozumieć markę.</p></a>
+          <a class="insight-card" href="/wiedza/"><time>Operacje / 06 min</time><div class="insight-visual"></div><h3>7 zadań, które agent może przejąć w tym kwartale.</h3><p>Praktyczna lista dla sprzedaży, obsługi i back office.</p></a>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

@@ -1,0 +1,46 @@
+---
+const path = Astro.url.pathname;
+const nav = [
+  ['/uslugi/', 'Usługi'],
+  ['/realizacje/', 'Realizacje'],
+  ['/jak-pracujemy/', 'Jak pracujemy'],
+  ['/wiedza/', 'Wiedza'],
+  ['/o-nas/', 'O nas'],
+];
+---
+<header class="site-header" data-header>
+  <a class="wordmark" href="/" aria-label="SimpleFast.ai — strona główna">
+    <span class="wordmark-mark">S/F<span>•</span></span>
+    <span class="wordmark-name">SimpleFast<br />AI studio</span>
+  </a>
+
+  <nav class="desktop-nav" aria-label="Główna nawigacja">
+    {nav.map(([href, label]) => (
+      <a class:list={[path.startsWith(href) && 'is-active']} href={href}>{label}</a>
+    ))}
+  </nav>
+
+  <a class="header-cta magnetic" href="/kontakt/">Porozmawiajmy <span aria-hidden="true">↗</span></a>
+
+  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu" data-menu-toggle>
+    <span></span><span></span>
+  </button>
+
+  <div class="mobile-menu" id="menu-panel" data-menu-panel aria-hidden="true">
+    <div class="mobile-menu-grid">
+      <p class="mono-label">/ Nawigacja</p>
+      <nav aria-label="Menu mobilne">
+        <a href="/">Start</a>
+        {nav.map(([href, label], index) => (
+          <a href={href}><small>0{index + 1}</small>{label}</a>
+        ))}
+        <a href="/kontakt/"><small>06</small>Kontakt</a>
+      </nav>
+      <div class="mobile-menu-contact">
+        <a href="mailto:kontakt@simplefast.ai">kontakt@simplefast.ai</a>
+        <a href="tel:+48696674874">+48 696 674 874</a>
+      </div>
+      <p class="mobile-menu-note">AI, które nie tylko mówi.<br />AI, które dowozi.</p>
+    </div>
+  </div>
+</header>

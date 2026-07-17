@@ -1,0 +1,97 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { services } from '../../data/services.js';
+import flowImage from '../../assets/generated/flow-core.png';
+import voiceImage from '../../assets/generated/voice-sculpture.png';
+import knowledgeImage from '../../assets/generated/knowledge-grid.png';
+
+export function getStaticPaths() {
+  return services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
+}
+
+const { service } = Astro.props;
+const heroImage = service.visual === 'voice' ? voiceImage : service.visual === 'search' ? knowledgeImage : flowImage;
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: service.title,
+  description: service.short,
+  provider: { '@type': 'Organization', name: 'SimpleFast.ai', url: 'https://www.simplefast.ai' },
+  areaServed: 'PL',
+  url: `https://www.simplefast.ai/uslugi/${service.slug}/`,
+};
+---
+<BaseLayout title={`${service.title} dla firm — SimpleFast.ai`} description={service.short} schema={schema}>
+  <main id="main" class="subpage-main">
+    <section class="subhero service-hero">
+      <p class="mono-label">/ Usługa {service.index}</p>
+      <div class="service-hero-copy">
+        <h1>{service.title}</h1>
+        <p>{service.short}</p>
+      </div>
+      <div class="service-hero-visual">
+        <Image src={heroImage} alt={`Autorska wizualizacja usługi ${service.title}`} widths={[720, 1080, 1500]} sizes="(max-width: 760px) 100vw, 53vw" format="webp" quality={82} loading="eager" />
+      </div>
+      <div class="service-meta"><span>SimpleFast.ai / {service.index}</span><span>{service.kicker}</span><span>Dane w UE / RODO</span></div>
+    </section>
+
+    <section class="service-outcome">
+      <div class="service-outcome-grid section-shell">
+        <p class="mono-label">/ Rezultat</p>
+        <blockquote>{service.outcome}</blockquote>
+        <div class="service-keywords">{service.keywords.map((keyword) => <span>{keyword}</span>)}</div>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <div class="content-grid section-shell">
+        <p class="mono-label">/ Co wdrażamy</p>
+        <h2 data-reveal>Technologia dopasowana do procesu.</h2>
+        <p class="lead">Zakres ustalamy po krótkiej diagnozie. Każdy projekt ma jasno opisane zadanie, granice działania, sposób kontroli i miarę efektu.</p>
+        <div class="feature-grid">
+          {service.useCases.map(([title, description], index) => (
+            <article class="feature-card" data-reveal>
+              <span>0{index + 1}</span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section light-section">
+      <div class="content-grid section-shell">
+        <p class="mono-label">/ Proces</p>
+        <h2 data-reveal>Od diagnozy do działania w czterech krokach.</h2>
+        <div class="case-list">
+          <article class="case-row"><h3>Diagnoza</h3><p>Mapujemy obecny proces, koszt ręcznej pracy i miejsca, w których sprawa się zatrzymuje.</p><div><strong>01</strong><small>Wartość</small></div></article>
+          <article class="case-row"><h3>Projekt</h3><p>Definiujemy przepływ, wiedzę, integracje, wyjątki i zakres odpowiedzialności systemu.</p><div><strong>02</strong><small>Architektura</small></div></article>
+          <article class="case-row"><h3>Wdrożenie</h3><p>Uruchamiamy małą, działającą wersję i testujemy ją na realnych przypadkach.</p><div><strong>03</strong><small>Praktyka</small></div></article>
+          <article class="case-row"><h3>Rozwój</h3><p>Monitorujemy jakość, poprawiamy i dodajemy kolejne zadania, gdy efekt jest potwierdzony.</p><div><strong>04</strong><small>Skala</small></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <div class="content-grid section-shell">
+        <p class="mono-label">/ FAQ</p>
+        <h2>Najważniejsze pytania przed startem.</h2>
+        <div class="faq-list">
+          <details class="faq-item"><summary>Ile trwa pierwsze wdrożenie?</summary><p>Zaczynamy od jednego, precyzyjnego procesu. Harmonogram zależy od integracji i jakości danych, ale pierwszą działającą wersję projektujemy jako mały krok, nie wielomiesięczną transformację.</p></details>
+          <details class="faq-item"><summary>Czy system działa pod kontrolą człowieka?</summary><p>Tak. Ustalamy granice samodzielnego działania, logujemy akcje i wskazujemy momenty, w których decyzja pozostaje po stronie zespołu.</p></details>
+          <details class="faq-item"><summary>Co dzieje się po uruchomieniu?</summary><p>Możesz wybrać stałą Opiekę AI. Monitorujemy działanie, aktualizujemy wiedzę i integracje oraz rozwijamy system wraz ze zmianami w firmie.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="care-callout">
+      <div class="care-callout-inner section-shell">
+        <p class="mono-label">/ Bezpłatna diagnoza</p>
+        <h2>Sprawdźmy, czy <em>to ma sens.</em></h2>
+        <div class="care-callout-copy"><p>30 minut wystarczy, żeby wybrać pierwszy proces i uczciwie ocenić potencjalny efekt.</p><a class="text-link" href="/kontakt/">Umów rozmowę <span>↗</span></a></div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

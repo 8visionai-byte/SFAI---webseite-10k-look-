@@ -1,0 +1,61 @@
+---
+import '@fontsource-variable/instrument-sans';
+import '@fontsource/ibm-plex-mono/400.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const {
+  title = 'SimpleFast.ai — AI, które dowozi',
+  description = 'Projektujemy i wdrażamy agentów AI, automatyzacje, chatboty, voiceboty oraz strony widoczne w Google i odpowiedziach AI.',
+  image = '/og-simplefast.png',
+  noindex = false,
+  schema,
+  theme = 'dark',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const defaultSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfessionalService',
+  name: 'SimpleFast.ai',
+  url: 'https://www.simplefast.ai',
+  email: 'kontakt@simplefast.ai',
+  telephone: '+48696674874',
+  areaServed: 'PL',
+  description,
+};
+---
+<!doctype html>
+<html lang="pl" data-theme={theme}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d0e0e" />
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:site_name" content="SimpleFast.ai" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(image, Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>{title}</title>
+    <script type="application/ld+json" set:html={JSON.stringify(schema ?? defaultSchema)} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Przejdź do treści</a>
+    <div class="page-transition" aria-hidden="true"><span>S/F·AI</span></div>
+    <Header />
+    <slot />
+    <Footer />
+    <div class="cursor-orbit" aria-hidden="true"><span></span></div>
+    <script>
+      import '../scripts/site.js';
+    </script>
+  </body>
+</html>

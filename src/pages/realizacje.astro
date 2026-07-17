@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const cases = [
+  ['Kancelaria prawno-finansowa', 'Raporty po spotkaniach przestały być ręcznym obowiązkiem. Wiedza trafia do właściwego miejsca od razu po rozmowie.', 'Agent', 'raportuje'],
+  ['Turystyka na Mazurach', 'Goście dostają odpowiedzi i mogą rozpocząć rezerwację także wtedy, gdy właściciel jest poza biurem.', 'Chat', 'obsługuje 24/7'],
+  ['Firma budowlana', 'Ustalenia nagrane po wizycie zamieniają się w uporządkowaną wiadomość i zapis sprawy.', 'Voice', 'porządkuje'],
+  ['Hotel i restauracja', 'Dane z faktur pochodzących z różnych źródeł trafiają do jednego, spójnego procesu.', 'OCR', 'łączy dane'],
+  ['Edukacja', 'Tysiące stron transkrypcji stały się przeszukiwalną wiedzą dostępną w kilka sekund.', 'RAG', 'odpowiada'],
+];
+---
+<BaseLayout title="Realizacje i scenariusze AI — SimpleFast.ai" description="Przykłady agentów, chatbotów i automatyzacji wdrażanych w kancelariach, turystyce, budownictwie, hotelarstwie i edukacji.">
+  <main id="main" class="subpage-main">
+    <section class="subhero">
+      <p class="mono-label">/ Realizacje</p><span class="subhero-orb" aria-hidden="true"></span>
+      <h1>Efekt zamiast<br /><em>obietnicy.</em></h1>
+      <p class="subhero-copy">Pokazujemy tylko pracę, która istnieje: realny proces, konkretne zadanie i wynik potwierdzony przez klienta. Bez wymyślonych procentów.</p>
+    </section>
+    <section class="content-section light-section">
+      <div class="content-grid section-shell">
+        <p class="mono-label">/ Wybrane branże</p>
+        <h2 data-reveal>AI wygląda inaczej w każdej firmie. Wartość — bardzo podobnie.</h2>
+        <p class="lead">Mniej ręcznego przepisywania, szybsza odpowiedź, lepszy przepływ wiedzy i mniej spraw, które trzeba pilnować pamięcią.</p>
+        <div class="case-list">
+          {cases.map(([title, description, label, result], index) => (
+            <article class="case-row" data-reveal>
+              <h3>{title}</h3><p>{description}</p><div><strong>0{index + 1}</strong><small>{label} / {result}</small></div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+    <section class="service-outcome"><div class="service-outcome-grid section-shell"><p class="mono-label">/ Twój proces</p><blockquote>Następna realizacja może zacząć się od jednej powtarzalnej czynności.</blockquote><div class="service-keywords"><a class="text-link" href="/kontakt/">Pokaż nam swój proces <span>↗</span></a></div></div></section>
+  </main>
+</BaseLayout>

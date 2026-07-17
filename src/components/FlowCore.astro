@@ -1,0 +1,144 @@
+---
+import { Image } from 'astro:assets';
+import poster from '../assets/generated/flow-core.png';
+---
+<div class="flow-core" data-flow-core aria-hidden="true">
+  <div class="flow-core-poster">
+    <Image src={poster} alt="" widths={[640, 960, 1280]} sizes="(max-width: 720px) 90vw, 62vw" format="webp" quality={80} loading="eager" />
+  </div>
+  <canvas data-flow-canvas></canvas>
+  <span class="core-signal core-signal-a"></span>
+  <span class="core-signal core-signal-b"></span>
+</div>
+
+<script>
+  import * as THREE from 'three';
+
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  document.querySelectorAll('[data-flow-core]').forEach((container) => {
+    const canvas = container.querySelector('[data-flow-canvas]');
+    if (!(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) return;
+    canvas.dataset.ready = 'true';
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+    camera.position.set(0, 0, 7.4);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 720 ? 1 : 1.5));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const coreGeometry = new THREE.TorusKnotGeometry(1.3, 0.39, 180, 24, 2, 3);
+    const coreMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x202423,
+      metalness: 0.76,
+      roughness: 0.16,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      emissive: 0x101800,
+      emissiveIntensity: 0.45,
+    });
+    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+    core.rotation.x = 0.35;
+    group.add(core);
+
+    const orbitMaterials = [0xdfff3f, 0x6c73ff, 0xe8e9e2].map((color) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.62 }));
+    const orbits = [];
+    for (let index = 0; index < 7; index += 1) {
+      const radius = 1.92 + index * 0.08;
+      const orbit = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, index % 3 === 0 ? 0.016 : 0.009, 8, 180),
+        orbitMaterials[index % orbitMaterials.length],
+      );
+      orbit.rotation.set(index * 0.42, index * 0.61, index * 0.27);
+      group.add(orbit);
+      orbits.push(orbit);
+    }
+
+    const nodeMaterial = new THREE.MeshPhysicalMaterial({ color: 0xdfff3f, emissive: 0x91b400, emissiveIntensity: 1.1, roughness: 0.18, metalness: 0.25 });
+    const nodes = [];
+    for (let index = 0; index < 9; index += 1) {
+      const node = new THREE.Mesh(new THREE.IcosahedronGeometry(index % 4 === 0 ? 0.105 : 0.065, 1), nodeMaterial);
+      group.add(node);
+      nodes.push(node);
+    }
+
+    scene.add(new THREE.AmbientLight(0x5c6380, 0.7));
+    const key = new THREE.DirectionalLight(0xffffff, 4.6);
+    key.position.set(3.5, 4, 5);
+    scene.add(key);
+    const blue = new THREE.PointLight(0x4358ff, 18, 13);
+    blue.position.set(-3, -1, 3);
+    scene.add(blue);
+    const lime = new THREE.PointLight(0xdfff3f, 12, 10);
+    lime.position.set(3, 1, 2);
+    scene.add(lime);
+
+    let targetX = 0;
+    let targetY = 0;
+    let progress = 0;
+    let visible = true;
+    const startedAt = Date.now();
+
+    const resize = () => {
+      const rect = container.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    new ResizeObserver(resize).observe(container);
+    resize();
+
+    window.addEventListener('pointermove', (event) => {
+      if (reduced || event.pointerType === 'touch') return;
+      targetX = (event.clientY / innerHeight - 0.5) * 0.16;
+      targetY = (event.clientX / innerWidth - 0.5) * 0.22;
+    }, { passive: true });
+
+    const hero = container.closest('[data-hero]');
+    const updateProgress = () => {
+      if (!hero) return;
+      const rect = hero.getBoundingClientRect();
+      const range = Math.max(1, hero.scrollHeight - innerHeight);
+      progress = clamp(-rect.top / range, 0, 1);
+    };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+
+    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { rootMargin: '120px' });
+    observer.observe(container);
+
+    const render = () => {
+      requestAnimationFrame(render);
+      if (document.body.classList.contains('menu-open') || document.hidden) return;
+      if (!visible && !reduced) return;
+      const time = (Date.now() - startedAt) / 1000;
+      group.rotation.x += (targetX + 0.22 + progress * 0.42 - group.rotation.x) * 0.035;
+      group.rotation.y += (targetY - 0.35 + progress * 2.1 - group.rotation.y) * 0.035;
+      group.rotation.z = Math.sin(time * 0.18) * 0.08 + progress * 0.32;
+      group.scale.setScalar(0.88 + progress * 0.16 + Math.sin(time * 0.8) * 0.012);
+      coreMaterial.emissiveIntensity = 0.35 + progress * 0.85;
+      orbits.forEach((orbit, index) => {
+        orbit.rotation.z += reduced ? 0 : 0.0007 * (index % 2 ? -1 : 1);
+      });
+      nodes.forEach((node, index) => {
+        const angle = time * (0.18 + index * 0.006) + index * 0.7 + progress * 2.4;
+        const radius = 1.82 + (index % 3) * 0.16;
+        node.position.set(Math.cos(angle) * radius, Math.sin(angle * 1.3) * radius * 0.68, Math.sin(angle) * 0.75);
+        node.scale.setScalar(0.8 + (Math.sin(time * 2 + index) + 1) * 0.25);
+      });
+      renderer.render(scene, camera);
+    };
+    render();
+    requestAnimationFrame(() => container.classList.add('is-rendered'));
+  });
+</script>

@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { services } from '../../data/services.js';
+---
+<BaseLayout
+  title="Usługi AI dla firm — SimpleFast.ai"
+  description="Architektura wartości AI, agenci, chatboty, voiceboty, automatyzacje, strony pod SEO i AI oraz stała opieka."
+>
+  <main id="main" class="subpage-main">
+    <section class="subhero">
+      <p class="mono-label">/ Usługi 01—07</p>
+      <span class="subhero-orb" aria-hidden="true"></span>
+      <h1>Cały system.<br /><em>Jeden partner.</em></h1>
+      <p class="subhero-copy">Od wyboru właściwego procesu, przez projekt i wdrożenie, aż po utrzymanie. Technologia ma się łączyć w całość, a nie tworzyć kolejne silosy.</p>
+    </section>
+
+    <section class="content-section">
+      <div class="content-grid section-shell">
+        <p class="mono-label">/ Wybierz obszar</p>
+        <h2 data-reveal>Zaczynamy od problemu, nie od narzędzia.</h2>
+        <p class="lead">Nie musisz wiedzieć, czy potrzebujesz agenta, voicebota czy automatyzacji. Na diagnozie mapujemy proces i rekomendujemy najprostsze rozwiązanie, które dowiezie efekt.</p>
+        <div class="listing-grid">
+          {services.map((service) => (
+            <article class="listing-card" data-reveal>
+              <p class="mono-label">{service.index} / {service.kicker}</p>
+              <h3>{service.title}</h3>
+              <p>{service.short}</p>
+              <a class="text-link" href={`/uslugi/${service.slug}/`}>Poznaj usługę <span>↗</span></a>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="service-outcome">
+      <div class="service-outcome-grid section-shell">
+        <p class="mono-label">/ Nie wiesz, co wybrać?</p>
+        <blockquote>Wystarczy, że pokażesz nam pracę, która zabiera czas.</blockquote>
+        <div class="service-keywords"><a class="text-link" href="/kontakt/">Umów diagnozę AI <span>↗</span></a></div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
