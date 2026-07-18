@@ -1,0 +1,342 @@
+const consoleRoot = document.querySelector('[data-agent-console]');
+
+if (consoleRoot instanceof HTMLElement) {
+  const panel = consoleRoot.querySelector('[data-agent-panel]');
+  const fab = document.querySelector('[data-agent-fab]');
+  const closeButtons = consoleRoot.querySelectorAll('[data-agent-close]');
+  const modeButtons = [...consoleRoot.querySelectorAll('[data-agent-mode]')];
+  const chatPanel = consoleRoot.querySelector('[data-agent-chat-panel]');
+  const voicePanel = consoleRoot.querySelector('[data-agent-voice-panel]');
+  const messageList = consoleRoot.querySelector('[data-agent-messages]');
+  const form = consoleRoot.querySelector('[data-agent-form]');
+  const input = consoleRoot.querySelector('[data-agent-input]');
+  const sendButton = consoleRoot.querySelector('[data-agent-send]');
+  const suggestions = consoleRoot.querySelector('[data-agent-suggestions]');
+  const connectionStatus = consoleRoot.querySelector('[data-agent-connection-status]');
+  const voiceStart = consoleRoot.querySelector('[data-agent-voice-start]');
+  const voiceStage = consoleRoot.querySelector('[data-agent-voice-stage]');
+  const transcript = consoleRoot.querySelector('[data-agent-transcript]');
+  const flowCores = [...document.querySelectorAll('[data-flow-core]')];
+
+  let previousFocus = null;
+  let currentMode = 'chat';
+  let conversation = [];
+  let voicePeer = null;
+  let voiceStream = null;
+  let voiceAudio = null;
+  let voiceChannel = null;
+
+  const setConnectionStatus = (label, state = '') => {
+    if (!(connectionStatus instanceof HTMLElement)) return;
+    connectionStatus.classList.toggle('is-working', state === 'working');
+    connectionStatus.classList.toggle('is-local', state === 'local');
+    const text = connectionStatus.querySelector('span');
+    if (text) text.textContent = label;
+  };
+
+  const switchMode = (mode) => {
+    currentMode = mode === 'voice' ? 'voice' : 'chat';
+    flowCores.forEach((core) => core.classList.toggle('is-voice-open', currentMode === 'voice' && !consoleRoot.hidden));
+    modeButtons.forEach((button) => {
+      const active = button.getAttribute('data-agent-mode') === currentMode;
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
+    if (chatPanel instanceof HTMLElement) chatPanel.hidden = currentMode !== 'chat';
+    if (voicePanel instanceof HTMLElement) voicePanel.hidden = currentMode !== 'voice';
+  };
+
+  const openConsole = (mode = 'chat') => {
+    previousFocus = document.activeElement;
+    consoleRoot.hidden = false;
+    document.body.classList.add('agent-console-open');
+    if (fab instanceof HTMLElement) {
+      fab.setAttribute('aria-hidden', 'true');
+      fab.setAttribute('tabindex', '-1');
+    }
+    switchMode(mode);
+    window.setTimeout(() => {
+      const target = currentMode === 'voice' ? voiceStart : input;
+      if (target instanceof HTMLElement) target.focus();
+    }, 70);
+  };
+
+  const stopVoice = () => {
+    voiceChannel?.close();
+    voicePeer?.close();
+    voiceStream?.getTracks().forEach((track) => track.stop());
+    if (voiceAudio) {
+      voiceAudio.pause();
+      voiceAudio.srcObject = null;
+      voiceAudio.remove();
+    }
+    voiceChannel = null;
+    voicePeer = null;
+    voiceStream = null;
+    voiceAudio = null;
+    if (voiceStart instanceof HTMLButtonElement) {
+      voiceStart.disabled = false;
+      voiceStart.setAttribute('aria-pressed', 'false');
+      const label = voiceStart.querySelector('span');
+      if (label) label.textContent = 'Rozpocznij rozmowę';
+    }
+    voiceStage?.classList.remove('is-live');
+  };
+
+  const closeConsole = () => {
+    stopVoice();
+    consoleRoot.hidden = true;
+    flowCores.forEach((core) => core.classList.remove('is-voice-open'));
+    document.body.classList.remove('agent-console-open');
+    if (fab instanceof HTMLElement) {
+      fab.removeAttribute('aria-hidden');
+      fab.removeAttribute('tabindex');
+    }
+    setConnectionStatus('gotowy');
+    if (previousFocus instanceof HTMLElement) previousFocus.focus();
+  };
+
+  fab?.addEventListener('click', () => openConsole('chat'));
+  document.querySelectorAll('[data-agent-open]').forEach((button) => {
+    button.addEventListener('click', () => openConsole(button.getAttribute('data-agent-open') || 'chat'));
+  });
+  closeButtons.forEach((button) => button.addEventListener('click', closeConsole));
+  modeButtons.forEach((button) => button.addEventListener('click', () => switchMode(button.getAttribute('data-agent-mode'))));
+
+  consoleRoot.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeConsole();
+      return;
+    }
+    if (event.key !== 'Tab' || !(panel instanceof HTMLElement)) return;
+    const focusable = [...panel.querySelectorAll('button:not([disabled]), textarea:not([disabled]), a[href]')]
+      .filter((element) => element instanceof HTMLElement && element.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  const resizeInput = () => {
+    if (!(input instanceof HTMLTextAreaElement)) return;
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(130, input.scrollHeight)}px`;
+    input.style.overflowY = input.scrollHeight > 130 ? 'auto' : 'hidden';
+  };
+  input?.addEventListener('input', resizeInput);
+  input?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    form?.requestSubmit();
+  });
+
+  const appendMessage = (role, content = '', streaming = false) => {
+    if (!(messageList instanceof HTMLElement)) return null;
+    const article = document.createElement('article');
+    article.className = `agent-message agent-message--${role}`;
+    if (streaming) article.classList.add('is-streaming');
+    const meta = document.createElement('span');
+    meta.className = 'agent-message__meta';
+    meta.textContent = role === 'user' ? 'Ty' : 'S/F · AI';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = content;
+    article.append(meta, paragraph);
+    messageList.append(article);
+    messageList.scrollTop = messageList.scrollHeight;
+    return { article, paragraph };
+  };
+
+  const fallbackAnswer = (question) => {
+    const normalized = question.toLocaleLowerCase('pl-PL');
+    if (/cen|koszt|budżet|wycen/.test(normalized)) {
+      return 'Cena zależy przede wszystkim od procesu, liczby integracji, ryzyka i zakresu późniejszej opieki. Najpierw warto zrobić krótką diagnozę — po niej można uczciwie określić zakres i budżet: /kontakt/';
+    }
+    if (/voice|telefon|połącze|rozmow/.test(normalized)) {
+      return 'Voicebot AI może odbierać połączenia po polsku, umawiać lub zmieniać terminy, potwierdzać wizyty i przekazywać człowiekowi tylko sprawy wymagające decyzji. Projekt zaczyna się od konkretnego call flow i wyjątków.';
+    }
+    if (/chatbot|czat|baza wiedzy/.test(normalized)) {
+      return 'Chatbot SimpleFast.ai odpowiada na podstawie zatwierdzonej wiedzy firmy, może kwalifikować leady i przekazywać trudne sprawy człowiekowi. Agent AI idzie krok dalej: wykonuje działania w innych systemach, zamiast kończyć na odpowiedzi.';
+    }
+    if (/seo|geo|stron|google|chatgpt|perplexity|widocz/.test(normalized)) {
+      return 'Strona pod SEO i AI łączy mocny design z architekturą treści, SEO technicznym, danymi strukturalnymi i GEO. Celem jest widoczność zarówno w wyszukiwarce, jak i w odpowiedziach systemów AI. Więcej: /uslugi/strony-www-seo-ai/';
+    }
+    if (/opie|monitor|utrzym|rozw/.test(normalized)) {
+      return 'Opieka AI to stały monitoring jakości agentów i automatyzacji, aktualizowanie wiedzy, poprawa wyjątków oraz rozwój integracji. Dzięki temu system po wdrożeniu nie zostaje bez właściciela.';
+    }
+    if (/agent|automatyz|proces|od czego|zaczą/.test(normalized)) {
+      return 'Najlepszy start to nie wybór narzędzia, tylko jednego powtarzalnego procesu. SimpleFast.ai najpierw liczy koszt obecnej pracy i ryzyko, potem buduje najmniejszy działający system, testuje go na żywo i dopiero wtedy skaluje.';
+    }
+    return 'Mogę pomóc dobrać usługę, wyjaśnić sposób wdrożenia albo uporządkować pierwszy proces do automatyzacji. Napisz proszę: jaka to branża i która powtarzalna czynność zabiera najwięcej czasu?';
+  };
+
+  const parseEventBlock = (block) => {
+    const data = block.split('\n').filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n');
+    if (!data || data === '[DONE]') return null;
+    try { return JSON.parse(data); } catch { return null; }
+  };
+
+  const streamResponse = async (response, paragraph) => {
+    if (!response.body) return '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let answer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replace(/\r\n/g, '\n');
+      let boundary = buffer.indexOf('\n\n');
+      while (boundary >= 0) {
+        const block = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        const event = parseEventBlock(block);
+        if (event?.type === 'response.output_text.delta' && typeof event.delta === 'string') {
+          answer += event.delta;
+          paragraph.textContent = answer;
+          if (messageList instanceof HTMLElement) messageList.scrollTop = messageList.scrollHeight;
+        }
+        boundary = buffer.indexOf('\n\n');
+      }
+      if (done) break;
+    }
+    return answer.trim();
+  };
+
+  const askAgent = async (question) => {
+    appendMessage('user', question);
+    conversation.push({ role: 'user', content: question });
+    suggestions?.setAttribute('hidden', '');
+    const pending = appendMessage('assistant', '', true);
+    if (!pending) return;
+    setConnectionStatus('myśli', 'working');
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversation.slice(-14) }),
+      });
+      if (!response.ok) throw new Error('Agent API unavailable');
+      const answer = await streamResponse(response, pending.paragraph);
+      if (!answer) throw new Error('Empty response');
+      conversation.push({ role: 'assistant', content: answer });
+      setConnectionStatus('online');
+    } catch {
+      const answer = fallbackAnswer(question);
+      pending.paragraph.textContent = answer;
+      conversation.push({ role: 'assistant', content: answer });
+      setConnectionStatus('wiedza lokalna', 'local');
+    } finally {
+      pending.article.classList.remove('is-streaming');
+      if (sendButton instanceof HTMLButtonElement) sendButton.disabled = false;
+      if (input instanceof HTMLTextAreaElement) {
+        input.disabled = false;
+        input.focus();
+      }
+    }
+  };
+
+  suggestions?.querySelectorAll('[data-agent-prompt]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const prompt = button.getAttribute('data-agent-prompt');
+      if (prompt) askAgent(prompt);
+    });
+  });
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!(input instanceof HTMLTextAreaElement)) return;
+    const question = input.value.trim();
+    if (!question) return;
+    input.value = '';
+    resizeInput();
+    input.disabled = true;
+    if (sendButton instanceof HTMLButtonElement) sendButton.disabled = true;
+    askAgent(question);
+  });
+
+  const startVoice = async () => {
+    if (!(voiceStart instanceof HTMLButtonElement) || !(transcript instanceof HTMLElement)) return;
+    if (voicePeer) {
+      stopVoice();
+      transcript.textContent = 'Rozmowa zakończona. Możesz uruchomić ją ponownie.';
+      setConnectionStatus('gotowy');
+      return;
+    }
+
+    voiceStart.disabled = true;
+    transcript.textContent = 'Przygotowuję bezpieczne połączenie…';
+    setConnectionStatus('łączy', 'working');
+
+    try {
+      const tokenResponse = await fetch('/api/realtime-session', { method: 'POST' });
+      const token = await tokenResponse.json();
+      if (!tokenResponse.ok || !token?.value) throw new Error(token?.error || 'Brak tokenu sesji.');
+
+      voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      voicePeer = new RTCPeerConnection();
+      voiceAudio = document.createElement('audio');
+      voiceAudio.autoplay = true;
+      voiceAudio.hidden = true;
+      consoleRoot.append(voiceAudio);
+      voicePeer.ontrack = (event) => { voiceAudio.srcObject = event.streams[0]; };
+      voiceStream.getTracks().forEach((track) => voicePeer.addTrack(track, voiceStream));
+
+      voiceChannel = voicePeer.createDataChannel('oai-events');
+      voiceChannel.addEventListener('open', () => {
+        transcript.textContent = 'Słucham. Zacznij mówić.';
+        setConnectionStatus('słucha', 'working');
+        voiceStart.disabled = false;
+        voiceStart.setAttribute('aria-pressed', 'true');
+        const label = voiceStart.querySelector('span');
+        if (label) label.textContent = 'Zakończ rozmowę';
+        voiceStage?.classList.add('is-live');
+      });
+      voiceChannel.addEventListener('message', (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch { return; }
+        if (data.type === 'input_audio_buffer.speech_started') {
+          transcript.textContent = 'Słucham…';
+          setConnectionStatus('słucha', 'working');
+        } else if (data.type === 'response.created') {
+          transcript.textContent = 'Odpowiadam…';
+          setConnectionStatus('mówi', 'working');
+        } else if (/transcript\.delta$/.test(data.type) && typeof data.delta === 'string') {
+          transcript.textContent = `${transcript.textContent === 'Odpowiadam…' ? '' : transcript.textContent} ${data.delta}`.trim();
+        } else if (data.type === 'response.done') {
+          setConnectionStatus('słucha', 'working');
+        } else if (data.type === 'error') {
+          transcript.textContent = 'Połączenie zostało przerwane. Spróbuj ponownie.';
+          setConnectionStatus('błąd', 'local');
+        }
+      });
+
+      const offer = await voicePeer.createOffer();
+      await voicePeer.setLocalDescription(offer);
+      const sdpResponse = await fetch('https://api.openai.com/v1/realtime/calls', {
+        method: 'POST',
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          'Content-Type': 'application/sdp',
+        },
+      });
+      if (!sdpResponse.ok) throw new Error('Nie udało się zestawić połączenia.');
+      await voicePeer.setRemoteDescription({ type: 'answer', sdp: await sdpResponse.text() });
+    } catch (error) {
+      stopVoice();
+      transcript.textContent = error?.name === 'NotAllowedError'
+        ? 'Dostęp do mikrofonu nie został udzielony.'
+        : 'Agent głosowy wymaga aktywacji po stronie serwera. Czat tekstowy nadal działa.';
+      setConnectionStatus('głos nieaktywny', 'local');
+    }
+  };
+
+  voiceStart?.addEventListener('click', startVoice);
+}

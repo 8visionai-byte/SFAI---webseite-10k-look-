@@ -100,6 +100,78 @@ document.querySelectorAll('[data-scramble]').forEach((element) => {
   trigger.addEventListener('focus', () => runScramble(element));
 });
 
+const processScrambleFrames = new WeakMap();
+const processUpperGlyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ';
+const processLowerGlyphs = 'abcdefghijklmnopqrstuvwxyząćęłńóśźż';
+const processNumberGlyphs = '0123456789';
+const processGlyphFor = (character, characterIndex, tick) => {
+  if (/\d/u.test(character)) return processNumberGlyphs[(characterIndex * 7 + tick * 5) % processNumberGlyphs.length];
+  if (!/\p{L}/u.test(character)) return character;
+  const pool = character === character.toLocaleLowerCase('pl-PL') ? processLowerGlyphs : processUpperGlyphs;
+  return pool[(characterIndex * 13 + tick * 7) % pool.length];
+};
+
+const runProcessScramble = (row, element) => {
+  if (!(row instanceof HTMLElement) || !(element instanceof HTMLElement) || reduced) return;
+  const original = element.dataset.processScrambleOriginal ?? element.textContent ?? '';
+  if (!original.trim()) return;
+  element.dataset.processScrambleOriginal = original;
+
+  const activeFrame = processScrambleFrames.get(element);
+  if (activeFrame) window.cancelAnimationFrame(activeFrame);
+
+  const characters = [...original];
+  const duration = 760;
+  let startTime = null;
+  row.classList.add('is-scrambling');
+
+  const animate = (time) => {
+    if (startTime === null) startTime = time;
+    const elapsed = time - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const tick = Math.floor(elapsed / 38);
+    const revealEdge = progress * (characters.length + 3.6) - 2.1;
+
+    element.textContent = characters.map((character, index) => {
+      if (/\s/u.test(character) || !/[\p{L}\d]/u.test(character)) return character;
+      return index <= revealEdge ? character : processGlyphFor(character, index, tick);
+    }).join('');
+
+    if (progress < 1) {
+      processScrambleFrames.set(element, window.requestAnimationFrame(animate));
+      return;
+    }
+
+    element.textContent = original;
+    processScrambleFrames.delete(element);
+    window.setTimeout(() => row.classList.remove('is-scrambling'), 120);
+  };
+
+  processScrambleFrames.set(element, window.requestAnimationFrame(animate));
+};
+
+const processRows = [...document.querySelectorAll('[data-process-row]')];
+if (processRows.length && !reduced) {
+  const processObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const row = entry.target;
+      const title = row.querySelector('[data-process-scramble]');
+      const rowIndex = Math.max(0, processRows.indexOf(row));
+      window.setTimeout(() => runProcessScramble(row, title), rowIndex * 80);
+      processObserver.unobserve(row);
+    });
+  }, { threshold: 0.52, rootMargin: '0px 0px -8% 0px' });
+
+  processRows.forEach((row) => {
+    const title = row.querySelector('[data-process-scramble]');
+    if (!(title instanceof HTMLElement)) return;
+    processObserver.observe(row);
+    row.addEventListener('pointerenter', () => runProcessScramble(row, title));
+    row.addEventListener('focusin', () => runProcessScramble(row, title));
+  });
+}
+
 document.querySelectorAll('[data-voice-trigger]').forEach((trigger) => {
   if (!(trigger instanceof HTMLButtonElement) || trigger.dataset.voiceBound) return;
   const core = trigger.closest('[data-flow-core]');
@@ -163,19 +235,19 @@ if (!reduced) {
   const humanBridge = document.querySelector('[data-human-bridge]');
   if (humanBridge) {
     const media = humanBridge.querySelector('[data-human-bridge-media]');
-    const lines = humanBridge.querySelectorAll('[data-human-bridge-line]');
-    const note = humanBridge.querySelector('[data-human-bridge-note]');
-    const bridgeTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: humanBridge,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.8,
-      },
-    });
-    bridgeTimeline.fromTo(media, { scale: 1.1, yPercent: 4 }, { scale: 1, yPercent: -2, duration: 1, ease: 'none' }, 0);
-    bridgeTimeline.fromTo(lines, { yPercent: 115 }, { yPercent: 0, stagger: 0.045, duration: 0.28, ease: 'power3.out' }, 0.12);
-    bridgeTimeline.fromTo(note, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 0.43);
+    if (media) {
+      gsap.fromTo(media, { scale: 1.055, yPercent: 2.6 }, {
+        scale: 1,
+        yPercent: -2.6,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: humanBridge,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1.05,
+        },
+      });
+    }
   }
 
   const cinematic = document.querySelector('[data-cinematic]');
@@ -193,28 +265,29 @@ if (!reduced) {
       },
     });
     timeline.fromTo(curtain, { xPercent: -101 }, { xPercent: 0, duration: 0.16, ease: 'none' }, 0);
-    timeline.fromTo(titleLines, { yPercent: 115 }, { yPercent: 0, stagger: 0.025, duration: 0.16, ease: 'power3.out' }, 0.08);
+    timeline.fromTo(titleLines, { yPercent: 112 }, { yPercent: 0, stagger: 0.022, duration: 0.16, ease: 'none' }, 0.055);
     frames.forEach((frame, index) => {
-      const fromRight = frame.classList.contains('is-right');
-      const entry = 0.13 + index * 0.18;
+      const bitmap = frame.querySelector('img');
+      const entry = 0.1 + index * 0.205;
       timeline.fromTo(frame, {
-        xPercent: fromRight ? 82 : -82,
-        yPercent: 35,
-        clipPath: fromRight ? 'inset(0 0 0 100%)' : 'inset(0 100% 0 0)',
+        xPercent: 0,
+        yPercent: 72,
+        clipPath: 'inset(0 100% 0 0)',
         opacity: 0,
       }, {
         xPercent: 0,
         yPercent: 0,
         clipPath: 'inset(0 0 0 0)',
         opacity: 1,
-        duration: 0.19,
-        ease: 'power2.out',
+        duration: 0.18,
+        ease: 'none',
       }, entry);
+      if (bitmap) timeline.fromTo(bitmap, { scale: 1.045 }, { scale: 1, duration: 0.24, ease: 'none' }, entry);
       if (index > 0) {
-        timeline.to(frames[index - 1], { yPercent: -52, opacity: 0.22, duration: 0.16, ease: 'none' }, entry + 0.01);
+        timeline.to(frames[index - 1], { yPercent: -58, opacity: 0.16, duration: 0.18, ease: 'none' }, entry);
       }
     });
-    timeline.to(frames[frames.length - 1], { yPercent: -38, scale: 1.04, duration: 0.18, ease: 'none' }, 0.83);
+    timeline.to(frames[frames.length - 1], { yPercent: -26, duration: 0.115, ease: 'none' }, 0.885);
     timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1, ease: 'none' }, 0);
   }
 
@@ -229,7 +302,7 @@ if (!reduced) {
         trigger: fogStatement,
         start: 'top top',
         end: 'bottom bottom',
-        scrub: 0.9,
+        scrub: 1.35,
       },
     });
 
@@ -243,32 +316,34 @@ if (!reduced) {
       fogTimeline.fromTo(image, {
         ...starts[index],
         opacity: 0,
-        filter: 'blur(18px)',
+        filter: 'blur(20px)',
       }, {
         xPercent: 0,
         yPercent: 0,
         clipPath: 'inset(0 0 0 0)',
         opacity: index === 0 ? 0.46 : 1,
         filter: 'blur(0px)',
-        duration: 0.24,
-        ease: 'power3.out',
+        duration: 0.3,
+        ease: 'none',
       }, entry);
-      fogTimeline.to(image, { yPercent: -10 - index * 4, scale: 1.025, duration: 0.45, ease: 'none' }, 0.55 + index * 0.035);
+      fogTimeline.to(image, { yPercent: -10 - index * 4, scale: 1.02, duration: 0.42, ease: 'none' }, 0.58 + index * 0.035);
     });
     fogTimeline.fromTo(fogLines, {
-      opacity: 0.12,
+      opacity: 0.035,
       y: 34,
-      filter: 'blur(24px)',
+      scale: 1.025,
+      filter: 'blur(32px)',
     }, {
       opacity: 1,
       y: 0,
+      scale: 1,
       filter: 'blur(0px)',
-      stagger: 0.055,
-      duration: 0.22,
-      ease: 'power2.out',
-    }, 0.24);
-    fogTimeline.fromTo(fogNote, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.16 }, 0.54);
-    fogTimeline.to(fogVeil, { opacity: 0.55, duration: 0.35, ease: 'none' }, 0.62);
+      stagger: 0.04,
+      duration: 0.42,
+      ease: 'none',
+    }, 0.17);
+    fogTimeline.fromTo(fogNote, { opacity: 0, y: 18, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.24, ease: 'none' }, 0.61);
+    fogTimeline.fromTo(fogVeil, { opacity: 1 }, { opacity: 0.5, duration: 0.5, ease: 'none' }, 0.18);
   }
 
   const systemExplore = document.querySelector('[data-system-explore]');

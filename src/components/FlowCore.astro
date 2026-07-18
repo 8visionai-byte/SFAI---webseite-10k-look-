@@ -1,31 +1,27 @@
-<div class="flow-core" data-flow-core>
+<div class="flow-core is-booting" data-flow-core>
+  <div class="flow-metal-fallback" data-flow-fallback aria-hidden="true">
+    <span class="flow-metal-fallback__body"><i></i><b></b></span>
+  </div>
+
   <canvas data-flow-canvas aria-hidden="true"></canvas>
 
   <div class="flow-metal-hud" aria-hidden="true">
-    <span>[ Magnetic intelligence ]</span>
+    <span>[ Liquid intelligence ]</span>
     <span data-metal-state>Signal / 01</span>
   </div>
 
   <button
     class="voice-core-trigger"
     type="button"
-    data-voice-trigger
-    aria-label="Otwórz prototyp voice agenta"
-    aria-expanded="false"
-    aria-controls="voice-core-panel"
+    data-agent-open="voice"
+    aria-label="Otwórz rozmowę głosową z Agentem SimpleFast.ai"
   >
     <span class="voice-core-orbit" aria-hidden="true"><i></i><b></b></span>
     <span class="voice-core-label">Zapytaj AI</span>
     <span class="voice-core-caption" aria-hidden="true">Voice agent</span>
   </button>
 
-  <div class="voice-core-panel" id="voice-core-panel" data-voice-panel role="region" aria-label="Prototyp voice agenta" hidden>
-    <span class="eyebrow">[ Interfejs głosowy ]</span>
-    <p data-voice-status role="status" aria-live="polite">Tu uruchomisz rozmowę z agentem znającym ofertę SimpleFast.ai.</p>
-    <small>Prototyp interfejsu — gotowy do połączenia z bazą wiedzy i modułem głosowym.</small>
-  </div>
-
-  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Living interface</span><b>SF / AI</b></div>
+  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Continuous matter</span><b>SF / AI</b></div>
 </div>
 
 <script>
@@ -37,139 +33,128 @@
     for (const container of document.querySelectorAll('[data-flow-core]')) {
       const canvas = container.querySelector('[data-flow-canvas]');
       const stateLabel = container.querySelector('[data-metal-state]');
-      if (!(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) continue;
+      if (!(container instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) continue;
 
       canvas.dataset.ready = 'true';
-      if (reduced) {
-        container.classList.add('is-static', 'is-rendered');
+      const mobile = window.matchMedia('(max-width: 760px)').matches;
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const lowPowerMobile = mobile && (connection?.saveData || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4));
+
+      if (reduced || lowPowerMobile) {
+        container.classList.remove('is-booting');
+        container.classList.add('is-static', 'is-ready');
         continue;
       }
 
-      const mobile = window.matchMedia('(max-width: 760px)').matches;
-
       try {
-        const THREE = await import('three');
+        const [THREE, { MarchingCubes }, { RectAreaLightUniformsLib }] = await Promise.all([
+          import('three'),
+          import('three/examples/jsm/objects/MarchingCubes.js'),
+          import('three/examples/jsm/lights/RectAreaLightUniformsLib.js'),
+        ]);
+        RectAreaLightUniformsLib.init();
+
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(mobile ? 34 : 30, 1, 0.1, 40);
-        camera.position.set(mobile ? 0.28 : 0.08, 0, mobile ? 10.1 : 9.75);
+        const camera = new THREE.PerspectiveCamera(mobile ? 33 : 29, 1, 0.1, 40);
+        camera.position.set(0, 0, mobile ? 10.2 : 9.55);
 
         const renderer = new THREE.WebGLRenderer({
           canvas,
           alpha: true,
           antialias: !mobile,
+          depth: true,
+          stencil: false,
           powerPreference: 'high-performance',
         });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.1 : 1.5));
+        const maxPixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.45);
+        let pixelRatio = maxPixelRatio;
+        renderer.setPixelRatio(pixelRatio);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.04;
-
-        const sculpture = new THREE.Group();
-        sculpture.position.set(mobile ? 0.76 : 0.54, mobile ? -0.05 : 0.02, 0);
-        scene.add(sculpture);
-
-        const geometry = new THREE.IcosahedronGeometry(mobile ? 1.5 : 1.66, mobile ? 4 : 5);
-        geometry.scale(mobile ? 1.08 : 1.16, mobile ? 0.98 : 1.04, mobile ? 0.76 : 0.82);
+        renderer.toneMappingExposure = 0.94;
 
         const material = new THREE.MeshPhysicalMaterial({
-          color: 0xb8bcbe,
-          metalness: 0.94,
-          roughness: 0.155,
-          clearcoat: 0.48,
-          clearcoatRoughness: 0.12,
-          iridescence: 0.065,
-          iridescenceIOR: 1.25,
-          iridescenceThicknessRange: [110, 220],
-          envMapIntensity: 0.15,
+          color: 0x7d8485,
+          metalness: 1,
+          roughness: 0.145,
+          clearcoat: 0.56,
+          clearcoatRoughness: 0.09,
+          iridescence: 0.022,
+          iridescenceIOR: 1.16,
+          iridescenceThicknessRange: [85, 130],
+          envMapIntensity: 0.25,
         });
 
-        const shaderState = { shader: null };
-        material.onBeforeCompile = (shader) => {
-          shader.uniforms.uTime = { value: 0 };
-          shader.uniforms.uProgress = { value: 0 };
-          shader.uniforms.uPointer = { value: new THREE.Vector2() };
-          shaderState.shader = shader;
+        const resolution = mobile ? 26 : 38;
+        const liquid = new MarchingCubes(resolution, material, false, false, mobile ? 14000 : 30000);
+        liquid.isolation = 48;
+        liquid.frustumCulled = false;
+        liquid.scale.set(mobile ? 2.16 : 2.42, mobile ? 1.9 : 2.12, mobile ? 1.4 : 1.52);
+        liquid.rotation.set(-0.2, -0.34, -0.12);
 
-          shader.vertexShader = shader.vertexShader
-            .replace(
-              '#include <common>',
-              `#include <common>
-              uniform float uTime;
-              uniform float uProgress;
-              uniform vec2 uPointer;
+        const sculpture = new THREE.Group();
+        sculpture.position.set(mobile ? 0.18 : 0.48, mobile ? -0.02 : 0, 0);
+        sculpture.add(liquid);
+        scene.add(sculpture);
 
-              float magneticField(vec3 p, float t) {
-                float broad = sin(p.x * 1.13 + t * .33) * cos(p.y * .91 - t * .25);
-                float fold = sin((p.y + p.z) * 1.42 - t * .28) * .54;
-                float current = cos((p.x - p.z) * 1.58 + t * .21) * .32;
-                return broad + fold + current;
-              }`
-            )
-            .replace(
-              '#include <beginnormal_vertex>',
-              `#include <beginnormal_vertex>
-              objectNormal = normalize(objectNormal + vec3(
-                cos(position.y * 1.1 - uTime * .18) * .045,
-                -sin(position.x * .96 + uTime * .15) * .04,
-                cos((position.x + position.y) * .88 + uTime * .2) * .055
-              ));`
-            )
-            .replace(
-              '#include <begin_vertex>',
-              `vec3 transformed = vec3(position);
-              float field = magneticField(position, uTime);
-              float displacement = field * (.155 + uProgress * .022);
-              transformed += normalize(objectNormal) * displacement;
-              transformed.x *= 1.0 + sin(position.y * .62 - uTime * .12) * .07;
-              transformed.y *= 1.0 + cos(position.x * .57 + uTime * .11) * .055;
-              transformed.x += sin(position.y * 1.06 - uTime * .2) * (.078 + uProgress * .018);
-              transformed.y += cos(position.x * .9 + uTime * .16) * .064;
-              transformed.z += sin((position.x - position.y) * .75 - uTime * .15) * .105;
-              transformed.x += uPointer.x * position.y * .022;
-              transformed.y += uPointer.y * position.x * .018;`
-            );
-        };
+        const fieldBlueprints = [
+          { x: .49, y: .50, z: .50, strength: 1.62, phase: .15, speed: .16, dx: .012, dy: .01, dz: .009, px: .006, py: .006 },
+          { x: .37, y: .61, z: .48, strength: .76, phase: 1.35, speed: .18, dx: .014, dy: .013, dz: .01, px: .014, py: .012 },
+          { x: .61, y: .61, z: .52, strength: .72, phase: 2.7, speed: .2, dx: .013, dy: .015, dz: .011, px: .013, py: .014 },
+          { x: .65, y: .42, z: .47, strength: .68, phase: 3.85, speed: .17, dx: .015, dy: .012, dz: .01, px: .016, py: -.011 },
+          { x: .47, y: .32, z: .53, strength: .78, phase: 5.05, speed: .19, dx: .014, dy: .015, dz: .011, px: -.007, py: -.015 },
+          { x: .30, y: .43, z: .46, strength: .66, phase: 6.2, speed: .18, dx: .015, dy: .013, dz: .01, px: -.016, py: -.01 },
+          { x: .72, y: .52, z: .51, strength: .48, phase: 7.45, speed: .21, dx: .012, dy: .015, dz: .009, px: .018, py: .004 },
+        ];
+        const fieldSubtract = 10.5;
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.rotation.set(-0.13, -0.48, -0.12);
-        sculpture.add(mesh);
+        scene.add(new THREE.HemisphereLight(0xe9eeee, 0x050606, 0.68));
 
-        scene.add(new THREE.HemisphereLight(0xf3f5f2, 0x080909, 0.92));
-        const whiteKey = new THREE.DirectionalLight(0xffffff, 3.6);
-        whiteKey.position.set(-3.2, 4.8, 6.4);
+        const whiteKey = new THREE.RectAreaLight(0xf8faf8, 7, 4.5, 6.5);
+        whiteKey.position.set(-3.7, 3.5, 5.8);
+        whiteKey.lookAt(0, 0, 0);
         scene.add(whiteKey);
-        const limeEdge = new THREE.DirectionalLight(0xc8ff45, 1.35);
-        limeEdge.position.set(-4.2, -1.8, 3.2);
+
+        const silverStrip = new THREE.RectAreaLight(0xc5cdcf, 5.2, 1.15, 5.8);
+        silverStrip.position.set(3.8, -1.4, 4.4);
+        silverStrip.lookAt(0.35, 0, 0);
+        scene.add(silverStrip);
+
+        const limeEdge = new THREE.RectAreaLight(0xcfff48, 0.82, 1.25, 3.6);
+        limeEdge.position.set(-3.6, -2.4, 3.2);
+        limeEdge.lookAt(0, 0, 0);
         scene.add(limeEdge);
-        const cobaltEdge = new THREE.DirectionalLight(0x3159ff, 1.12);
-        cobaltEdge.position.set(4.6, 1.6, 3.8);
+
+        const cobaltEdge = new THREE.RectAreaLight(0x315cff, 0.7, 1.15, 4);
+        cobaltEdge.position.set(4.1, 2.1, 3.6);
+        cobaltEdge.lookAt(0, 0, 0);
         scene.add(cobaltEdge);
-        const coolFill = new THREE.PointLight(0xd6f5f0, 2.2, 14);
-        coolFill.position.set(0.8, -4, 4.5);
-        scene.add(coolFill);
-        const warmPin = new THREE.PointLight(0xffc39a, 1.35, 12);
-        warmPin.position.set(-3.8, 2.8, 2.4);
-        scene.add(warmPin);
+
+        const darkContour = new THREE.DirectionalLight(0x43505a, 0.48);
+        darkContour.position.set(0, -4, -2);
+        scene.add(darkContour);
 
         let environment = null;
-        let targetEnvIntensity = 0.15;
+        let targetEnvIntensity = 0.25;
         let disposed = false;
-        let targetProgress = mobile ? 0.42 : 0;
+        let targetProgress = mobile ? 0.48 : 0;
         let progress = targetProgress;
         let targetPointerX = 0;
         let targetPointerY = 0;
         let pointerX = 0;
         let pointerY = 0;
-        let visible = true;
+        let visible = false;
         let running = false;
         let frameId = 0;
         let lastFrame = 0;
+        let performanceStarted = performance.now();
+        let performanceFrames = 0;
         const startedAt = performance.now();
         const hero = container.closest('[data-hero]');
         const stateNames = ['Signal / 01', 'Context / 02', 'Motion / 03', 'Result / 04'];
 
         const setProgress = (value) => {
-          targetProgress = mobile ? 0.42 : clamp(value, 0, 1);
+          targetProgress = mobile ? 0.48 : clamp(value, 0, 1);
           container.style.setProperty('--metal-progress', String(targetProgress));
           if (stateLabel) stateLabel.textContent = stateNames[Math.min(3, Math.floor(targetProgress * 4))];
         };
@@ -188,15 +173,15 @@
           if (mobile || event.pointerType === 'touch') return;
           const rect = container.getBoundingClientRect();
           const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-          targetPointerX = inside ? clamp((event.clientX - rect.left) / rect.width - 0.5, -0.5, 0.5) : 0;
-          targetPointerY = inside ? clamp((event.clientY - rect.top) / rect.height - 0.5, -0.5, 0.5) : 0;
+          targetPointerX = inside ? clamp(((event.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1) : 0;
+          targetPointerY = inside ? clamp(((event.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1) : 0;
         };
         window.addEventListener('pointermove', onPointerMove, { passive: true });
 
         const resize = () => {
           const rect = container.getBoundingClientRect();
-          const width = Math.max(1, rect.width);
-          const height = Math.max(1, rect.height);
+          const width = Math.max(1, Math.round(rect.width));
+          const height = Math.max(1, Math.round(rect.height));
           renderer.setSize(width, height, false);
           camera.aspect = width / height;
           camera.updateProjectionMatrix();
@@ -205,44 +190,91 @@
         resizeObserver.observe(container);
         resize();
 
+        const updateField = (seconds) => {
+          liquid.reset();
+          liquid.isolation = 48 + progress * 2.8;
+
+          fieldBlueprints.forEach((field, index) => {
+            const phase = field.phase + seconds * field.speed;
+            const counterPhase = field.phase * .73 - seconds * field.speed * .71;
+            const x = field.x
+              + Math.sin(phase) * field.dx
+              + Math.cos(counterPhase * .83) * field.dx * .34
+              + pointerX * field.px;
+            const y = field.y
+              + Math.cos(phase * .91) * field.dy
+              + Math.sin(counterPhase) * field.dy * .31
+              - pointerY * field.py;
+            const z = field.z
+              + Math.sin(phase * .67 + index * .41) * field.dz
+              + pointerX * pointerY * (index % 2 ? .006 : -.006);
+            const strength = field.strength * (1 + Math.sin(phase * .58) * .025);
+            liquid.addBall(x, y, z, strength, fieldSubtract);
+          });
+
+          const carveOneX = .53 + Math.sin(seconds * .13) * .012 + pointerX * .012;
+          const carveOneY = .55 + Math.cos(seconds * .11) * .011 - pointerY * .01;
+          const carveTwoX = .38 + Math.cos(seconds * .12 + 1.4) * .011 - pointerX * .009;
+          const carveTwoY = .43 + Math.sin(seconds * .14 + .8) * .012 + pointerY * .008;
+          liquid.addBall(carveOneX, carveOneY, .66, -.58, 15);
+          liquid.addBall(carveTwoX, carveTwoY, .36, -.42, 16);
+          liquid.update();
+        };
+
         const updateScene = (time) => {
-          progress += (targetProgress - progress) * 0.052;
-          pointerX += (targetPointerX - pointerX) * 0.045;
-          pointerY += (targetPointerY - pointerY) * 0.045;
+          progress += (targetProgress - progress) * 0.05;
+          pointerX += (targetPointerX - pointerX) * 0.052;
+          pointerY += (targetPointerY - pointerY) * 0.052;
 
           const seconds = (time - startedAt) * 0.001;
-          const shader = shaderState.shader;
-          if (shader) {
-            shader.uniforms.uTime.value = seconds;
-            shader.uniforms.uProgress.value = progress;
-            shader.uniforms.uPointer.value.set(pointerX, pointerY);
-          }
+          updateField(seconds);
 
-          const idle = Math.sin(seconds * 0.31) * 0.018;
-          mesh.rotation.x = -0.13 + progress * 0.13 + pointerY * 0.1 + idle;
-          mesh.rotation.y = -0.48 + progress * 0.42 + pointerX * 0.13;
-          mesh.rotation.z = -0.12 + progress * 0.11 - pointerX * 0.05;
-          sculpture.position.y = (mobile ? -0.05 : 0.02) + Math.sin(seconds * 0.38) * 0.032 - progress * 0.035;
-          sculpture.scale.setScalar(0.97 + progress * 0.035);
-          material.roughness = 0.15 + progress * 0.022;
-          material.envMapIntensity += (targetEnvIntensity - material.envMapIntensity) * 0.075;
-          limeEdge.intensity = 1.15 + progress * 0.5;
-          cobaltEdge.intensity = 0.92 + progress * 0.4;
+          liquid.rotation.x = -0.2 + progress * 0.09 + pointerY * 0.045 + Math.sin(seconds * .16) * .009;
+          liquid.rotation.y = -0.34 + progress * 0.28 + pointerX * 0.07 + seconds * .012;
+          liquid.rotation.z = -0.12 + progress * 0.06 - pointerX * 0.018;
+          sculpture.position.x = (mobile ? 0.18 : 0.48) + pointerX * 0.045;
+          sculpture.position.y = (mobile ? -0.02 : 0) - pointerY * 0.035 + Math.sin(seconds * .21) * .014;
+          material.roughness = 0.145 + progress * 0.014;
+          material.envMapIntensity += (targetEnvIntensity - material.envMapIntensity) * 0.065;
+          limeEdge.intensity = 0.74 + progress * 0.12;
+          cobaltEdge.intensity = 0.64 + progress * 0.1;
+        };
+
+        const adaptPixelRatio = (time) => {
+          if (mobile) return;
+          performanceFrames += 1;
+          const elapsed = time - performanceStarted;
+          if (elapsed < 1800) return;
+
+          const averageFrame = elapsed / Math.max(1, performanceFrames);
+          let nextPixelRatio = pixelRatio;
+          if (averageFrame > 19.5 && pixelRatio > 1) nextPixelRatio = Math.max(1, pixelRatio - 0.15);
+          if (averageFrame < 15.2 && pixelRatio < maxPixelRatio) nextPixelRatio = Math.min(maxPixelRatio, pixelRatio + 0.1);
+          if (nextPixelRatio !== pixelRatio) {
+            pixelRatio = nextPixelRatio;
+            renderer.setPixelRatio(pixelRatio);
+            resize();
+          }
+          performanceStarted = time;
+          performanceFrames = 0;
         };
 
         const render = (time) => {
           if (!running) return;
           frameId = requestAnimationFrame(render);
-          if (mobile && time - lastFrame < 34) return;
+          if (mobile && time - lastFrame < 32) return;
           lastFrame = time;
           if (document.hidden || document.body.classList.contains('menu-open')) return;
           updateScene(time);
           renderer.render(scene, camera);
+          adaptPixelRatio(time);
         };
 
         const start = () => {
-          if (running || !visible) return;
+          if (running || !visible || disposed) return;
           running = true;
+          performanceStarted = performance.now();
+          performanceFrames = 0;
           frameId = requestAnimationFrame(render);
         };
         const stop = () => {
@@ -253,35 +285,42 @@
         const intersectionObserver = new IntersectionObserver(([entry]) => {
           visible = entry.isIntersecting;
           visible ? start() : stop();
-        }, { rootMargin: '120px' });
+        }, { rootMargin: '140px' });
         intersectionObserver.observe(container);
 
         const onVisibility = () => document.hidden ? stop() : start();
         document.addEventListener('visibilitychange', onVisibility);
+
         const onContextLost = (event) => {
           event.preventDefault();
           stop();
+          container.classList.remove('is-rendered');
           container.classList.add('is-fallback');
         };
         const onContextRestored = () => {
           container.classList.remove('is-fallback');
+          container.classList.add('is-rendered');
           start();
         };
         canvas.addEventListener('webglcontextlost', onContextLost);
         canvas.addEventListener('webglcontextrestored', onContextRestored);
 
-        updateScene(performance.now());
+        updateField(0);
+        renderer.compile(scene, camera);
         renderer.render(scene, camera);
-        container.classList.add('is-rendered');
-        start();
+        requestAnimationFrame(() => {
+          if (disposed) return;
+          container.classList.remove('is-booting');
+          container.classList.add('is-ready', 'is-rendered');
+        });
 
         import('three/examples/jsm/environments/RoomEnvironment.js').then(({ RoomEnvironment }) => {
           if (disposed) return;
           const pmrem = new THREE.PMREMGenerator(renderer);
           const room = new RoomEnvironment();
-          environment = pmrem.fromScene(room, 0.035).texture;
+          environment = pmrem.fromScene(room, 0.038).texture;
           scene.environment = environment;
-          targetEnvIntensity = 1.2;
+          targetEnvIntensity = 1.3;
           room.dispose();
           pmrem.dispose();
         }).catch(() => undefined);
@@ -298,13 +337,8 @@
           hero?.removeEventListener('sfai:hero-progress', onHeroProgress);
           window.removeEventListener('pagehide', onPageHide);
           window.removeEventListener('pageshow', onPageShow);
-          scene.traverse((object) => {
-            if (object instanceof THREE.Mesh) {
-              object.geometry?.dispose();
-              const materials = Array.isArray(object.material) ? object.material : [object.material];
-              materials.forEach((entry) => entry?.dispose());
-            }
-          });
+          liquid.geometry.dispose();
+          material.dispose();
           environment?.dispose();
           renderer.dispose();
         };
@@ -316,7 +350,8 @@
         window.addEventListener('pageshow', onPageShow);
       } catch (error) {
         console.warn('Flow Core fallback:', error);
-        container.classList.add('is-static', 'is-fallback', 'is-rendered');
+        container.classList.remove('is-booting', 'is-rendered');
+        container.classList.add('is-static', 'is-fallback', 'is-ready');
       }
     }
   };

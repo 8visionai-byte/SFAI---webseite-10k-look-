@@ -1,0 +1,102 @@
+---
+import '../styles/agent-console.css';
+---
+
+<button class="agent-fab" type="button" data-agent-fab aria-label="Otwórz Agenta SimpleFast.ai">
+  <span class="agent-fab__signal" aria-hidden="true"></span>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M5 5.75h14v9.5H9.1L5 18.7V5.75Z"></path>
+    <path d="M8 9h8M8 12h5"></path>
+  </svg>
+  <span class="agent-fab__label">Zapytaj AI</span>
+</button>
+
+<div class="agent-console" data-agent-console hidden>
+  <button class="agent-console__backdrop" type="button" data-agent-close tabindex="-1" aria-label="Zamknij Agenta"></button>
+
+  <section class="agent-console__panel" data-agent-panel role="dialog" aria-modal="true" aria-labelledby="agent-console-title">
+    <header class="agent-console__header">
+      <div class="agent-console__identity">
+        <span class="agent-console__mark" aria-hidden="true"><i></i></span>
+        <div>
+          <p class="agent-console__kicker">SimpleFast / living interface</p>
+          <h2 id="agent-console-title">Agent wiedzy firmy</h2>
+        </div>
+      </div>
+      <div class="agent-console__status" data-agent-connection-status><i></i><span>gotowy</span></div>
+      <button class="agent-console__close" type="button" data-agent-close aria-label="Zamknij Agenta">
+        <span></span><span></span>
+      </button>
+    </header>
+
+    <div class="agent-console__workspace">
+      <aside class="agent-console__rail" aria-label="Zakres wiedzy Agenta">
+        <p class="agent-console__rail-label">/ 01—07</p>
+        <p class="agent-console__rail-title">Zna ofertę.<br />Rozumie proces.<br />Nie zgaduje.</p>
+        <ol class="agent-console__scope">
+          <li><span>01</span>Usługi i dobór rozwiązania</li>
+          <li><span>02</span>Sposób wdrożenia</li>
+          <li><span>03</span>Bezpieczeństwo i kontrola</li>
+          <li><span>04</span>Następny sensowny krok</li>
+        </ol>
+        <p class="agent-console__rail-note">Ceny i terminy zależą od procesu. Agent nie wymyśla liczb — pomaga przygotować diagnozę.</p>
+      </aside>
+
+      <div class="agent-console__main">
+        <div class="agent-console__tabs" role="tablist" aria-label="Tryb rozmowy">
+          <button type="button" role="tab" aria-selected="true" aria-controls="agent-chat-panel" id="agent-chat-tab" data-agent-mode="chat">
+            <span>01</span> Czat
+          </button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="agent-voice-panel" id="agent-voice-tab" data-agent-mode="voice">
+            <span>02</span> Głos
+          </button>
+        </div>
+
+        <div class="agent-console__mode" id="agent-chat-panel" role="tabpanel" aria-labelledby="agent-chat-tab" data-agent-chat-panel>
+          <div class="agent-console__messages" data-agent-messages aria-live="polite" aria-label="Rozmowa z Agentem">
+            <article class="agent-message agent-message--assistant">
+              <span class="agent-message__meta">S/F · AI</span>
+              <p>Cześć. Znam usługi i sposób pracy SimpleFast.ai. Opisz proces, który zabiera czas, albo zapytaj o konkretne rozwiązanie.</p>
+            </article>
+          </div>
+
+          <div class="agent-console__suggestions" data-agent-suggestions>
+            <button type="button" data-agent-prompt="Od czego zacząć wdrożenie AI w mojej firmie?">Od czego zacząć?</button>
+            <button type="button" data-agent-prompt="Czym różni się agent AI od chatbota?">Agent czy chatbot?</button>
+            <button type="button" data-agent-prompt="Jak wygląda opieka AI po wdrożeniu?">Jak działa opieka AI?</button>
+          </div>
+
+          <form class="agent-console__form" data-agent-form>
+            <label class="sr-only" for="agent-console-input">Napisz pytanie do Agenta SimpleFast.ai</label>
+            <textarea id="agent-console-input" data-agent-input rows="1" maxlength="4000" placeholder="Zapytaj o usługę albo opisz powtarzalny proces…" required></textarea>
+            <button type="submit" data-agent-send aria-label="Wyślij pytanie">
+              <span>Wyślij</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-4.2 14-3.1-5.1L5 12Zm6.7 1.9L19 5"></path></svg>
+            </button>
+          </form>
+        </div>
+
+        <div class="agent-console__mode agent-console__mode--voice" id="agent-voice-panel" role="tabpanel" aria-labelledby="agent-voice-tab" data-agent-voice-panel hidden>
+          <div class="voice-agent-stage" data-agent-voice-stage>
+            <div class="voice-agent-stage__field" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <i></i>
+            </div>
+            <p class="voice-agent-stage__eyebrow">/ kanał realtime</p>
+            <h3>Powiedz, czego<br />chcesz się dowiedzieć.</h3>
+            <p class="voice-agent-stage__transcript" data-agent-transcript aria-live="polite">Mikrofon uruchomi się dopiero po kliknięciu.</p>
+            <button class="voice-agent-stage__button" type="button" data-agent-voice-start aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"></path><path d="M6.5 11.5v.5a5.5 5.5 0 0 0 11 0v-.5M12 17.5V21M9 21h6"></path></svg>
+              <span>Rozpocznij rozmowę</span>
+            </button>
+          </div>
+        </div>
+
+        <footer class="agent-console__footer">
+          <span>AI może się pomylić. Ważne ustalenia potwierdzi człowiek.</span>
+          <a href="/polityka-prywatnosci/">Prywatność ↗</a>
+        </footer>
+      </div>
+    </div>
+  </section>
+</div>
