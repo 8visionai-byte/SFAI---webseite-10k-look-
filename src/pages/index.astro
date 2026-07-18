@@ -2,46 +2,47 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowCore from '../components/FlowCore.astro';
+import EditorialJourney from '../components/EditorialJourney.astro';
 import { services } from '../data/services.js';
-import systemHeroImage from '../assets/generated/v2/system-hero.png';
-import valueBlueprintImage from '../assets/generated/v2/value-blueprint.png';
-import chatInterfaceImage from '../assets/generated/v2/chat-interface.png';
-import voiceChamberImage from '../assets/generated/v2/voice-chamber.png';
-import careObservatoryImage from '../assets/generated/v2/care-observatory.png';
-import searchCitationFieldImage from '../assets/generated/v2/search-citation-field.png';
-import agentOrchestrationImage from '../assets/generated/v2/agent-orchestration.png';
-import processEngineImage from '../assets/generated/v2/process-engine.png';
+import valueArchitectureImage from '../assets/generated/v3/value-architecture.png';
+import chatbotKnowledgeImage from '../assets/generated/v3/chatbot-knowledge.png';
+import voicebotRobotImage from '../assets/generated/v3/voicebot-robot.png';
+import careObservatoryImage from '../assets/generated/v3/ai-care-observatory.png';
+import seoAiCitationsImage from '../assets/generated/v3/seo-ai-citations.png';
+import aiAgentControlImage from '../assets/generated/v3/ai-agent-control.png';
+import processAutomationImage from '../assets/generated/v3/process-automation.png';
+import humanAiTouchImage from '../assets/generated/v3/human-ai-touch.png';
 
 const marquee = ['Agenci AI', 'Voiceboty', 'Chatboty', 'Automatyzacje', 'SEO + GEO', 'Strony WWW', 'Opieka AI', 'Dane w UE'];
 const serviceVisuals = {
-  core: { src: valueBlueprintImage, alt: 'Warstwowa architektura strategii i wartości wdrożenia AI' },
-  chat: { src: chatInterfaceImage, alt: 'Modułowy interfejs inteligentnego chatbota dla firmy' },
-  search: { src: searchCitationFieldImage, alt: 'Źródła treści prowadzące do odpowiedzi cytowanej przez systemy AI' },
-  voice: { src: voiceChamberImage, alt: 'Przestrzenna komora głosowa symbolizująca rozmowę z voicebotem AI' },
-  agent: { src: agentOrchestrationImage, alt: 'Orkiestracja agenta AI od sygnału do kontrolowanego działania' },
-  automation: { src: processEngineImage, alt: 'Precyzyjny silnik automatyzacji procesów i przepływu danych' },
-  care: { src: careObservatoryImage, alt: 'Centrum monitorowania agentów i automatyzacji w ramach Opieki AI' },
+  core: { src: valueArchitectureImage, alt: 'Warstwowa mapa strategii i priorytetów wdrożenia AI' },
+  chat: { src: chatbotKnowledgeImage, alt: 'Modułowy chatbot łączący pytania klientów z wiedzą firmy' },
+  search: { src: seoAiCitationsImage, alt: 'Treści strony prowadzące do odpowiedzi cytowanej przez system AI' },
+  voice: { src: voicebotRobotImage, alt: 'Profesjonalny robot AI prowadzący naturalną rozmowę głosową' },
+  agent: { src: aiAgentControlImage, alt: 'Agent AI prowadzący zadanie od sygnału do kontrolowanego działania' },
+  automation: { src: processAutomationImage, alt: 'Silnik automatyzacji przesyłający dane przez kolejne etapy procesu' },
+  care: { src: careObservatoryImage, alt: 'Centrum monitorowania agentów AI z wykrytym wyjątkiem systemowym' },
 };
 const cinematicFrames = [
-  { src: agentOrchestrationImage, alt: 'Agent AI porządkujący sygnały i działania', label: 'Sygnał / decyzja', side: 'right' },
-  { src: voiceChamberImage, alt: 'System głosowy reagujący na naturalną rozmowę', label: 'Głos / intencja', side: 'left' },
-  { src: searchCitationFieldImage, alt: 'Architektura treści widoczna dla systemów AI', label: 'Wiedza / widoczność', side: 'right' },
+  { src: aiAgentControlImage, alt: 'Agent AI porządkujący sygnały i działania', label: 'Sygnał / decyzja', side: 'right' },
+  { src: voicebotRobotImage, alt: 'Profesjonalny voicebot prowadzący naturalną rozmowę', label: 'Głos / intencja', side: 'left' },
+  { src: seoAiCitationsImage, alt: 'Architektura treści widoczna dla systemów AI', label: 'Wiedza / widoczność', side: 'right' },
   { src: careObservatoryImage, alt: 'Stały monitoring systemów AI', label: 'Kontrola / rozwój', side: 'left' },
 ];
 const sequenceFrames = [
-  { src: valueBlueprintImage, label: '01 / Kierunek' },
-  { src: chatInterfaceImage, label: '02 / Rozmowa' },
-  { src: voiceChamberImage, label: '03 / Intencja' },
-  { src: searchCitationFieldImage, label: '04 / Wiedza' },
-  { src: agentOrchestrationImage, label: '05 / Decyzja' },
-  { src: processEngineImage, label: '06 / Działanie' },
+  { src: valueArchitectureImage, label: '01 / Kierunek' },
+  { src: chatbotKnowledgeImage, label: '02 / Rozmowa' },
+  { src: voicebotRobotImage, label: '03 / Intencja' },
+  { src: seoAiCitationsImage, label: '04 / Wiedza' },
+  { src: aiAgentControlImage, label: '05 / Decyzja' },
+  { src: processAutomationImage, label: '06 / Działanie' },
   { src: careObservatoryImage, label: '07 / Kontrola' },
-  { src: systemHeroImage, label: '08 / Skala' },
+  { src: humanAiTouchImage, label: '08 / Współpraca' },
 ];
 const insightArticles = [
-  { meta: 'Agenci AI / 08 min', title: 'Agent AI czy automatyzacja — od czego zacząć?', text: 'Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.', image: agentOrchestrationImage, alt: 'Modułowa architektura agenta AI' },
-  { meta: 'SEO + GEO / 11 min', title: 'Jak być widocznym w odpowiedziach ChatGPT?', text: 'Co na stronie pomaga systemom AI właściwie zrozumieć markę.', image: searchCitationFieldImage, alt: 'Wizualizacja źródeł cytowanych w odpowiedziach AI' },
-  { meta: 'Operacje / 06 min', title: '7 zadań, które agent może przejąć w tym kwartale.', text: 'Praktyczna lista dla sprzedaży, obsługi i back office.', image: processEngineImage, alt: 'Silnik automatyzacji z kontrolowanym przepływem danych' },
+  { meta: 'Agenci AI / 08 min', title: 'Agent AI czy automatyzacja — od czego zacząć?', text: 'Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.', image: aiAgentControlImage, alt: 'Modułowa architektura agenta AI z bramką kontroli' },
+  { meta: 'SEO + GEO / 11 min', title: 'Jak być widocznym w odpowiedziach ChatGPT?', text: 'Co na stronie pomaga systemom AI właściwie zrozumieć markę.', image: seoAiCitationsImage, alt: 'Wizualizacja treści prowadzących do cytowanej odpowiedzi AI' },
+  { meta: 'Operacje / 06 min', title: '7 zadań, które agent może przejąć w tym kwartale.', text: 'Praktyczna lista dla sprzedaży, obsługi i back office.', image: processAutomationImage, alt: 'Silnik automatyzacji z kontrolowanym przepływem danych' },
 ];
 const serviceLoop = [...services, ...services];
 const schema = {
@@ -126,6 +127,32 @@ const schema = {
       </div>
     </section>
 
+    <section class="human-ai-bridge" data-human-bridge aria-labelledby="human-ai-bridge-title">
+      <div class="human-ai-bridge__sticky">
+        <div class="human-ai-bridge__media" data-human-bridge-media>
+          <Image
+            src={humanAiTouchImage}
+            alt="Ludzka dłoń i precyzyjna dłoń robota spotykające się na granicy dwóch światów"
+            widths={[960, 1440, 1920, 2400]}
+            sizes="100vw"
+            format="webp"
+            quality={88}
+          />
+        </div>
+        <div class="human-ai-bridge__shade" aria-hidden="true"></div>
+        <div class="human-ai-bridge__copy">
+          <p class="mono-label">/ Człowiek × technologia</p>
+          <h2 id="human-ai-bridge-title">
+            <span data-human-bridge-line>Technologia, która</span>
+            <span data-human-bridge-line>pozostaje po</span>
+            <span data-human-bridge-line><em>ludzkiej stronie.</em></span>
+          </h2>
+          <p data-human-bridge-note>AI przejmuje ciężar procesu. Człowiek zachowuje decyzję, relację i kierunek.</p>
+        </div>
+        <div class="human-ai-bridge__index" aria-hidden="true"><span>Human judgment</span><i></i><span>Machine precision</span></div>
+      </div>
+    </section>
+
     <section class="cinematic-system" data-cinematic aria-label="System AI w ruchu">
       <div class="cinematic-sticky">
         <div class="cinematic-curtain" data-cinematic-curtain></div>
@@ -146,6 +173,8 @@ const schema = {
         <div class="cinematic-progress" aria-hidden="true"><i data-cinematic-progress></i></div>
       </div>
     </section>
+
+    <EditorialJourney />
 
     <section class="sequence-lab">
       <div class="sequence-grid section-shell">
@@ -175,7 +204,7 @@ const schema = {
     <section class="system-story">
       <div class="story-grid">
         <div class="story-media">
-          <Image src={agentOrchestrationImage} alt="Architektura agenta AI prowadząca zadanie od sygnału do wyniku" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
+          <Image src={aiAgentControlImage} alt="Architektura agenta AI prowadząca zadanie od sygnału do kontrolowanego wyniku" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
           <div class="story-media-copy"><span>Flow architecture</span><span>Scroll / 01—03</span></div>
         </div>
         <div class="story-steps">
@@ -249,7 +278,7 @@ const schema = {
         </div>
         <div class="proof-grid">
           <a class="proof-card" href="/uslugi/voiceboty-ai/">
-            <div class="proof-card-media"><Image src={voiceChamberImage} alt="Przestrzenna komora głosowa symbolizująca rozmowę voicebota AI" widths={[760,1100,1500]} sizes="(max-width:760px) 100vw, 54vw" format="webp" quality={84} /></div>
+            <div class="proof-card-media"><Image src={voicebotRobotImage} alt="Profesjonalny robot voicebota prowadzący naturalną rozmowę głosową" widths={[760,1100,1500]} sizes="(max-width:760px) 100vw, 54vw" format="webp" quality={84} /></div>
             <div class="proof-card-copy">
               <p class="mono-label">Scenariusz / Obsługa klienta</p>
               <h3>Telefon odebrany. Termin zapisany. Zespół nadal pracuje.</h3>
@@ -257,7 +286,7 @@ const schema = {
             </div>
           </a>
           <a class="proof-card" href="/uslugi/strony-www-seo-ai/">
-            <div class="proof-card-media"><Image src={searchCitationFieldImage} alt="Sieć treści i źródeł połączona w system wiedzy dla AI" widths={[640,960,1280]} sizes="(max-width:760px) 100vw, 46vw" format="webp" quality={84} /></div>
+            <div class="proof-card-media"><Image src={seoAiCitationsImage} alt="Treści strony i źródła prowadzące do cytowanej odpowiedzi systemu AI" widths={[640,960,1280]} sizes="(max-width:760px) 100vw, 46vw" format="webp" quality={84} /></div>
             <div class="proof-card-copy">
               <p class="mono-label">Scenariusz / Widoczność</p>
               <h3>Jedna strona. Dwa ekosystemy wyszukiwania.</h3>

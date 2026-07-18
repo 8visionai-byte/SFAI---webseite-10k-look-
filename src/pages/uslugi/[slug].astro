@@ -2,13 +2,13 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { services } from '../../data/services.js';
-import valueBlueprintImage from '../../assets/generated/v2/value-blueprint.png';
-import chatInterfaceImage from '../../assets/generated/v2/chat-interface.png';
-import searchCitationFieldImage from '../../assets/generated/v2/search-citation-field.png';
-import voiceChamberImage from '../../assets/generated/v2/voice-chamber.png';
-import agentOrchestrationImage from '../../assets/generated/v2/agent-orchestration.png';
-import processEngineImage from '../../assets/generated/v2/process-engine.png';
-import careObservatoryImage from '../../assets/generated/v2/care-observatory.png';
+import valueArchitectureImage from '../../assets/generated/v3/value-architecture.png';
+import chatbotKnowledgeImage from '../../assets/generated/v3/chatbot-knowledge.png';
+import seoAiCitationsImage from '../../assets/generated/v3/seo-ai-citations.png';
+import voicebotRobotImage from '../../assets/generated/v3/voicebot-robot.png';
+import aiAgentControlImage from '../../assets/generated/v3/ai-agent-control.png';
+import processAutomationImage from '../../assets/generated/v3/process-automation.png';
+import aiCareObservatoryImage from '../../assets/generated/v3/ai-care-observatory.png';
 
 export function getStaticPaths() {
   return services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
@@ -17,32 +17,32 @@ export function getStaticPaths() {
 const { service } = Astro.props;
 const serviceVisuals = {
   core: {
-    src: valueBlueprintImage,
-    alt: 'Warstwowa architektura strategii i wartości wdrożenia AI',
+    src: valueArchitectureImage,
+    alt: 'Makieta architektoniczna z mapą priorytetów i ścieżką wartości wdrożenia AI',
   },
   chat: {
-    src: chatInterfaceImage,
-    alt: 'Modułowy interfejs inteligentnego chatbota dla firmy',
+    src: chatbotKnowledgeImage,
+    alt: 'Chatbot AI łączący rozmowę klienta z uporządkowaną bazą wiedzy firmy',
   },
   search: {
-    src: searchCitationFieldImage,
-    alt: 'Wizualizacja treści prowadzących do odpowiedzi cytowanej przez systemy AI',
+    src: seoAiCitationsImage,
+    alt: 'Treści stron internetowych przetwarzane w odpowiedź cytowaną przez system AI',
   },
   voice: {
-    src: voiceChamberImage,
-    alt: 'Przestrzenna komora głosowa symbolizująca rozmowę z voicebotem AI',
+    src: voicebotRobotImage,
+    alt: 'Profesjonalny robot AI prowadzący naturalną rozmowę głosową',
   },
   agent: {
-    src: agentOrchestrationImage,
-    alt: 'Schemat orkiestracji agenta AI od sygnału do kontrolowanego działania',
+    src: aiAgentControlImage,
+    alt: 'Agent AI przetwarzający różne dane w kontrolowane działania biznesowe',
   },
   automation: {
-    src: processEngineImage,
-    alt: 'Precyzyjny silnik automatyzacji procesów i przepływu danych',
+    src: processAutomationImage,
+    alt: 'Automatyczny przepływ danych przechodzący przez kolejne etapy procesu',
   },
   care: {
-    src: careObservatoryImage,
-    alt: 'Centrum monitorowania agentów i automatyzacji w ramach Opieki AI',
+    src: aiCareObservatoryImage,
+    alt: 'Obserwatorium AI monitorujące systemy i wykrywające pojedynczy wyjątek',
   },
 };
 const heroVisual = serviceVisuals[service.visual] ?? serviceVisuals.core;

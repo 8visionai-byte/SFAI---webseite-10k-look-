@@ -100,6 +100,28 @@ document.querySelectorAll('[data-scramble]').forEach((element) => {
   trigger.addEventListener('focus', () => runScramble(element));
 });
 
+document.querySelectorAll('[data-voice-trigger]').forEach((trigger) => {
+  if (!(trigger instanceof HTMLButtonElement) || trigger.dataset.voiceBound) return;
+  const core = trigger.closest('[data-flow-core]');
+  const panelId = trigger.getAttribute('aria-controls');
+  const panel = panelId ? document.getElementById(panelId) : null;
+  if (!(core instanceof HTMLElement) || !(panel instanceof HTMLElement)) return;
+  trigger.dataset.voiceBound = 'true';
+
+  const setOpen = (open) => {
+    trigger.setAttribute('aria-expanded', String(open));
+    panel.hidden = !open;
+    core.classList.toggle('is-voice-open', open);
+  };
+
+  trigger.addEventListener('click', () => setOpen(trigger.getAttribute('aria-expanded') !== 'true'));
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || trigger.getAttribute('aria-expanded') !== 'true') return;
+    setOpen(false);
+    trigger.focus();
+  });
+});
+
 const storySteps = [...document.querySelectorAll('[data-story-step]')];
 if (storySteps.length) {
   const storyObserver = new IntersectionObserver((entries) => {
@@ -138,6 +160,24 @@ if (hero && heroScenes.length) {
 }
 
 if (!reduced) {
+  const humanBridge = document.querySelector('[data-human-bridge]');
+  if (humanBridge) {
+    const media = humanBridge.querySelector('[data-human-bridge-media]');
+    const lines = humanBridge.querySelectorAll('[data-human-bridge-line]');
+    const note = humanBridge.querySelector('[data-human-bridge-note]');
+    const bridgeTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: humanBridge,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.8,
+      },
+    });
+    bridgeTimeline.fromTo(media, { scale: 1.1, yPercent: 4 }, { scale: 1, yPercent: -2, duration: 1, ease: 'none' }, 0);
+    bridgeTimeline.fromTo(lines, { yPercent: 115 }, { yPercent: 0, stagger: 0.045, duration: 0.28, ease: 'power3.out' }, 0.12);
+    bridgeTimeline.fromTo(note, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }, 0.43);
+  }
+
   const cinematic = document.querySelector('[data-cinematic]');
   if (cinematic) {
     const curtain = cinematic.querySelector('[data-cinematic-curtain]');
@@ -176,6 +216,106 @@ if (!reduced) {
     });
     timeline.to(frames[frames.length - 1], { yPercent: -38, scale: 1.04, duration: 0.18, ease: 'none' }, 0.83);
     timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1, ease: 'none' }, 0);
+  }
+
+  const fogStatement = document.querySelector('[data-fog-statement]');
+  if (fogStatement) {
+    const fogImages = [...fogStatement.querySelectorAll('[data-fog-image]')];
+    const fogLines = fogStatement.querySelectorAll('[data-fog-line]');
+    const fogNote = fogStatement.querySelector('[data-fog-note]');
+    const fogVeil = fogStatement.querySelector('[data-fog-veil]');
+    const fogTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: fogStatement,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.9,
+      },
+    });
+
+    fogImages.forEach((image, index) => {
+      const starts = [
+        { xPercent: -24, yPercent: 24, clipPath: 'inset(0 100% 0 0)' },
+        { xPercent: 22, yPercent: 32, clipPath: 'inset(100% 0 0 0)' },
+        { xPercent: 30, yPercent: 42, clipPath: 'inset(0 0 100% 0)' },
+      ];
+      const entry = 0.03 + index * 0.1;
+      fogTimeline.fromTo(image, {
+        ...starts[index],
+        opacity: 0,
+        filter: 'blur(18px)',
+      }, {
+        xPercent: 0,
+        yPercent: 0,
+        clipPath: 'inset(0 0 0 0)',
+        opacity: index === 0 ? 0.46 : 1,
+        filter: 'blur(0px)',
+        duration: 0.24,
+        ease: 'power3.out',
+      }, entry);
+      fogTimeline.to(image, { yPercent: -10 - index * 4, scale: 1.025, duration: 0.45, ease: 'none' }, 0.55 + index * 0.035);
+    });
+    fogTimeline.fromTo(fogLines, {
+      opacity: 0.12,
+      y: 34,
+      filter: 'blur(24px)',
+    }, {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      stagger: 0.055,
+      duration: 0.22,
+      ease: 'power2.out',
+    }, 0.24);
+    fogTimeline.fromTo(fogNote, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.16 }, 0.54);
+    fogTimeline.to(fogVeil, { opacity: 0.55, duration: 0.35, ease: 'none' }, 0.62);
+  }
+
+  const systemExplore = document.querySelector('[data-system-explore]');
+  if (systemExplore) {
+    const items = [...systemExplore.querySelectorAll('[data-explore-item]')];
+    const lines = systemExplore.querySelectorAll('[data-explore-line]');
+    const note = systemExplore.querySelector('.system-explore__note');
+    const exploreTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: systemExplore,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.88,
+        onUpdate: (self) => systemExplore.style.setProperty('--explore-progress', self.progress.toFixed(3)),
+      },
+    });
+    exploreTimeline.fromTo(lines, { yPercent: 112 }, { yPercent: 0, stagger: 0.035, duration: 0.18, ease: 'power3.out' }, 0.02);
+    exploreTimeline.fromTo(note, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.14 }, 0.17);
+
+    const directionState = {
+      'from-left': { xPercent: -78, yPercent: 18, clipPath: 'inset(0 100% 0 0)' },
+      'from-right': { xPercent: 78, yPercent: 14, clipPath: 'inset(0 0 0 100%)' },
+      'from-bottom-left': { xPercent: -42, yPercent: 72, clipPath: 'inset(100% 0 0 0)' },
+      'from-top-right': { xPercent: 46, yPercent: -62, clipPath: 'inset(0 0 100% 0)' },
+      'from-bottom-right': { xPercent: 48, yPercent: 74, clipPath: 'inset(100% 0 0 0)' },
+    };
+
+    items.forEach((item, index) => {
+      const image = item.querySelector('.system-explore__image');
+      const bitmap = item.querySelector('img');
+      const state = directionState[item.dataset.exploreDirection] ?? directionState['from-bottom-left'];
+      const entry = 0.11 + index * 0.125;
+      exploreTimeline.fromTo(item, {
+        xPercent: state.xPercent,
+        yPercent: state.yPercent,
+        opacity: 0,
+      }, {
+        xPercent: 0,
+        yPercent: 0,
+        opacity: 1,
+        duration: 0.12,
+        ease: 'power3.out',
+      }, entry);
+      exploreTimeline.fromTo(image, { clipPath: state.clipPath }, { clipPath: 'inset(0 0 0 0)', duration: 0.12, ease: 'power3.out' }, entry);
+      exploreTimeline.fromTo(bitmap, { scale: 1.14 }, { scale: 1, duration: 0.18, ease: 'none' }, entry);
+      exploreTimeline.to(item, { yPercent: -48, opacity: 0.12, duration: 0.12, ease: 'none' }, Math.min(0.94, entry + 0.145));
+    });
   }
 
   document.querySelectorAll('.service-card').forEach((card) => {

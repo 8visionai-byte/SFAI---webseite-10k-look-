@@ -1,31 +1,31 @@
 ---
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import agentOrchestration from '../assets/generated/v2/agent-orchestration.png';
-import processEngine from '../assets/generated/v2/process-engine.png';
-import searchCitationField from '../assets/generated/v2/search-citation-field.png';
+import aiAgentControl from '../assets/generated/v3/ai-agent-control.png';
+import processAutomation from '../assets/generated/v3/process-automation.png';
+import seoAiCitations from '../assets/generated/v3/seo-ai-citations.png';
 
 const articles = [
   {
     category: 'Agenci AI',
     title: 'Agent AI czy chatbot — różnica, którą widać w procesie',
     description: 'Agent nie kończy na odpowiedzi. Sprawdza, zapisuje i wykonuje kolejny krok.',
-    image: agentOrchestration,
-    alt: 'Wizualizacja przepływu zadań pomiędzy modułami autonomicznego agenta AI',
+    image: aiAgentControl,
+    alt: 'Agent AI przetwarzający różne dane w kontrolowane działania biznesowe',
   },
   {
     category: 'Automatyzacja',
     title: 'Jak wybrać pierwszy proces do automatyzacji?',
     description: 'Pięć sygnałów, że zadanie jest dobrym kandydatem i trzy, że jeszcze nie.',
-    image: processEngine,
-    alt: 'Precyzyjny silnik automatyzacji prowadzący dane przez kolejne etapy procesu',
+    image: processAutomation,
+    alt: 'Automatyczny przepływ danych przechodzący przez kolejne etapy procesu',
   },
   {
     category: 'SEO + GEO',
     title: 'Jak przygotować stronę do cytowania przez systemy AI',
     description: 'Architektura treści, dane strukturalne i wiarygodność marki bez skrótów.',
-    image: searchCitationField,
-    alt: 'Struktury treści zbiegające się w wyróżnioną odpowiedź cytowaną przez system AI',
+    image: seoAiCitations,
+    alt: 'Treści stron internetowych przetwarzane w odpowiedź cytowaną przez system AI',
   },
 ];
 ---

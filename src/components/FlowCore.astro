@@ -1,298 +1,325 @@
----
-import { Image } from 'astro:assets';
-import poster from '../assets/generated/v2/system-hero.png';
----
-<div class="flow-core" data-flow-core aria-hidden="true">
-  <div class="flow-core-poster">
-    <Image src={poster} alt="" widths={[640, 960, 1280]} sizes="(max-width: 720px) 118vw, 64vw" format="webp" quality={82} loading="eager" />
-  </div>
-  <canvas data-flow-canvas></canvas>
-  <div class="flow-metal-hud">
-    <span>[ Adaptive matter ]</span>
+<div class="flow-core" data-flow-core>
+  <canvas data-flow-canvas aria-hidden="true"></canvas>
+
+  <div class="flow-metal-hud" aria-hidden="true">
+    <span>[ Magnetic intelligence ]</span>
     <span data-metal-state>Signal / 01</span>
   </div>
-  <div class="flow-metal-index"><i></i><span>Liquid logic</span><b>SF / AI</b></div>
+
+  <button
+    class="voice-core-trigger"
+    type="button"
+    data-voice-trigger
+    aria-label="Otwórz prototyp voice agenta"
+    aria-expanded="false"
+    aria-controls="voice-core-panel"
+  >
+    <span class="voice-core-orbit" aria-hidden="true"><i></i><b></b></span>
+    <span class="voice-core-label">Zapytaj AI</span>
+    <span class="voice-core-caption" aria-hidden="true">Voice agent</span>
+  </button>
+
+  <div class="voice-core-panel" id="voice-core-panel" data-voice-panel role="region" aria-label="Prototyp voice agenta" hidden>
+    <span class="eyebrow">[ Interfejs głosowy ]</span>
+    <p data-voice-status role="status" aria-live="polite">Tu uruchomisz rozmowę z agentem znającym ofertę SimpleFast.ai.</p>
+    <small>Prototyp interfejsu — gotowy do połączenia z bazą wiedzy i modułem głosowym.</small>
+  </div>
+
+  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Living interface</span><b>SF / AI</b></div>
 </div>
 
 <script>
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
   const bootFlowCore = async () => {
-    const [THREE, environmentModule] = await Promise.all([
-      import('three'),
-      import('three/examples/jsm/environments/RoomEnvironment.js'),
-    ]);
-    const { RoomEnvironment } = environmentModule;
-
-    document.querySelectorAll('[data-flow-core]').forEach((container) => {
-    const canvas = container.querySelector('[data-flow-canvas]');
-    const stateLabel = container.querySelector('[data-metal-state]');
-    if (!(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) return;
-    canvas.dataset.ready = 'true';
-
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const mobile = window.matchMedia('(max-width: 760px)').matches;
-    if (reduced) {
-      container.classList.add('is-static');
-      return;
-    }
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(mobile ? 32 : 27, 1, 0.1, 50);
-    camera.position.set(mobile ? 0.35 : 0.15, 0, mobile ? 10.4 : 11.55);
+    for (const container of document.querySelectorAll('[data-flow-core]')) {
+      const canvas = container.querySelector('[data-flow-canvas]');
+      const stateLabel = container.querySelector('[data-metal-state]');
+      if (!(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) continue;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: !mobile,
-      powerPreference: 'high-performance',
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.15 : 1.65));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const room = new RoomEnvironment();
-    const environment = pmrem.fromScene(room, 0.035).texture;
-    scene.environment = environment;
-    room.dispose();
-    pmrem.dispose();
-
-    const sculpture = new THREE.Group();
-    sculpture.position.set(mobile ? 0.82 : 0.68, mobile ? -0.18 : 0.04, 0);
-    scene.add(sculpture);
-
-    const geometry = new THREE.TorusGeometry(
-      mobile ? 1.33 : 1.42,
-      mobile ? 0.79 : 0.86,
-      mobile ? 72 : 112,
-      mobile ? 128 : 220,
-    );
-    geometry.scale(mobile ? 1.12 : 1.18, mobile ? 1.32 : 1.38, mobile ? 0.82 : 0.88);
-
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0x777e84,
-      metalness: 1,
-      roughness: 0.072,
-      clearcoat: 1,
-      clearcoatRoughness: 0.07,
-      iridescence: 0.62,
-      iridescenceIOR: 1.38,
-      iridescenceThicknessRange: [180, 520],
-      envMapIntensity: 2.15,
-    });
-
-    const shaderState = { shader: null };
-    material.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = { value: 0 };
-      shader.uniforms.uProgress = { value: 0 };
-      shader.uniforms.uPointer = { value: new THREE.Vector2() };
-      shaderState.shader = shader;
-
-      shader.vertexShader = shader.vertexShader
-        .replace(
-          '#include <common>',
-          `#include <common>
-          uniform float uTime;
-          uniform float uProgress;
-          uniform vec2 uPointer;
-
-          float fluidField(vec3 p, float t) {
-            float broad = sin(p.x * 1.18 + t * .52) * cos(p.y * .82 - t * .31);
-            float fold = sin((p.y + p.z) * 1.46 - t * .43) * .58;
-            float current = cos((p.x - p.z) * 1.72 + t * .27) * .36;
-            return broad + fold + current;
-          }`
-        )
-        .replace(
-          '#include <beginnormal_vertex>',
-          `#include <beginnormal_vertex>
-          float normalAngle = atan(position.y, position.x);
-          objectNormal = normalize(objectNormal + vec3(
-            cos(position.y * .82 - uTime * .2) * .15,
-            -sin(position.x * .74 + uTime * .16) * .13,
-            cos(normalAngle * 2.0 + uTime * .34 + uProgress * 1.8) * .24
-          ));`
-        )
-        .replace(
-          '#include <begin_vertex>',
-          `vec3 transformed = vec3(position);
-          float t = uTime;
-          float field = fluidField(position, t);
-          float angle = atan(position.y, position.x);
-          float broadFold = sin(angle * 2.0 + t * .34 + uProgress * 1.8);
-          float secondaryFold = cos(angle * 3.0 - t * .23);
-          float displacement = field * (.105 + uProgress * .035) + broadFold * .1;
-          transformed += normalize(objectNormal) * displacement;
-          transformed.x *= 1.0 + broadFold * .13;
-          transformed.y *= 1.0 + secondaryFold * .1;
-          transformed.z += broadFold * (.31 + uProgress * .08);
-          transformed.z += sin((position.x - position.y) * .72 - t * .19) * .14;
-          transformed.x += sin(position.y * .82 - t * .2) * (.18 + uProgress * .08);
-          transformed.y += cos(position.x * .74 + t * .16) * .13;
-          transformed.x += uPointer.x * (position.y * .035);
-          transformed.y += uPointer.y * (position.x * .028);`
-        );
-    };
-
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.set(-0.18, -0.42, -0.08);
-    sculpture.add(mesh);
-
-    scene.add(new THREE.HemisphereLight(0xe7ebff, 0x050606, 1.18));
-    const whiteKey = new THREE.DirectionalLight(0xffffff, 4.6);
-    whiteKey.position.set(-3.4, 4.8, 6.5);
-    scene.add(whiteKey);
-    const cobaltRim = new THREE.DirectionalLight(0x5368ff, 5.4);
-    cobaltRim.position.set(4.8, 1.4, 4.2);
-    scene.add(cobaltRim);
-    const warmRim = new THREE.DirectionalLight(0xffa55f, 3.2);
-    warmRim.position.set(-4.6, -2.8, 3.4);
-    scene.add(warmRim);
-    const cyanFill = new THREE.PointLight(0x6de8ff, 10, 14);
-    cyanFill.position.set(0.5, -4.5, 4.8);
-    scene.add(cyanFill);
-
-    let targetProgress = mobile ? 0.47 : 0;
-    let progress = targetProgress;
-    let targetPointerX = 0;
-    let targetPointerY = 0;
-    let pointerX = 0;
-    let pointerY = 0;
-    let visible = true;
-    let running = false;
-    let frameId = 0;
-    let lastFrame = 0;
-    const startedAt = performance.now();
-    const hero = container.closest('[data-hero]');
-    const stateNames = ['Signal / 01', 'Context / 02', 'Motion / 03', 'Result / 04'];
-
-    const setProgress = (value) => {
-      targetProgress = mobile ? 0.47 : clamp(value, 0, 1);
-      container.style.setProperty('--metal-progress', String(targetProgress));
-      if (stateLabel) stateLabel.textContent = stateNames[Math.min(3, Math.floor(targetProgress * 4))];
-    };
-
-    const onHeroProgress = (event) => {
-      if (event instanceof CustomEvent && typeof event.detail?.progress === 'number') setProgress(event.detail.progress);
-    };
-    hero?.addEventListener('sfai:hero-progress', onHeroProgress);
-
-    if (!mobile && hero) {
-      const rect = hero.getBoundingClientRect();
-      const range = Math.max(1, hero.scrollHeight - innerHeight);
-      setProgress(-rect.top / range);
-    }
-
-    const onPointerMove = (event) => {
-      if (mobile || event.pointerType === 'touch') return;
-      const rect = container.getBoundingClientRect();
-      const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-      if (!inside) {
-        targetPointerX = 0;
-        targetPointerY = 0;
-        return;
-      }
-      targetPointerX = clamp((event.clientX - rect.left) / rect.width - 0.5, -0.5, 0.5);
-      targetPointerY = clamp((event.clientY - rect.top) / rect.height - 0.5, -0.5, 0.5);
-    };
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-
-    const resize = () => {
-      const rect = container.getBoundingClientRect();
-      const width = Math.max(1, rect.width);
-      const height = Math.max(1, rect.height);
-      renderer.setSize(width, height, false);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    };
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(container);
-    resize();
-
-    const updateScene = (time) => {
-      progress += (targetProgress - progress) * 0.055;
-      pointerX += (targetPointerX - pointerX) * 0.045;
-      pointerY += (targetPointerY - pointerY) * 0.045;
-
-      const seconds = (time - startedAt) * 0.001;
-      const shader = shaderState.shader;
-      if (shader) {
-        shader.uniforms.uTime.value = seconds;
-        shader.uniforms.uProgress.value = progress;
-        shader.uniforms.uPointer.value.set(pointerX, pointerY);
+      canvas.dataset.ready = 'true';
+      if (reduced) {
+        container.classList.add('is-static', 'is-rendered');
+        continue;
       }
 
-      const idle = Math.sin(seconds * 0.34) * 0.025;
-      mesh.rotation.x = -0.2 + progress * 0.22 + pointerY * 0.18 + idle;
-      mesh.rotation.y = -0.48 + progress * 0.66 + pointerX * 0.22;
-      mesh.rotation.z = -0.09 + progress * 0.18 - pointerX * 0.08;
-      sculpture.position.y = (mobile ? -0.18 : 0.04) + Math.sin(seconds * 0.42) * 0.045 - progress * 0.08;
-      sculpture.scale.setScalar(0.95 + progress * 0.08);
-      material.roughness = 0.068 + progress * 0.042;
-      material.iridescence = 0.52 + Math.sin(seconds * 0.28) * 0.08 + progress * 0.1;
-      cobaltRim.intensity = 4.7 + progress * 2.1;
-      warmRim.intensity = 2.7 + (1 - progress) * 1.2;
-    };
+      const mobile = window.matchMedia('(max-width: 760px)').matches;
 
-    const render = (time) => {
-      if (!running) return;
-      frameId = requestAnimationFrame(render);
-      if (mobile && time - lastFrame < 32) return;
-      lastFrame = time;
-      if (document.hidden || document.body.classList.contains('menu-open')) return;
-      updateScene(time);
-      renderer.render(scene, camera);
-    };
+      try {
+        const THREE = await import('three');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(mobile ? 34 : 30, 1, 0.1, 40);
+        camera.position.set(mobile ? 0.28 : 0.08, 0, mobile ? 10.1 : 9.75);
 
-    const start = () => {
-      if (running || !visible) return;
-      running = true;
-      frameId = requestAnimationFrame(render);
-    };
-    const stop = () => {
-      running = false;
-      cancelAnimationFrame(frameId);
-    };
+        const renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: !mobile,
+          powerPreference: 'high-performance',
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.1 : 1.5));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.04;
 
-    const intersectionObserver = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      visible ? start() : stop();
-    }, { rootMargin: '120px' });
-    intersectionObserver.observe(container);
+        const sculpture = new THREE.Group();
+        sculpture.position.set(mobile ? 0.76 : 0.54, mobile ? -0.05 : 0.02, 0);
+        scene.add(sculpture);
 
-    const onVisibility = () => document.hidden ? stop() : start();
-    document.addEventListener('visibilitychange', onVisibility);
-    canvas.addEventListener('webglcontextlost', () => container.classList.remove('is-rendered'), { passive: true });
+        const geometry = new THREE.IcosahedronGeometry(mobile ? 1.5 : 1.66, mobile ? 4 : 5);
+        geometry.scale(mobile ? 1.08 : 1.16, mobile ? 0.98 : 1.04, mobile ? 0.76 : 0.82);
 
-    const cleanup = () => {
-      stop();
-      resizeObserver.disconnect();
-      intersectionObserver.disconnect();
-      window.removeEventListener('pointermove', onPointerMove);
-      document.removeEventListener('visibilitychange', onVisibility);
-      hero?.removeEventListener('sfai:hero-progress', onHeroProgress);
-      scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry?.dispose();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach((entry) => entry?.dispose());
+        const material = new THREE.MeshPhysicalMaterial({
+          color: 0xb8bcbe,
+          metalness: 0.94,
+          roughness: 0.155,
+          clearcoat: 0.48,
+          clearcoatRoughness: 0.12,
+          iridescence: 0.065,
+          iridescenceIOR: 1.25,
+          iridescenceThicknessRange: [110, 220],
+          envMapIntensity: 0.15,
+        });
+
+        const shaderState = { shader: null };
+        material.onBeforeCompile = (shader) => {
+          shader.uniforms.uTime = { value: 0 };
+          shader.uniforms.uProgress = { value: 0 };
+          shader.uniforms.uPointer = { value: new THREE.Vector2() };
+          shaderState.shader = shader;
+
+          shader.vertexShader = shader.vertexShader
+            .replace(
+              '#include <common>',
+              `#include <common>
+              uniform float uTime;
+              uniform float uProgress;
+              uniform vec2 uPointer;
+
+              float magneticField(vec3 p, float t) {
+                float broad = sin(p.x * 1.13 + t * .33) * cos(p.y * .91 - t * .25);
+                float fold = sin((p.y + p.z) * 1.42 - t * .28) * .54;
+                float current = cos((p.x - p.z) * 1.58 + t * .21) * .32;
+                return broad + fold + current;
+              }`
+            )
+            .replace(
+              '#include <beginnormal_vertex>',
+              `#include <beginnormal_vertex>
+              objectNormal = normalize(objectNormal + vec3(
+                cos(position.y * 1.1 - uTime * .18) * .045,
+                -sin(position.x * .96 + uTime * .15) * .04,
+                cos((position.x + position.y) * .88 + uTime * .2) * .055
+              ));`
+            )
+            .replace(
+              '#include <begin_vertex>',
+              `vec3 transformed = vec3(position);
+              float field = magneticField(position, uTime);
+              float displacement = field * (.155 + uProgress * .022);
+              transformed += normalize(objectNormal) * displacement;
+              transformed.x *= 1.0 + sin(position.y * .62 - uTime * .12) * .07;
+              transformed.y *= 1.0 + cos(position.x * .57 + uTime * .11) * .055;
+              transformed.x += sin(position.y * 1.06 - uTime * .2) * (.078 + uProgress * .018);
+              transformed.y += cos(position.x * .9 + uTime * .16) * .064;
+              transformed.z += sin((position.x - position.y) * .75 - uTime * .15) * .105;
+              transformed.x += uPointer.x * position.y * .022;
+              transformed.y += uPointer.y * position.x * .018;`
+            );
+        };
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.rotation.set(-0.13, -0.48, -0.12);
+        sculpture.add(mesh);
+
+        scene.add(new THREE.HemisphereLight(0xf3f5f2, 0x080909, 0.92));
+        const whiteKey = new THREE.DirectionalLight(0xffffff, 3.6);
+        whiteKey.position.set(-3.2, 4.8, 6.4);
+        scene.add(whiteKey);
+        const limeEdge = new THREE.DirectionalLight(0xc8ff45, 1.35);
+        limeEdge.position.set(-4.2, -1.8, 3.2);
+        scene.add(limeEdge);
+        const cobaltEdge = new THREE.DirectionalLight(0x3159ff, 1.12);
+        cobaltEdge.position.set(4.6, 1.6, 3.8);
+        scene.add(cobaltEdge);
+        const coolFill = new THREE.PointLight(0xd6f5f0, 2.2, 14);
+        coolFill.position.set(0.8, -4, 4.5);
+        scene.add(coolFill);
+        const warmPin = new THREE.PointLight(0xffc39a, 1.35, 12);
+        warmPin.position.set(-3.8, 2.8, 2.4);
+        scene.add(warmPin);
+
+        let environment = null;
+        let targetEnvIntensity = 0.15;
+        let disposed = false;
+        let targetProgress = mobile ? 0.42 : 0;
+        let progress = targetProgress;
+        let targetPointerX = 0;
+        let targetPointerY = 0;
+        let pointerX = 0;
+        let pointerY = 0;
+        let visible = true;
+        let running = false;
+        let frameId = 0;
+        let lastFrame = 0;
+        const startedAt = performance.now();
+        const hero = container.closest('[data-hero]');
+        const stateNames = ['Signal / 01', 'Context / 02', 'Motion / 03', 'Result / 04'];
+
+        const setProgress = (value) => {
+          targetProgress = mobile ? 0.42 : clamp(value, 0, 1);
+          container.style.setProperty('--metal-progress', String(targetProgress));
+          if (stateLabel) stateLabel.textContent = stateNames[Math.min(3, Math.floor(targetProgress * 4))];
+        };
+
+        const onHeroProgress = (event) => {
+          if (event instanceof CustomEvent && typeof event.detail?.progress === 'number') setProgress(event.detail.progress);
+        };
+        hero?.addEventListener('sfai:hero-progress', onHeroProgress);
+
+        if (!mobile && hero) {
+          const rect = hero.getBoundingClientRect();
+          setProgress(-rect.top / Math.max(1, hero.scrollHeight - innerHeight));
         }
-      });
-      environment.dispose();
-      renderer.dispose();
-    };
-    window.addEventListener('pagehide', cleanup, { once: true });
 
-    start();
-    requestAnimationFrame(() => container.classList.add('is-rendered'));
-    });
+        const onPointerMove = (event) => {
+          if (mobile || event.pointerType === 'touch') return;
+          const rect = container.getBoundingClientRect();
+          const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+          targetPointerX = inside ? clamp((event.clientX - rect.left) / rect.width - 0.5, -0.5, 0.5) : 0;
+          targetPointerY = inside ? clamp((event.clientY - rect.top) / rect.height - 0.5, -0.5, 0.5) : 0;
+        };
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
+
+        const resize = () => {
+          const rect = container.getBoundingClientRect();
+          const width = Math.max(1, rect.width);
+          const height = Math.max(1, rect.height);
+          renderer.setSize(width, height, false);
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+        };
+        const resizeObserver = new ResizeObserver(resize);
+        resizeObserver.observe(container);
+        resize();
+
+        const updateScene = (time) => {
+          progress += (targetProgress - progress) * 0.052;
+          pointerX += (targetPointerX - pointerX) * 0.045;
+          pointerY += (targetPointerY - pointerY) * 0.045;
+
+          const seconds = (time - startedAt) * 0.001;
+          const shader = shaderState.shader;
+          if (shader) {
+            shader.uniforms.uTime.value = seconds;
+            shader.uniforms.uProgress.value = progress;
+            shader.uniforms.uPointer.value.set(pointerX, pointerY);
+          }
+
+          const idle = Math.sin(seconds * 0.31) * 0.018;
+          mesh.rotation.x = -0.13 + progress * 0.13 + pointerY * 0.1 + idle;
+          mesh.rotation.y = -0.48 + progress * 0.42 + pointerX * 0.13;
+          mesh.rotation.z = -0.12 + progress * 0.11 - pointerX * 0.05;
+          sculpture.position.y = (mobile ? -0.05 : 0.02) + Math.sin(seconds * 0.38) * 0.032 - progress * 0.035;
+          sculpture.scale.setScalar(0.97 + progress * 0.035);
+          material.roughness = 0.15 + progress * 0.022;
+          material.envMapIntensity += (targetEnvIntensity - material.envMapIntensity) * 0.075;
+          limeEdge.intensity = 1.15 + progress * 0.5;
+          cobaltEdge.intensity = 0.92 + progress * 0.4;
+        };
+
+        const render = (time) => {
+          if (!running) return;
+          frameId = requestAnimationFrame(render);
+          if (mobile && time - lastFrame < 34) return;
+          lastFrame = time;
+          if (document.hidden || document.body.classList.contains('menu-open')) return;
+          updateScene(time);
+          renderer.render(scene, camera);
+        };
+
+        const start = () => {
+          if (running || !visible) return;
+          running = true;
+          frameId = requestAnimationFrame(render);
+        };
+        const stop = () => {
+          running = false;
+          cancelAnimationFrame(frameId);
+        };
+
+        const intersectionObserver = new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          visible ? start() : stop();
+        }, { rootMargin: '120px' });
+        intersectionObserver.observe(container);
+
+        const onVisibility = () => document.hidden ? stop() : start();
+        document.addEventListener('visibilitychange', onVisibility);
+        const onContextLost = (event) => {
+          event.preventDefault();
+          stop();
+          container.classList.add('is-fallback');
+        };
+        const onContextRestored = () => {
+          container.classList.remove('is-fallback');
+          start();
+        };
+        canvas.addEventListener('webglcontextlost', onContextLost);
+        canvas.addEventListener('webglcontextrestored', onContextRestored);
+
+        updateScene(performance.now());
+        renderer.render(scene, camera);
+        container.classList.add('is-rendered');
+        start();
+
+        import('three/examples/jsm/environments/RoomEnvironment.js').then(({ RoomEnvironment }) => {
+          if (disposed) return;
+          const pmrem = new THREE.PMREMGenerator(renderer);
+          const room = new RoomEnvironment();
+          environment = pmrem.fromScene(room, 0.035).texture;
+          scene.environment = environment;
+          targetEnvIntensity = 1.2;
+          room.dispose();
+          pmrem.dispose();
+        }).catch(() => undefined);
+
+        const cleanup = () => {
+          disposed = true;
+          stop();
+          resizeObserver.disconnect();
+          intersectionObserver.disconnect();
+          window.removeEventListener('pointermove', onPointerMove);
+          document.removeEventListener('visibilitychange', onVisibility);
+          canvas.removeEventListener('webglcontextlost', onContextLost);
+          canvas.removeEventListener('webglcontextrestored', onContextRestored);
+          hero?.removeEventListener('sfai:hero-progress', onHeroProgress);
+          window.removeEventListener('pagehide', onPageHide);
+          window.removeEventListener('pageshow', onPageShow);
+          scene.traverse((object) => {
+            if (object instanceof THREE.Mesh) {
+              object.geometry?.dispose();
+              const materials = Array.isArray(object.material) ? object.material : [object.material];
+              materials.forEach((entry) => entry?.dispose());
+            }
+          });
+          environment?.dispose();
+          renderer.dispose();
+        };
+        const onPageHide = (event) => event.persisted ? stop() : cleanup();
+        const onPageShow = (event) => {
+          if (event.persisted) start();
+        };
+        window.addEventListener('pagehide', onPageHide);
+        window.addEventListener('pageshow', onPageShow);
+      } catch (error) {
+        console.warn('Flow Core fallback:', error);
+        container.classList.add('is-static', 'is-fallback', 'is-rendered');
+      }
+    }
   };
 
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(() => void bootFlowCore(), { timeout: 900 });
-  } else {
-    window.setTimeout(() => void bootFlowCore(), 120);
-  }
+  void bootFlowCore();
 </script>

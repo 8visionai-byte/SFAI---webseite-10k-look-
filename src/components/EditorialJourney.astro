@@ -1,0 +1,171 @@
+---
+import { Image } from 'astro:assets';
+import valueArchitectureImage from '../assets/generated/v3/value-architecture.png';
+import aiCareObservatoryImage from '../assets/generated/v3/ai-care-observatory.png';
+import voicebotImage from '../assets/generated/v3/voicebot-robot.png';
+import chatbotKnowledgeImage from '../assets/generated/v3/chatbot-knowledge.png';
+import seoAiCitationsImage from '../assets/generated/v3/seo-ai-citations.png';
+import aiAgentControlImage from '../assets/generated/v3/ai-agent-control.png';
+import processAutomationImage from '../assets/generated/v3/process-automation.png';
+
+const fogLayers = [
+  {
+    src: valueArchitectureImage,
+    alt: 'Architektura wartości AI przedstawiona jako uporządkowany system decyzji i priorytetów',
+    layer: 'background',
+  },
+  {
+    src: aiAgentControlImage,
+    alt: 'Agent AI porządkujący sygnały, decyzje i kontrolowane działania',
+    layer: 'subject',
+  },
+  {
+    src: aiCareObservatoryImage,
+    alt: 'Centrum stałego nadzoru nad agentami i automatyzacjami AI',
+    layer: 'foreground',
+  },
+];
+
+const exploreRows = [
+  [
+    {
+      src: voicebotImage,
+      alt: 'Profesjonalny system voicebota obsługującego naturalną rozmowę po polsku',
+      label: 'Voiceboty AI',
+      detail: 'Rozmowa / intencja / termin',
+      direction: 'from-left',
+    },
+    {
+      src: chatbotKnowledgeImage,
+      alt: 'Chatbot AI korzystający z kontrolowanej bazy wiedzy firmy',
+      label: 'Chatboty AI',
+      detail: 'Wiedza / obsługa / lead',
+      direction: 'from-right',
+    },
+  ],
+  [
+    {
+      src: seoAiCitationsImage,
+      alt: 'Sieć wiarygodnych źródeł prowadząca do cytowania marki w odpowiedziach AI',
+      label: 'SEO + widoczność w AI',
+      detail: 'Źródła / znaczenie / cytowanie',
+      direction: 'from-bottom-left',
+    },
+  ],
+  [
+    {
+      src: aiAgentControlImage,
+      alt: 'Agent AI wykonujący zadania w granicach wyznaczonych przez człowieka',
+      label: 'Agenci AI',
+      detail: 'Decyzja / akcja / kontrola',
+      direction: 'from-top-right',
+    },
+    {
+      src: processAutomationImage,
+      alt: 'Automatyzacja łącząca dane i firmowe narzędzia w jeden precyzyjny proces',
+      label: 'Automatyzacja procesów',
+      detail: 'Systemy / dane / przepływ',
+      direction: 'from-left',
+    },
+  ],
+  [
+    {
+      src: aiCareObservatoryImage,
+      alt: 'Obserwatorium monitorujące jakość i ciągłość działania systemów AI',
+      label: 'Opieka AI',
+      detail: 'Monitoring / rozwój / spokój',
+      direction: 'from-bottom-right',
+    },
+  ],
+];
+---
+
+<section class="fog-statement" data-fog-statement aria-labelledby="fog-statement-title">
+  <div class="fog-statement__stage" data-fog-stage>
+    <div class="fog-statement__media" data-fog-media>
+      {fogLayers.map((image, index) => (
+        <figure
+          class:list={['fog-statement__image', `fog-statement__image--${image.layer}`]}
+          data-fog-image={index + 1}
+          data-fog-layer={image.layer}
+        >
+          <Image
+            src={image.src}
+            alt={image.alt}
+            widths={[640, 960, 1440, 1920]}
+            sizes="(max-width: 760px) 92vw, 72vw"
+            format="webp"
+            quality={86}
+          />
+        </figure>
+      ))}
+      <div class="fog-statement__veil" data-fog-veil aria-hidden="true"></div>
+    </div>
+
+    <div class="fog-statement__copy" data-fog-copy>
+      <p class="mono-label" data-fog-kicker>/ Inteligencja w służbie pracy</p>
+      <h2 id="fog-statement-title" data-fog-heading>
+        <span data-fog-line>Najlepsze systemy AI</span>
+        <span data-fog-line>nie proszą o uwagę.</span>
+        <span data-fog-line>Oddają ją ludziom.</span>
+      </h2>
+      <p data-fog-note>
+        Technologia działa w tle. Zespół odzyskuje czas, klient dostaje odpowiedź,
+        a każda decyzja pozostaje pod kontrolą.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="system-explore" data-system-explore aria-labelledby="system-explore-title">
+  <div class="system-explore__sticky">
+    <div class="system-explore__media-plane" data-explore-media aria-label="Obszary systemu SimpleFast.ai">
+      {exploreRows.map((row, rowIndex) => (
+        <div class="system-explore__row" data-explore-row={rowIndex + 1}>
+          {row.map((item, itemIndex) => (
+            <figure
+              class="system-explore__item"
+              data-explore-item
+              data-explore-row-index={rowIndex + 1}
+              data-explore-item-index={itemIndex + 1}
+              data-explore-direction={item.direction}
+            >
+              <div class="system-explore__image">
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  widths={[520, 760, 1080, 1440]}
+                  sizes="(max-width: 760px) 78vw, 34vw"
+                  format="webp"
+                  quality={84}
+                />
+              </div>
+              <figcaption>
+                <strong>{item.label}</strong>
+                <span>{item.detail}</span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ))}
+    </div>
+
+    <div class="system-explore__copy">
+      <p class="mono-label">/ Jeden partner. Cały system.</p>
+      <h2 id="system-explore-title">
+        <span data-explore-line>Od pierwszego sygnału.</span>
+        <span data-explore-line>Do pracy wykonanej</span>
+        <span data-explore-line>pod pełną kontrolą.</span>
+      </h2>
+      <p class="system-explore__note">
+        Projektujemy warstwy, które rozmawiają, rozumieją, działają i stale uczą się realiów Twojej firmy.
+      </p>
+    </div>
+
+    <div class="system-explore__progress" aria-hidden="true">
+      <span>01</span>
+      <i data-explore-progress></i>
+      <span>04</span>
+    </div>
+  </div>
+</section>
