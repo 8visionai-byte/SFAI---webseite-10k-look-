@@ -224,6 +224,313 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
     }
   });
 
+  const caseShowcase = root.querySelector('[data-case-showcase]');
+  if (caseShowcase instanceof HTMLElement) {
+    const panels = [...caseShowcase.querySelectorAll('[data-case-panel]')];
+    const rows = [...caseShowcase.querySelectorAll('[data-case-row]')];
+    let activeCase = 0;
+
+    const setCaseState = (index) => {
+      rows.forEach((row, rowIndex) => row.classList.toggle('is-active', rowIndex === index));
+      panels.forEach((panel, panelIndex) => panel.setAttribute('aria-hidden', String(panelIndex !== index)));
+    };
+
+    const activateCase = (nextIndex, direction = 1, animate = true) => {
+      if (!panels[nextIndex] || nextIndex === activeCase) {
+        setCaseState(nextIndex);
+        return;
+      }
+
+      const previous = panels[activeCase];
+      const next = panels[nextIndex];
+      const previousImage = previous?.querySelector('img');
+      const nextImage = next.querySelector('img');
+
+      [previous, previousImage, next, nextImage].forEach((element) => {
+        if (element) gsap.killTweensOf(element);
+      });
+
+      panels.forEach((panel) => {
+        if (panel !== previous) panel.classList.remove('is-exiting');
+      });
+
+      if (previous) {
+        previous.classList.remove('is-active');
+        previous.classList.add('is-exiting');
+        if (animate) {
+          gsap.to(previous, {
+            '--case-curtain': 1,
+            duration: 0.36,
+            ease: 'power2.in',
+            onComplete: () => {
+              if (previous.classList.contains('is-active')) return;
+              previous.classList.remove('is-exiting');
+              gsap.set(previous, { opacity: 0 });
+            },
+          });
+          if (previousImage) {
+            gsap.to(previousImage, {
+              filter: 'blur(8px) brightness(0.48) contrast(0.82) saturate(0.48)',
+              scale: 1.025,
+              duration: 0.34,
+              ease: 'power2.in',
+            });
+          }
+        } else {
+          previous.classList.remove('is-exiting');
+          gsap.set(previous, { opacity: 0, '--case-curtain': 1 });
+        }
+      }
+
+      next.classList.remove('is-exiting');
+      next.classList.add('is-active');
+      gsap.set(next, { opacity: 1, '--case-curtain': animate ? 1 : 0 });
+
+      if (nextImage) {
+        if (animate) {
+          const offset = direction >= 0 ? 5 : -5;
+          gsap.timeline({ defaults: { ease: 'none' } })
+            .fromTo(
+              nextImage,
+              {
+                filter: 'blur(11px) brightness(0.36) contrast(0.76) saturate(0.32)',
+                scale: 1.07,
+                xPercent: offset,
+                yPercent: 4,
+              },
+              { filter: 'blur(4px) brightness(0.72) contrast(0.92) saturate(0.72)', duration: 0.46 },
+              0,
+            )
+            .to(next, { '--case-curtain': 0, duration: 0.46 }, 0)
+            .to(nextImage, { filter: 'blur(0px) brightness(1) contrast(1) saturate(0.94)', duration: 0.2 }, 0.46)
+            .to(nextImage, { scale: 1, xPercent: 0, yPercent: 0, duration: 0.34, ease: 'power3.out' }, 0.66);
+        } else {
+          gsap.set(nextImage, { filter: 'none', scale: 1, xPercent: 0, yPercent: 0 });
+        }
+      }
+
+      activeCase = nextIndex;
+      setCaseState(nextIndex);
+    };
+
+    panels.forEach((panel, index) => {
+      gsap.set(panel, {
+        opacity: index === 0 ? 1 : 0,
+        '--case-curtain': index === 0 ? 0 : 1,
+      });
+    });
+    setCaseState(0);
+
+    if (reducedMotion.matches) {
+      panels.forEach((panel, index) => {
+        panel.classList.toggle('is-active', index === 0);
+        gsap.set(panel, { opacity: index === 0 ? 1 : 0, '--case-curtain': 0 });
+      });
+    } else {
+      rows.forEach((row, index) => {
+        gsap.fromTo(
+          row,
+          {
+            opacity: mobileViewport.matches ? 0.34 : 0.16,
+            y: mobileViewport.matches ? 22 : 38,
+            filter: `blur(${mobileViewport.matches ? 4 : 10}px) brightness(${mobileViewport.matches ? 0.76 : 0.58})`,
+          },
+          {
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px) brightness(1)',
+            ease: 'none',
+            scrollTrigger: {
+              trigger: row,
+              start: 'clamp(top 94%)',
+              end: 'clamp(top 57%)',
+              scrub: mobileViewport.matches ? 0.78 : 1.18,
+            },
+          },
+        );
+
+        ScrollTrigger.create({
+          trigger: row,
+          start: 'top 64%',
+          end: 'bottom 36%',
+          onEnter: () => activateCase(index, 1),
+          onEnterBack: () => activateCase(index, -1),
+        });
+
+        row.addEventListener('pointerenter', () => {
+          if (finePointer.matches) activateCase(index, index >= activeCase ? 1 : -1);
+        });
+      });
+    }
+  }
+
+  const methodSequence = root.querySelector('[data-method-sequence]');
+  if (methodSequence instanceof HTMLElement) {
+    const steps = [...methodSequence.querySelectorAll('[data-method-step]')];
+    const panels = [...methodSequence.querySelectorAll('[data-method-panel]')];
+    const railIndex = methodSequence.querySelector('.method-sequence__rail-index');
+    let activeMethodPanel = 0;
+
+    const setMethodPanelState = (index) => {
+      panels.forEach((panel, panelIndex) => {
+        panel.setAttribute('aria-hidden', String(panelIndex !== index));
+      });
+    };
+
+    const activateMethodPanel = (nextIndex, direction = 1, animate = true) => {
+      if (!panels[nextIndex]) return;
+      if (nextIndex === activeMethodPanel) {
+        setMethodPanelState(nextIndex);
+        return;
+      }
+
+      const previous = panels[activeMethodPanel];
+      const next = panels[nextIndex];
+      const previousImage = previous?.querySelector('img');
+      const nextImage = next.querySelector('img');
+
+      [previous, previousImage, next, nextImage].forEach((element) => {
+        if (element) gsap.killTweensOf(element);
+      });
+
+      panels.forEach((panel) => {
+        if (panel !== previous) panel.classList.remove('is-exiting');
+      });
+
+      if (previous) {
+        previous.classList.remove('is-active');
+        previous.classList.add('is-exiting');
+        if (animate) {
+          gsap.to(previous, {
+            '--method-curtain': 1,
+            duration: mobileViewport.matches ? 0.28 : 0.36,
+            ease: 'power2.in',
+            onComplete: () => {
+              if (previous.classList.contains('is-active')) return;
+              previous.classList.remove('is-exiting');
+              gsap.set(previous, { opacity: 0 });
+            },
+          });
+          if (previousImage) {
+            gsap.to(previousImage, {
+              filter: `blur(${mobileViewport.matches ? 4 : 8}px) brightness(0.48) contrast(0.82) saturate(0.48)`,
+              scale: mobileViewport.matches ? 1.012 : 1.025,
+              duration: mobileViewport.matches ? 0.26 : 0.34,
+              ease: 'power2.in',
+            });
+          }
+        } else {
+          previous.classList.remove('is-exiting');
+          gsap.set(previous, { opacity: 0, '--method-curtain': 1 });
+        }
+      }
+
+      next.classList.remove('is-exiting');
+      next.classList.add('is-active');
+      gsap.set(next, { opacity: 1, '--method-curtain': animate ? 1 : 0 });
+
+      if (nextImage) {
+        if (animate) {
+          const offset = direction >= 0 ? 5 : -5;
+          gsap.timeline({ defaults: { ease: 'none' } })
+            .fromTo(
+              nextImage,
+              {
+                filter: `blur(${mobileViewport.matches ? 5 : 11}px) brightness(${mobileViewport.matches ? 0.5 : 0.36}) contrast(0.76) saturate(0.32)`,
+                scale: mobileViewport.matches ? 1.035 : 1.07,
+                xPercent: mobileViewport.matches ? offset * 0.45 : offset,
+                yPercent: mobileViewport.matches ? 2 : 4,
+              },
+              { filter: 'blur(4px) brightness(0.72) contrast(0.92) saturate(0.72)', duration: 0.46 },
+              0,
+            )
+            .to(next, { '--method-curtain': 0, duration: 0.46 }, 0)
+            .to(nextImage, { filter: 'blur(0px) brightness(1) contrast(1) saturate(0.94)', duration: 0.2 }, 0.46)
+            .to(nextImage, { scale: 1, xPercent: 0, yPercent: 0, duration: 0.34, ease: 'power3.out' }, 0.66);
+        } else {
+          gsap.set(nextImage, { filter: 'none', scale: 1, xPercent: 0, yPercent: 0 });
+        }
+      }
+
+      activeMethodPanel = nextIndex;
+      setMethodPanelState(nextIndex);
+    };
+
+    panels.forEach((panel, index) => {
+      gsap.set(panel, {
+        opacity: index === 0 ? 1 : 0,
+        '--method-curtain': index === 0 ? 0 : 1,
+      });
+    });
+    setMethodPanelState(0);
+
+    const markMethodStep = (index, direction = 1, animate = true) => {
+      steps.forEach((step, stepIndex) => step.classList.toggle('is-active', stepIndex === index));
+      if (railIndex) railIndex.textContent = steps[index]?.dataset.methodIndex ?? '01';
+      activateMethodPanel(Math.min(index, Math.max(0, panels.length - 1)), direction, animate);
+    };
+
+    markMethodStep(0, 1, false);
+
+    if (reducedMotion.matches) {
+      methodSequence.style.setProperty('--method-progress', '1');
+      panels.forEach((panel, index) => {
+        panel.classList.toggle('is-active', index === 0);
+        gsap.set(panel, { opacity: index === 0 ? 1 : 0, '--method-curtain': 0 });
+      });
+      steps.forEach((step) => {
+        step.style.removeProperty('opacity');
+        step.style.removeProperty('filter');
+        step.style.removeProperty('transform');
+      });
+    } else {
+      gsap.fromTo(
+        methodSequence,
+        { '--method-progress': 0 },
+        {
+          '--method-progress': 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: methodSequence,
+            start: 'clamp(top 76%)',
+            end: 'clamp(bottom 42%)',
+            scrub: mobileViewport.matches ? 0.86 : 1.3,
+          },
+        },
+      );
+
+      steps.forEach((step, index) => {
+        const title = step.querySelector('.method-step__title');
+        const copy = step.querySelector('.method-step__copy');
+        const timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: step,
+            start: 'clamp(top 93%)',
+            end: 'clamp(top 53%)',
+            scrub: mobileViewport.matches ? 0.74 : 1.12,
+          },
+        });
+
+        timeline.fromTo(
+          step,
+          { opacity: 0.14, y: mobileViewport.matches ? 24 : 46, filter: `blur(${mobileViewport.matches ? 5 : 11}px) brightness(0.52)` },
+          { opacity: 1, y: 0, filter: 'blur(0px) brightness(1)', ease: 'none', duration: 1 },
+          0,
+        );
+        if (title) timeline.fromTo(title, { x: mobileViewport.matches ? 0 : 24 }, { x: 0, ease: 'none', duration: 0.84 }, 0.16);
+        if (copy) timeline.fromTo(copy, { opacity: 0.3 }, { opacity: 1, ease: 'none', duration: 0.62 }, 0.32);
+
+        ScrollTrigger.create({
+          trigger: step,
+          start: 'top 58%',
+          end: 'bottom 42%',
+          onEnter: () => markMethodStep(index, 1),
+          onEnterBack: () => markMethodStep(index, -1),
+        });
+      });
+    }
+  }
+
   if (finePointer.matches && !reducedMotion.matches) {
     root.querySelectorAll('[data-motion-row]').forEach((row) => {
       if (!(row instanceof HTMLElement)) return;

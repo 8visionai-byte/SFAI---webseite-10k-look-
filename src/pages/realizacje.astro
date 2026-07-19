@@ -1,12 +1,19 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../styles/subpage-motion.css';
+import aiAgentControl from '../assets/generated/v4/service-agent-human-control.png';
+import chatbotKnowledge from '../assets/generated/v4/service-chatbot-knowledge-dialogue.png';
+import voicebotRobot from '../assets/generated/v4/service-voice-agent-resonance.png';
+import processAutomation from '../assets/generated/v4/service-workflow-business-artifacts.png';
+import seoAiCitations from '../assets/generated/v4/service-geo-citation-ecosystem.png';
+
 const cases = [
-  ['Kancelaria prawno-finansowa', 'Raporty po spotkaniach przestały być ręcznym obowiązkiem. Wiedza trafia do właściwego miejsca od razu po rozmowie.', 'Agent', 'raportuje'],
-  ['Turystyka na Mazurach', 'Goście dostają odpowiedzi i mogą rozpocząć rezerwację także wtedy, gdy właściciel jest poza biurem.', 'Chat', 'obsługuje 24/7'],
-  ['Firma budowlana', 'Ustalenia nagrane po wizycie zamieniają się w uporządkowaną wiadomość i zapis sprawy.', 'Voice', 'porządkuje'],
-  ['Hotel i restauracja', 'Dane z faktur pochodzących z różnych źródeł trafiają do jednego, spójnego procesu.', 'OCR', 'łączy dane'],
-  ['Edukacja', 'Tysiące stron transkrypcji stały się przeszukiwalną wiedzą dostępną w kilka sekund.', 'RAG', 'odpowiada'],
+  { title: 'Kancelaria prawno-finansowa', description: 'Raporty po spotkaniach przestały być ręcznym obowiązkiem. Wiedza trafia do właściwego miejsca od razu po rozmowie.', label: 'Agent', result: 'raportuje', image: aiAgentControl },
+  { title: 'Turystyka na Mazurach', description: 'Goście dostają odpowiedzi i mogą rozpocząć rezerwację także wtedy, gdy właściciel jest poza biurem.', label: 'Chat', result: 'obsługuje 24/7', image: chatbotKnowledge },
+  { title: 'Firma budowlana', description: 'Ustalenia nagrane po wizycie zamieniają się w uporządkowaną wiadomość i zapis sprawy.', label: 'Voice', result: 'porządkuje', image: voicebotRobot },
+  { title: 'Hotel i restauracja', description: 'Dane z faktur pochodzących z różnych źródeł trafiają do jednego, spójnego procesu.', label: 'OCR', result: 'łączy dane', image: processAutomation },
+  { title: 'Edukacja', description: 'Tysiące stron transkrypcji stały się przeszukiwalną wiedzą dostępną w kilka sekund.', label: 'RAG', result: 'odpowiada', image: seoAiCitations },
 ];
 ---
 <BaseLayout title="Realizacje i scenariusze AI — SimpleFast.ai" description="Przykłady agentów, chatbotów i automatyzacji wdrażanych w kancelariach, turystyce, budownictwie, hotelarstwie i edukacji.">
@@ -21,16 +28,33 @@ const cases = [
         <p class="mono-label">/ Wybrane branże</p>
         <h2 data-reveal>AI wygląda inaczej w każdej firmie. Wartość — bardzo podobnie.</h2>
         <p class="lead">Mniej ręcznego przepisywania, szybsza odpowiedź, lepszy przepływ wiedzy i mniej spraw, które trzeba pilnować pamięcią.</p>
-        <div class="case-list" data-motion-group>
-          {cases.map(([title, description, label, result], index) => (
-            <article class="case-row" data-motion-row data-motion-index={`0${index + 1}`} data-motion-preview={`${label} / ${result}`}>
-              <h3>{title}</h3><p>{description}</p><div><strong>0{index + 1}</strong><small>{label} / {result}</small></div>
-            </article>
-          ))}
+        <div class="case-showcase" data-case-showcase>
+          <div class="case-showcase__stage" aria-hidden="true">
+            <div class="case-showcase__viewport">
+              {cases.map(({ image, label, result }, index) => (
+                <figure class:list={['case-showcase__panel', index === 0 && 'is-active']} data-case-panel aria-hidden={index === 0 ? 'false' : 'true'}>
+                  <Image src={image} alt="" widths={[520, 760, 1040]} sizes="(max-width: 760px) 92vw, 38vw" loading={index === 0 ? 'eager' : 'lazy'} quality={82} />
+                  <figcaption><span>0{index + 1}</span><span>{label} / {result}</span></figcaption>
+                </figure>
+              ))}
+              <span class="case-showcase__scan" aria-hidden="true"></span>
+            </div>
+            <p class="case-showcase__stage-note">Scroll / wybierz realizację</p>
+          </div>
+
+          <div class="case-showcase__list">
+            {cases.map(({ title, description, label, result }, index) => (
+              <article class="case-row" data-case-row data-motion-row data-motion-index={`0${index + 1}`}>
+                <h3>{title}</h3>
+                <p>{description}</p>
+                <div><strong>0{index + 1}</strong><small>{label} / {result}</small></div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
-    <section class="service-outcome"><div class="service-outcome-grid section-shell"><p class="mono-label">/ Twój proces</p><blockquote>Następna realizacja może zacząć się od jednej powtarzalnej czynności.</blockquote><div class="service-keywords"><a class="text-link" href="/kontakt/">Pokaż nam swój proces <span>↗</span></a></div></div></section>
+    <section class="service-outcome" data-motion-section><div class="service-outcome-grid section-shell"><p class="mono-label">/ Twój proces</p><blockquote>Następna realizacja może zacząć się od jednej powtarzalnej czynności.</blockquote><div class="service-keywords"><a class="text-link" href="/kontakt/">Pokaż nam swój proces <span>↗</span></a></div></div></section>
   </main>
   <script>
     import '../scripts/subpage-motion.js';

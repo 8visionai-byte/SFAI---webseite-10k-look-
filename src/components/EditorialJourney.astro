@@ -1,26 +1,29 @@
 ---
 import { Image } from 'astro:assets';
-import valueArchitectureImage from '../assets/generated/v3/value-architecture.png';
-import aiCareObservatoryImage from '../assets/generated/v3/ai-care-observatory.png';
-import voicebotImage from '../assets/generated/v3/voicebot-robot.png';
-import chatbotKnowledgeImage from '../assets/generated/v3/chatbot-knowledge.png';
-import seoAiCitationsImage from '../assets/generated/v3/seo-ai-citations.png';
-import aiAgentControlImage from '../assets/generated/v3/ai-agent-control.png';
-import processAutomationImage from '../assets/generated/v3/process-automation.png';
+import valueArchitectureImage from '../assets/generated/v4/service-value-diagnostic-atlas.png';
+import aiCareObservatoryImage from '../assets/generated/v4/service-care-command-observatory.png';
+import voicebotImage from '../assets/generated/v4/service-voice-agent-resonance.png';
+import chatbotKnowledgeImage from '../assets/generated/v4/service-chatbot-knowledge-dialogue.png';
+import seoAiCitationsImage from '../assets/generated/v4/service-geo-citation-ecosystem.png';
+import aiAgentControlImage from '../assets/generated/v4/service-agent-human-control.png';
+import processAutomationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
+import storyValueDiagnosisImage from '../assets/generated/v4/story-02-value-diagnosis.png';
+import storyControlledActionImage from '../assets/generated/v4/story-06-controlled-action.png';
+import storyScaleCareImage from '../assets/generated/v4/story-08-scale-and-care.png';
 
 const fogLayers = [
   {
-    src: valueArchitectureImage,
+    src: storyValueDiagnosisImage,
     alt: 'Architektura wartości AI przedstawiona jako uporządkowany system decyzji i priorytetów',
     layer: 'background',
   },
   {
-    src: aiAgentControlImage,
+    src: storyControlledActionImage,
     alt: 'Agent AI porządkujący sygnały, decyzje i kontrolowane działania',
     layer: 'subject',
   },
   {
-    src: aiCareObservatoryImage,
+    src: storyScaleCareImage,
     alt: 'Centrum stałego nadzoru nad agentami i automatyzacjami AI',
     layer: 'foreground',
   },
@@ -93,7 +96,7 @@ const exploreRows = [
             src={image.src}
             alt={image.alt}
             widths={[640, 960, 1440, 1920]}
-            sizes="(max-width: 760px) 92vw, 72vw"
+            sizes="(max-width: 760px) 72vw, 38vw"
             format="webp"
             quality={86}
             loading={index === 0 ? 'eager' : 'lazy'}
@@ -137,7 +140,7 @@ const exploreRows = [
                   src={item.src}
                   alt={item.alt}
                   widths={[520, 760, 1080, 1440]}
-                  sizes="(max-width: 760px) 78vw, 34vw"
+                  sizes="(max-width: 760px) 68vw, 29vw"
                   format="webp"
                   quality={84}
                   loading={rowIndex === 0 && itemIndex === 0 ? 'eager' : 'lazy'}
@@ -157,9 +160,9 @@ const exploreRows = [
     <div class="system-explore__copy">
       <p class="mono-label">/ Jeden partner. Cały system.</p>
       <h2 id="system-explore-title">
-        <span data-explore-line>Od pierwszego sygnału.</span>
-        <span data-explore-line>Do pracy wykonanej</span>
-        <span data-explore-line>pod pełną kontrolą.</span>
+        <span><span data-explore-line>Od pierwszego sygnału.</span></span>
+        <span><span data-explore-line>Do pracy wykonanej</span></span>
+        <span><span data-explore-line>pod pełną kontrolą.</span></span>
       </h2>
       <p class="system-explore__note">
         Projektujemy warstwy, które rozmawiają, rozumieją, działają i stale uczą się realiów Twojej firmy.

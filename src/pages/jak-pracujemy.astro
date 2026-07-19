@@ -1,6 +1,27 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../styles/subpage-motion.css';
+import valueDiagnosis from '../assets/generated/v4/story-02-value-diagnosis.png';
+import systemArchitecture from '../assets/generated/v4/story-04-system-architecture.png';
+import livePilot from '../assets/generated/v4/story-05-live-pilot.png';
+import scaleAndCare from '../assets/generated/v4/story-08-scale-and-care.png';
+
+const methodSteps = [
+  ['01', 'Sygnał / wartość', 'Diagnoza wartości', 'Rozkładamy proces na kroki, liczymy koszt i wybieramy miejsce z najlepszą relacją efektu do ryzyka.'],
+  ['02', 'Przepływ / reguły', 'Projekt rozwiązania', 'Opisujemy dane, integracje, reguły, wyjątki i momenty, w których decyzję podejmuje człowiek.'],
+  ['03', 'Praktyka / kontrola', 'Pilot na żywo', 'Uruchamiamy mały system, testujemy rzeczywiste przypadki i poprawiamy to, czego nie pokaże demo.'],
+  ['04', 'Wynik / rozwój', 'Opieka i rozwój', 'Mierzymy jakość, aktualizujemy wiedzę i dokładamy kolejne zadania dopiero po potwierdzeniu wartości.'],
+  ['A', 'Zasada stała', 'Bezpieczeństwo od początku', 'Kontrola uprawnień, logowanie akcji, dane w UE oraz jasna informacja, kiedy klient rozmawia z AI.'],
+  ['B', 'Zasada stała', 'Wynik przed narzędziem', 'Możemy odradzić wdrożenie, jeśli prostsza zmiana procesu da lepszy rezultat. To też jest dobra diagnoza.'],
+];
+
+const methodVisuals = [
+  { index: '01', label: 'Diagnoza / wartość', image: valueDiagnosis },
+  { index: '02', label: 'Architektura / przepływ', image: systemArchitecture },
+  { index: '03', label: 'Pilot / kontrola', image: livePilot },
+  { index: '04', label: 'Opieka / skala', image: scaleAndCare },
+];
 ---
 <BaseLayout title="Jak wdrażamy AI w firmie — SimpleFast.ai" description="Diagnoza wartości, małe wdrożenie, test na realnym procesie i stały rozwój agentów AI oraz automatyzacji.">
   <main id="main" class="subpage-main">
@@ -8,13 +29,38 @@ import '../styles/subpage-motion.css';
     <section class="content-section" data-motion-section>
       <div class="content-grid section-shell">
         <p class="mono-label">/ 01—04</p><h2 data-reveal>Cztery etapy, jedna odpowiedzialność.</h2>
-        <div class="feature-grid" data-motion-group>
-          <article class="feature-card"><span>01</span><h3>Diagnoza wartości</h3><p>Rozkładamy proces na kroki, liczymy koszt i wybieramy miejsce z najlepszą relacją efektu do ryzyka.</p></article>
-          <article class="feature-card"><span>02</span><h3>Projekt rozwiązania</h3><p>Opisujemy dane, integracje, reguły, wyjątki i momenty, w których decyzję podejmuje człowiek.</p></article>
-          <article class="feature-card"><span>03</span><h3>Pilot na żywo</h3><p>Uruchamiamy mały system, testujemy rzeczywiste przypadki i poprawiamy to, czego nie pokaże demo.</p></article>
-          <article class="feature-card"><span>04</span><h3>Opieka i rozwój</h3><p>Mierzymy jakość, aktualizujemy wiedzę i dokładamy kolejne zadania dopiero po potwierdzeniu wartości.</p></article>
-          <article class="feature-card"><span>+</span><h3>Bezpieczeństwo od początku</h3><p>Kontrola uprawnień, logowanie akcji, dane w UE oraz jasna informacja, kiedy klient rozmawia z AI.</p></article>
-          <article class="feature-card"><span>→</span><h3>Wynik przed narzędziem</h3><p>Możemy odradzić wdrożenie, jeśli prostsza zmiana procesu da lepszy rezultat. To też jest dobra diagnoza.</p></article>
+        <div class="method-sequence" data-method-sequence>
+          <aside class="method-sequence__rail" aria-hidden="true">
+            <span class="method-sequence__rail-label">Proces / 04 + 02 zasady</span>
+            <span class="method-sequence__track"><i></i></span>
+            <span class="method-sequence__rail-index">01</span>
+          </aside>
+          <div class="method-sequence__body">
+            <div class="method-sequence__stage" aria-hidden="true">
+              <div class="method-sequence__viewport">
+                {methodVisuals.map(({ index, label, image }, visualIndex) => (
+                  <figure class:list={['method-sequence__panel', visualIndex === 0 && 'is-active']} data-method-panel aria-hidden={visualIndex === 0 ? 'false' : 'true'}>
+                    <Image src={image} alt="" widths={[480, 720, 960]} sizes="(max-width: 760px) 88vw, 34vw" loading={visualIndex === 0 ? 'eager' : 'lazy'} quality={82} />
+                    <figcaption><span>{index}</span><span>{label}</span></figcaption>
+                  </figure>
+                ))}
+                <span class="method-sequence__scan" aria-hidden="true"></span>
+              </div>
+              <p class="method-sequence__stage-note">Proces / obraz aktywnego etapu</p>
+            </div>
+            <div class="method-sequence__steps">
+              {methodSteps.map(([index, kicker, title, description]) => (
+                <article class="method-step" data-method-step data-method-index={index}>
+                  <span class="method-step__index">{index}</span>
+                  <div class="method-step__title">
+                    <p class="mono-label">{kicker}</p>
+                    <h3>{title}</h3>
+                  </div>
+                  <p class="method-step__copy">{description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

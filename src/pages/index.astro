@@ -4,14 +4,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowCore from '../components/FlowCore.astro';
 import EditorialJourney from '../components/EditorialJourney.astro';
 import { services } from '../data/services.js';
-import valueArchitectureImage from '../assets/generated/v3/value-architecture.png';
-import chatbotKnowledgeImage from '../assets/generated/v3/chatbot-knowledge.png';
-import voicebotRobotImage from '../assets/generated/v3/voicebot-robot.png';
-import careObservatoryImage from '../assets/generated/v3/ai-care-observatory.png';
-import seoAiCitationsImage from '../assets/generated/v3/seo-ai-citations.png';
-import aiAgentControlImage from '../assets/generated/v3/ai-agent-control.png';
-import processAutomationImage from '../assets/generated/v3/process-automation.png';
+import valueArchitectureImage from '../assets/generated/v4/service-value-diagnostic-atlas.png';
+import chatbotKnowledgeImage from '../assets/generated/v4/service-chatbot-knowledge-dialogue.png';
+import voicebotRobotImage from '../assets/generated/v4/service-voice-agent-resonance.png';
+import careObservatoryImage from '../assets/generated/v4/service-care-command-observatory.png';
+import seoAiCitationsImage from '../assets/generated/v4/service-geo-citation-ecosystem.png';
+import aiAgentControlImage from '../assets/generated/v4/service-agent-human-control.png';
+import processAutomationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
 import humanAiTouchImage from '../assets/generated/v3/human-ai-touch.png';
+import storyFirstSignalImage from '../assets/generated/v4/story-01-first-signal.png';
+import storyValueDiagnosisImage from '../assets/generated/v4/story-02-value-diagnosis.png';
+import storyContextMemoryImage from '../assets/generated/v4/story-03-context-memory.png';
+import storySystemArchitectureImage from '../assets/generated/v4/story-04-system-architecture.png';
+import storyLivePilotImage from '../assets/generated/v4/story-05-live-pilot.png';
+import storyControlledActionImage from '../assets/generated/v4/story-06-controlled-action.png';
+import storyObservableResultImage from '../assets/generated/v4/story-07-observable-result.png';
+import storyScaleCareImage from '../assets/generated/v4/story-08-scale-and-care.png';
 
 const marquee = ['Agenci AI', 'Voiceboty', 'Chatboty', 'Automatyzacje', 'SEO + GEO', 'Strony WWW', 'Opieka AI', 'Dane w UE'];
 const serviceVisuals = {
@@ -24,20 +32,20 @@ const serviceVisuals = {
   care: { src: careObservatoryImage, alt: 'Centrum monitorowania agentów AI z wykrytym wyjątkiem systemowym' },
 };
 const cinematicFrames = [
-  { src: aiAgentControlImage, alt: 'Agent AI porządkujący sygnały i działania', label: 'Sygnał / decyzja', side: 'right' },
-  { src: voicebotRobotImage, alt: 'Profesjonalny voicebot prowadzący naturalną rozmowę', label: 'Głos / intencja', side: 'left' },
-  { src: seoAiCitationsImage, alt: 'Architektura treści widoczna dla systemów AI', label: 'Wiedza / widoczność', side: 'right' },
-  { src: careObservatoryImage, alt: 'Stały monitoring systemów AI', label: 'Kontrola / rozwój', side: 'left' },
+  { src: storyFirstSignalImage, alt: 'Pierwszy sygnał z rozmowy, wiadomości, dokumentu i systemu firmy', label: 'Sygnał / wejście', side: 'right' },
+  { src: storyContextMemoryImage, alt: 'Kontekst firmy pobierany z uporządkowanej i kontrolowanej wiedzy', label: 'Kontekst / wiedza', side: 'left' },
+  { src: storyControlledActionImage, alt: 'Działanie agenta przechodzące przez bramkę kontroli człowieka', label: 'Decyzja / akcja', side: 'right' },
+  { src: storyObservableResultImage, alt: 'Zakończone zadanie z mierzalnym wynikiem i śladem kontroli', label: 'Wynik / kontrola', side: 'left' },
 ];
 const sequenceFrames = [
-  { src: valueArchitectureImage, label: '01 / Kierunek' },
-  { src: chatbotKnowledgeImage, label: '02 / Rozmowa' },
-  { src: voicebotRobotImage, label: '03 / Intencja' },
-  { src: seoAiCitationsImage, label: '04 / Wiedza' },
-  { src: aiAgentControlImage, label: '05 / Decyzja' },
-  { src: processAutomationImage, label: '06 / Działanie' },
-  { src: careObservatoryImage, label: '07 / Kontrola' },
-  { src: humanAiTouchImage, label: '08 / Współpraca' },
+  { src: storyFirstSignalImage, label: '01 / Sygnał' },
+  { src: storyValueDiagnosisImage, label: '02 / Wartość' },
+  { src: storyContextMemoryImage, label: '03 / Kontekst' },
+  { src: storySystemArchitectureImage, label: '04 / Architektura' },
+  { src: storyLivePilotImage, label: '05 / Pilot' },
+  { src: storyControlledActionImage, label: '06 / Działanie' },
+  { src: storyObservableResultImage, label: '07 / Wynik' },
+  { src: storyScaleCareImage, label: '08 / Skala' },
 ];
 const insightArticles = [
   { meta: 'Agenci AI / 08 min', title: 'Agent AI czy automatyzacja — od czego zacząć?', text: 'Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.', image: aiAgentControlImage, alt: 'Modułowa architektura agenta AI z bramką kontroli' },
@@ -116,11 +124,21 @@ const schema = {
       </div>
     </div>
 
-    <section class="manifesto" id="manifest">
+    <section class="manifesto" id="manifest" data-manifesto>
       <div class="manifesto-grid section-shell">
-        <p class="mono-label">/ Nasze podejście</p>
-        <h2 data-reveal>Nie wdrażamy AI dla efektu wow. <span>Wdrażamy efekt, który widać w pracy.</span></h2>
-        <div class="manifesto-copy" data-reveal>
+        <p class="mono-label">/ <span data-scramble>Nasze podejście</span></p>
+        <h2 aria-label="Nie wdrażamy AI dla efektu wow. Wdrażamy efekt, który widać w pracy.">
+          <span class="manifesto-line"><span data-manifesto-line>Nie wdrażamy AI</span></span>
+          <span class="manifesto-line"><span data-manifesto-line>dla efektu wow.</span></span>
+          <span class="manifesto-line manifesto-line--muted"><span data-manifesto-line>Wdrażamy <em>efekt,</em></span></span>
+          <span class="manifesto-line manifesto-line--muted"><span data-manifesto-line>który widać w pracy.</span></span>
+        </h2>
+        <ul class="manifesto-signals" data-manifesto-signals aria-label="Etapy podejścia SimpleFast.ai">
+          <li><b data-scramble>01 / Znajdź stratę</b><i></i><span>Proces</span></li>
+          <li><b data-scramble>02 / Zbuduj system</b><i></i><span>Próba</span></li>
+          <li><b data-scramble>03 / Zmierz efekt</b><i></i><span>Dowód</span></li>
+        </ul>
+        <div class="manifesto-copy" data-manifesto-copy>
           <p>Najpierw znajdujemy proces, w którym znika czas lub sprzedaż. Dopiero potem dobieramy model, narzędzia i integracje.</p>
           <p>Budujemy mały, działający system, mierzymy efekt i rozwijamy go wtedy, kiedy biznes jest na to gotowy.</p>
         </div>
@@ -166,9 +184,9 @@ const schema = {
           ))}
         </div>
         <h2 class="cinematic-title" aria-label="Od pierwszego sygnału do działania pod kontrolą">
-          <span>Od pierwszego <em>sygnału</em></span>
-          <span>do działania</span>
-          <span>pod kontrolą.</span>
+          <span><span data-cinematic-line>Od pierwszego <em>sygnału</em></span></span>
+          <span><span data-cinematic-line>do działania</span></span>
+          <span><span data-cinematic-line>pod kontrolą.</span></span>
         </h2>
         <div class="cinematic-progress" aria-hidden="true"><i data-cinematic-progress></i></div>
       </div>
@@ -204,7 +222,7 @@ const schema = {
     <section class="system-story">
       <div class="story-grid">
         <div class="story-media">
-          <Image src={aiAgentControlImage} alt="Architektura agenta AI prowadząca zadanie od sygnału do kontrolowanego wyniku" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
+          <Image src={storyControlledActionImage} alt="Architektura agenta AI prowadząca zadanie przez bramkę kontroli do wyniku" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
           <div class="story-media-copy"><span>Flow architecture</span><span>Scroll / 01—03</span></div>
         </div>
         <div class="story-steps">
@@ -313,10 +331,13 @@ const schema = {
       </div>
     </section>
 
-    <section class="services-reel-section">
+    <section class="services-reel-section" data-reel-heading>
       <div class="reel-heading section-shell">
         <p class="mono-label">/ Porozmawiajmy o usługach</p>
-        <h2 data-reveal>Jeden partner.<br />Cały ekosystem AI.</h2>
+        <h2 aria-label="Jeden partner. Cały ekosystem AI.">
+          <span class="reel-heading-line"><span data-reel-heading-line>Jeden partner.</span></span>
+          <span class="reel-heading-line"><span data-reel-heading-line>Cały ekosystem <em>AI.</em></span></span>
+        </h2>
         <p>Najedź na wybraną usługę albo przesuń karuzelę na telefonie. Każda ma własną podstronę, zakres i architekturę treści pod dalsze pozycjonowanie.</p>
       </div>
       <div class="services-reel" data-services-reel>

@@ -33,6 +33,7 @@ if (consoleRoot instanceof HTMLElement) {
   let voiceStateFloor = 0;
   let voiceSessionGeneration = 0;
   let voiceTokenController = null;
+  let voiceStartInFlight = false;
 
   const isVoiceSessionActive = (generation) => (
     generation === voiceSessionGeneration
@@ -52,59 +53,75 @@ if (consoleRoot instanceof HTMLElement) {
   const stopVoiceMeter = () => {
     cancelAnimationFrame(voiceMeterFrame);
     voiceMeterFrame = 0;
-    voiceMeterSource?.disconnect();
-    voiceMeterAnalyser?.disconnect();
-    voiceMeterContext?.close().catch(() => {});
+    try { voiceMeterSource?.disconnect(); } catch {}
+    try { voiceMeterAnalyser?.disconnect(); } catch {}
+    const meterContext = voiceMeterContext;
     voiceMeterContext = null;
     voiceMeterSource = null;
     voiceMeterAnalyser = null;
     voiceMeterData = null;
     voiceStateFloor = 0;
+    try { meterContext?.close().catch(() => {}); } catch {}
     emitVoiceEnergy(0, 'idle');
   };
 
-  const startVoiceMeter = async (stream, generation) => {
+  const startVoiceMeter = (stream, generation) => {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass || !(stream instanceof MediaStream)) return;
-    const meterContext = new AudioContextClass();
-    try {
-      if (meterContext.state === 'suspended') await meterContext.resume();
-    } catch {
-      meterContext.close().catch(() => {});
-      return;
-    }
-    if (!isVoiceSessionActive(generation) || voiceStream !== stream) {
-      meterContext.close().catch(() => {});
-      return;
-    }
-    const meterAnalyser = meterContext.createAnalyser();
-    meterAnalyser.fftSize = 256;
-    meterAnalyser.smoothingTimeConstant = .76;
-    const meterData = new Uint8Array(meterAnalyser.fftSize);
-    const meterSource = meterContext.createMediaStreamSource(stream);
-    meterSource.connect(meterAnalyser);
-    voiceMeterContext = meterContext;
-    voiceMeterAnalyser = meterAnalyser;
-    voiceMeterData = meterData;
-    voiceMeterSource = meterSource;
+    void (async () => {
+      let meterContext = null;
+      let meterAnalyser = null;
+      let meterSource = null;
+      try {
+        meterContext = new AudioContextClass();
+        if (meterContext.state === 'suspended') await meterContext.resume();
+        if (!isVoiceSessionActive(generation) || voiceStream !== stream) return;
 
-    let smoothEnergy = 0;
-    const measure = () => {
-      if (!voiceMeterAnalyser || !voiceMeterData) return;
-      voiceMeterAnalyser.getByteTimeDomainData(voiceMeterData);
-      let sum = 0;
-      for (const sample of voiceMeterData) {
-        const normalized = (sample - 128) / 128;
-        sum += normalized * normalized;
+        meterAnalyser = meterContext.createAnalyser();
+        meterAnalyser.fftSize = 256;
+        meterAnalyser.smoothingTimeConstant = .76;
+        const meterData = new Uint8Array(meterAnalyser.fftSize);
+        meterSource = meterContext.createMediaStreamSource(stream);
+        meterSource.connect(meterAnalyser);
+
+        if (!isVoiceSessionActive(generation) || voiceStream !== stream) return;
+        voiceMeterContext = meterContext;
+        voiceMeterAnalyser = meterAnalyser;
+        voiceMeterData = meterData;
+        voiceMeterSource = meterSource;
+
+        let smoothEnergy = 0;
+        const measure = () => {
+          if (!voiceMeterAnalyser || !voiceMeterData || !isVoiceSessionActive(generation)) return;
+          try {
+            voiceMeterAnalyser.getByteTimeDomainData(voiceMeterData);
+            let sum = 0;
+            for (const sample of voiceMeterData) {
+              const normalized = (sample - 128) / 128;
+              sum += normalized * normalized;
+            }
+            const rms = Math.sqrt(sum / voiceMeterData.length);
+            const target = Math.min(1, Math.max(voiceStateFloor, rms * 5.2));
+            const blend = target > smoothEnergy ? .38 : .1;
+            smoothEnergy += (target - smoothEnergy) * blend;
+            emitVoiceEnergy(smoothEnergy);
+            voiceMeterFrame = requestAnimationFrame(measure);
+          } catch {
+            stopVoiceMeter();
+          }
+        };
+        measure();
+        meterContext = null;
+        meterAnalyser = null;
+        meterSource = null;
+      } catch {
+        // Metering is enhancement-only. WebRTC must continue without it.
+      } finally {
+        try { meterSource?.disconnect(); } catch {}
+        try { meterAnalyser?.disconnect(); } catch {}
+        try { meterContext?.close().catch(() => {}); } catch {}
       }
-      const rms = Math.sqrt(sum / voiceMeterData.length);
-      const target = Math.min(1, Math.max(voiceStateFloor, rms * 5.2));
-      const blend = target > smoothEnergy ? .38 : .1;
-      smoothEnergy += (target - smoothEnergy) * blend;
-      emitVoiceEnergy(smoothEnergy);
-      voiceMeterFrame = requestAnimationFrame(measure);
-    };
-    measure();
+    })();
   };
 
   const setConnectionStatus = (label, state = '') => {
@@ -117,7 +134,7 @@ if (consoleRoot instanceof HTMLElement) {
 
   const switchMode = (mode) => {
     const nextMode = mode === 'voice' ? 'voice' : 'chat';
-    if (currentMode === 'voice' && nextMode !== 'voice') stopVoice();
+    if (nextMode !== 'voice') stopVoice();
     currentMode = nextMode;
     flowCores.forEach((core) => core.classList.toggle('is-voice-open', currentMode === 'voice' && !consoleRoot.hidden));
     modeButtons.forEach((button) => {
@@ -146,6 +163,7 @@ if (consoleRoot instanceof HTMLElement) {
 
   const stopVoice = () => {
     voiceSessionGeneration += 1;
+    voiceStartInFlight = false;
     voiceTokenController?.abort();
     voiceTokenController = null;
     stopVoiceMeter();
@@ -350,14 +368,17 @@ if (consoleRoot instanceof HTMLElement) {
 
   const startVoice = async () => {
     if (!(voiceStart instanceof HTMLButtonElement) || !(transcript instanceof HTMLElement)) return;
+    if (consoleRoot.hidden || currentMode !== 'voice') return;
     if (voicePeer) {
       stopVoice();
       transcript.textContent = 'Rozmowa zakończona. Możesz uruchomić ją ponownie.';
       setConnectionStatus('gotowy');
       return;
     }
+    if (voiceStartInFlight) return;
 
     voiceStart.disabled = true;
+    voiceStartInFlight = true;
     transcript.textContent = 'Przygotowuję bezpieczne połączenie…';
     setConnectionStatus('łączy', 'working');
 
@@ -378,7 +399,7 @@ if (consoleRoot instanceof HTMLElement) {
         return;
       }
       voiceStream = stream;
-      void startVoiceMeter(stream, generation).catch(() => {});
+      startVoiceMeter(stream, generation);
       const peer = new RTCPeerConnection();
       voicePeer = peer;
       voiceAudio = document.createElement('audio');
@@ -460,6 +481,7 @@ if (consoleRoot instanceof HTMLElement) {
       setConnectionStatus('głos nieaktywny', 'local');
     } finally {
       if (voiceTokenController === controller) voiceTokenController = null;
+      if (generation === voiceSessionGeneration) voiceStartInFlight = false;
     }
   };
 
