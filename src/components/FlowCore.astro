@@ -1,13 +1,15 @@
-<div class="flow-core is-booting" data-flow-core>
-  <div class="flow-metal-fallback" data-flow-fallback aria-hidden="true">
-    <span class="flow-metal-fallback__body"><i></i><b></b></span>
+<div class="flow-core voice-aura is-booting" data-flow-core>
+  <div class="voice-aura__ambient" aria-hidden="true"></div>
+
+  <div class="flow-metal-fallback voice-aura__fallback" data-flow-fallback aria-hidden="true">
+    <span></span><i></i><b></b>
   </div>
 
-  <canvas data-flow-canvas aria-hidden="true"></canvas>
+  <canvas data-voice-aura-canvas aria-hidden="true"></canvas>
 
   <div class="flow-metal-hud" aria-hidden="true">
-    <span>[ Liquid intelligence ]</span>
-    <span data-metal-state>Signal / 01</span>
+    <span>[ Voice intelligence ]</span>
+    <span data-aura-state>Słucha / 01</span>
   </div>
 
   <button
@@ -21,140 +23,311 @@
     <span class="voice-core-caption" aria-hidden="true">Voice agent</span>
   </button>
 
-  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Continuous matter</span><b>SF / AI</b></div>
+  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Live resonance</span><b>SF / AI</b></div>
 </div>
+
+<style>
+  .voice-aura__ambient {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: var(--flow-object-x);
+    width: min(70%, 560px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(245, 250, 248, .095), transparent 37%),
+      radial-gradient(circle at 40% 64%, rgba(200, 255, 69, .075), transparent 30%),
+      radial-gradient(circle at 68% 35%, rgba(49, 92, 255, .075), transparent 28%);
+    filter: blur(32px);
+    opacity: .8;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: opacity .6s ease, transform .8s cubic-bezier(.2,.75,.2,1);
+  }
+
+  .voice-aura.is-voice-open .voice-aura__ambient {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  .voice-aura__fallback {
+    display: grid;
+    place-items: center;
+  }
+
+  .voice-aura__fallback span,
+  .voice-aura__fallback i,
+  .voice-aura__fallback b {
+    position: absolute;
+    top: 50%;
+    left: var(--flow-object-x);
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 45% 55% 52% 48% / 52% 43% 57% 48%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .voice-aura__fallback span {
+    width: min(53%, 430px);
+    background:
+      radial-gradient(circle at 35% 32%, rgba(255,255,255,.32), transparent 18%),
+      radial-gradient(circle at 63% 65%, rgba(200,255,69,.15), transparent 29%),
+      radial-gradient(circle at 67% 30%, rgba(49,92,255,.16), transparent 28%),
+      radial-gradient(circle, rgba(210,222,219,.18), rgba(91,105,104,.07) 48%, transparent 70%);
+    box-shadow: 0 0 75px rgba(239,245,242,.08), inset 0 0 55px rgba(255,255,255,.08);
+    filter: blur(1px);
+    animation: voice-aura-breathe 7s ease-in-out infinite alternate;
+  }
+
+  .voice-aura__fallback i {
+    width: min(41%, 330px);
+    border: 1px solid rgba(247,247,242,.14);
+    box-shadow: 0 0 48px rgba(49,92,255,.06);
+    opacity: .72;
+    animation: voice-aura-orbit 12s linear infinite;
+  }
+
+  .voice-aura__fallback b {
+    width: min(29%, 230px);
+    border: 1px solid rgba(200,255,69,.18);
+    opacity: .6;
+    animation: voice-aura-orbit 9s linear infinite reverse;
+  }
+
+  @keyframes voice-aura-breathe {
+    0% { opacity: .78; transform: translate(-50%,-50%) scale(.96) rotate(-4deg); }
+    100% { opacity: 1; transform: translate(-50%,-50%) scale(1.045) rotate(6deg); }
+  }
+
+  @keyframes voice-aura-orbit {
+    to { transform: translate(-50%,-50%) rotate(360deg); }
+  }
+
+  @media (max-width: 760px) {
+    .voice-aura__ambient { width: 82%; filter: blur(24px); }
+    .voice-aura__fallback span { width: 64%; }
+    .voice-aura__fallback i { width: 50%; }
+    .voice-aura__fallback b { width: 35%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .voice-aura__fallback span,
+    .voice-aura__fallback i,
+    .voice-aura__fallback b { animation: none; }
+  }
+</style>
 
 <script>
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-  const bootFlowCore = async () => {
+  const vertexSource = `
+    attribute vec2 a_position;
+    void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
+
+  const fragmentSource = `
+    precision highp float;
+
+    uniform vec2 u_resolution;
+    uniform vec2 u_pointer;
+    uniform float u_time;
+    uniform float u_energy;
+    uniform float u_progress;
+
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      return mix(
+        mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+        mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
+        f.y
+      );
+    }
+
+    float fbm(vec2 p) {
+      float value = 0.0;
+      float amplitude = 0.5;
+      for (int i = 0; i < 4; i++) {
+        value += amplitude * noise(p);
+        p = p * 2.03 + vec2(4.7, 2.1);
+        amplitude *= 0.5;
+      }
+      return value;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      float aspect = u_resolution.x / max(1.0, u_resolution.y);
+      vec2 center = vec2(0.56, 0.50) + u_pointer * vec2(0.012, -0.010);
+      vec2 p = uv - center;
+      p.x *= aspect;
+
+      float time = u_time * (0.58 + u_energy * 0.18);
+      float baseRadius = length(p);
+      if (baseRadius > .62) {
+        gl_FragColor = vec4(0.0);
+        return;
+      }
+
+      float warpX = noise(p * 2.15 + vec2(time * .055, -time * .032));
+      float warpY = noise(p * 2.37 + vec2(-time * .041, time * .047) + 9.7);
+      vec2 q = p + (vec2(warpX, warpY) - .5) * (.052 + u_energy * .018);
+      float angle = atan(q.y, q.x);
+      float radius = length(q);
+      float grain = fbm(q * 3.5 + vec2(time * 0.075, -time * 0.052));
+      float breath = sin(time * 1.18) * 0.009 + sin(time * 0.43) * 0.006;
+      float voiceWave = sin(angle * 3.0 - time * 1.16) * 0.023;
+      voiceWave += sin(angle * 5.0 + time * 0.82) * 0.012;
+      voiceWave += (grain - 0.5) * (0.025 + u_energy * 0.016);
+
+      float boundary = 0.285 + breath + voiceWave;
+      float outerDistance = abs(radius - boundary);
+      float innerDistance = abs(radius - (boundary - 0.052 - sin(angle * 2.0 + time) * 0.009));
+      float outerGlow = exp(-outerDistance * (18.0 - u_energy * 2.0));
+      float innerGlow = exp(-innerDistance * 31.0);
+      float body = 1.0 - smoothstep(boundary - 0.11, boundary + 0.06, radius);
+      float veil = body * (0.18 + grain * 0.2);
+      float core = exp(-radius * radius * (25.0 - u_energy * 4.0));
+      float innerMist = exp(-radius * radius * 11.0) * (0.55 + grain * .45);
+
+      float ribbonPhase = angle * 2.0 + time * 0.75 + grain * 1.8;
+      float ribbon = exp(-abs(sin(ribbonPhase) - (radius / max(boundary, .01) - .52)) * 7.0);
+      ribbon *= 1.0 - smoothstep(boundary - .08, boundary + .02, radius);
+
+      float pulse = 0.76 + sin(time * 1.35 + radius * 18.0) * 0.08 + u_energy * 0.26;
+      vec3 silver = vec3(0.80, 0.88, 0.86);
+      vec3 softWhite = vec3(0.97, 0.985, 0.975);
+      vec3 lime = vec3(0.78, 1.0, 0.23);
+      vec3 cobalt = vec3(0.18, 0.30, 1.0);
+      float chroma = sin(angle + time * .31) * .5 + .5;
+      vec3 spectrum = mix(cobalt, lime, chroma);
+      vec3 edgeColor = mix(silver, spectrum, .10 + u_energy * .04);
+      edgeColor = mix(edgeColor, softWhite, innerGlow * .42 + outerGlow * .18);
+      vec3 coreColor = mix(silver, softWhite, .78);
+
+      float halo = exp(-max(0.0, radius - boundary) * 9.0) * (1.0 - smoothstep(boundary - .01, boundary + .22, radius));
+      float alpha = (outerGlow * .46 + innerGlow * .22 + veil * .29 + ribbon * .15 + halo * .07 + core * .12) * pulse;
+      alpha *= 1.0 - smoothstep(.19, .53, radius);
+      alpha *= .88 + u_progress * .08;
+
+      vec3 rgb = edgeColor * (outerGlow * .52 + innerGlow * .3 + veil * .26 + ribbon * .13);
+      rgb += coreColor * core * (.22 + u_energy * .1);
+      rgb += silver * innerMist * .055;
+      rgb += spectrum * (ribbon * .055 + outerGlow * .025);
+      rgb += (hash(gl_FragCoord.xy + u_time) - .5) / 255.0;
+      alpha = clamp(alpha, 0.0, .86);
+      gl_FragColor = vec4(max(rgb, vec3(0.0)) * alpha, alpha);
+    }
+  `;
+
+  const compileShader = (gl, type, source) => {
+    const shader = gl.createShader(type);
+    if (!shader) throw new Error('Shader unavailable');
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const message = gl.getShaderInfoLog(shader) || 'Shader compilation failed';
+      gl.deleteShader(shader);
+      throw new Error(message);
+    }
+    return shader;
+  };
+
+  const bootVoiceAura = () => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    for (const container of document.querySelectorAll('[data-flow-core]')) {
-      const canvas = container.querySelector('[data-flow-canvas]');
-      const stateLabel = container.querySelector('[data-metal-state]');
-      if (!(container instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) continue;
-
+    document.querySelectorAll('[data-flow-core]').forEach((container) => {
+      const canvas = container.querySelector('[data-voice-aura-canvas]');
+      const stateLabel = container.querySelector('[data-aura-state]');
+      if (!(container instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement) || canvas.dataset.ready) return;
       canvas.dataset.ready = 'true';
-      const mobile = window.matchMedia('(max-width: 760px)').matches;
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      const lowPowerMobile = mobile && (connection?.saveData || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4));
 
-      if (reduced || lowPowerMobile) {
+      const compactQuery = window.matchMedia('(max-width: 760px)');
+      let mobile = compactQuery.matches;
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const saveData = Boolean(connection?.saveData);
+
+      if (reduced || saveData) {
         container.classList.remove('is-booting');
         container.classList.add('is-static', 'is-ready');
-        continue;
+        return;
+      }
+
+      const gl = canvas.getContext('webgl', {
+        alpha: true,
+        antialias: false,
+        depth: false,
+        stencil: false,
+        premultipliedAlpha: true,
+        powerPreference: 'high-performance',
+      });
+
+      if (!gl) {
+        container.classList.remove('is-booting');
+        container.classList.add('is-static', 'is-fallback', 'is-ready');
+        return;
       }
 
       try {
-        const [THREE, { MarchingCubes }, { RectAreaLightUniformsLib }] = await Promise.all([
-          import('three'),
-          import('three/examples/jsm/objects/MarchingCubes.js'),
-          import('three/examples/jsm/lights/RectAreaLightUniformsLib.js'),
-        ]);
-        RectAreaLightUniformsLib.init();
+        const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
+        const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+        const program = gl.createProgram();
+        if (!program) throw new Error('Program unavailable');
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) || 'Program link failed');
+        gl.useProgram(program);
 
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(mobile ? 33 : 29, 1, 0.1, 40);
-        camera.position.set(0, 0, mobile ? 10.2 : 9.55);
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        const position = gl.getAttribLocation(program, 'a_position');
+        gl.enableVertexAttribArray(position);
+        gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({
-          canvas,
-          alpha: true,
-          antialias: !mobile,
-          depth: true,
-          stencil: false,
-          powerPreference: 'high-performance',
-        });
-        const maxPixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.45);
-        let pixelRatio = maxPixelRatio;
-        renderer.setPixelRatio(pixelRatio);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.94;
+        const uniforms = {
+          resolution: gl.getUniformLocation(program, 'u_resolution'),
+          pointer: gl.getUniformLocation(program, 'u_pointer'),
+          time: gl.getUniformLocation(program, 'u_time'),
+          energy: gl.getUniformLocation(program, 'u_energy'),
+          progress: gl.getUniformLocation(program, 'u_progress'),
+        };
 
-        const material = new THREE.MeshPhysicalMaterial({
-          color: 0x7d8485,
-          metalness: 1,
-          roughness: 0.145,
-          clearcoat: 0.56,
-          clearcoatRoughness: 0.09,
-          iridescence: 0.022,
-          iridescenceIOR: 1.16,
-          iridescenceThicknessRange: [85, 130],
-          envMapIntensity: 0.25,
-        });
-
-        const resolution = mobile ? 26 : 38;
-        const liquid = new MarchingCubes(resolution, material, false, false, mobile ? 14000 : 30000);
-        liquid.isolation = 48;
-        liquid.frustumCulled = false;
-        liquid.scale.set(mobile ? 2.16 : 2.42, mobile ? 1.9 : 2.12, mobile ? 1.4 : 1.52);
-        liquid.rotation.set(-0.2, -0.34, -0.12);
-
-        const sculpture = new THREE.Group();
-        sculpture.position.set(mobile ? 0.18 : 0.48, mobile ? -0.02 : 0, 0);
-        sculpture.add(liquid);
-        scene.add(sculpture);
-
-        const fieldBlueprints = [
-          { x: .49, y: .50, z: .50, strength: 1.62, phase: .15, speed: .16, dx: .012, dy: .01, dz: .009, px: .006, py: .006 },
-          { x: .37, y: .61, z: .48, strength: .76, phase: 1.35, speed: .18, dx: .014, dy: .013, dz: .01, px: .014, py: .012 },
-          { x: .61, y: .61, z: .52, strength: .72, phase: 2.7, speed: .2, dx: .013, dy: .015, dz: .011, px: .013, py: .014 },
-          { x: .65, y: .42, z: .47, strength: .68, phase: 3.85, speed: .17, dx: .015, dy: .012, dz: .01, px: .016, py: -.011 },
-          { x: .47, y: .32, z: .53, strength: .78, phase: 5.05, speed: .19, dx: .014, dy: .015, dz: .011, px: -.007, py: -.015 },
-          { x: .30, y: .43, z: .46, strength: .66, phase: 6.2, speed: .18, dx: .015, dy: .013, dz: .01, px: -.016, py: -.01 },
-          { x: .72, y: .52, z: .51, strength: .48, phase: 7.45, speed: .21, dx: .012, dy: .015, dz: .009, px: .018, py: .004 },
-        ];
-        const fieldSubtract = 10.5;
-
-        scene.add(new THREE.HemisphereLight(0xe9eeee, 0x050606, 0.68));
-
-        const whiteKey = new THREE.RectAreaLight(0xf8faf8, 7, 4.5, 6.5);
-        whiteKey.position.set(-3.7, 3.5, 5.8);
-        whiteKey.lookAt(0, 0, 0);
-        scene.add(whiteKey);
-
-        const silverStrip = new THREE.RectAreaLight(0xc5cdcf, 5.2, 1.15, 5.8);
-        silverStrip.position.set(3.8, -1.4, 4.4);
-        silverStrip.lookAt(0.35, 0, 0);
-        scene.add(silverStrip);
-
-        const limeEdge = new THREE.RectAreaLight(0xcfff48, 0.82, 1.25, 3.6);
-        limeEdge.position.set(-3.6, -2.4, 3.2);
-        limeEdge.lookAt(0, 0, 0);
-        scene.add(limeEdge);
-
-        const cobaltEdge = new THREE.RectAreaLight(0x315cff, 0.7, 1.15, 4);
-        cobaltEdge.position.set(4.1, 2.1, 3.6);
-        cobaltEdge.lookAt(0, 0, 0);
-        scene.add(cobaltEdge);
-
-        const darkContour = new THREE.DirectionalLight(0x43505a, 0.48);
-        darkContour.position.set(0, -4, -2);
-        scene.add(darkContour);
-
-        let environment = null;
-        let targetEnvIntensity = 0.25;
-        let disposed = false;
-        let targetProgress = mobile ? 0.48 : 0;
-        let progress = targetProgress;
+        let width = 1;
+        let height = 1;
         let targetPointerX = 0;
         let targetPointerY = 0;
         let pointerX = 0;
         let pointerY = 0;
+        let targetProgress = mobile ? .48 : 0;
+        let progress = targetProgress;
+        let energy = .26;
+        let targetVoiceEnergy = 0;
+        let voiceEnergy = 0;
         let visible = false;
         let running = false;
-        let frameId = 0;
+        let frame = 0;
+        let disposed = false;
         let lastFrame = 0;
-        let performanceStarted = performance.now();
-        let performanceFrames = 0;
-        const startedAt = performance.now();
+        let activeTime = 0;
+        let cachedRect = container.getBoundingClientRect();
         const hero = container.closest('[data-hero]');
-        const stateNames = ['Signal / 01', 'Context / 02', 'Motion / 03', 'Result / 04'];
+        const stateNames = ['Słucha / 01', 'Rozumie / 02', 'Działa / 03', 'Dowozi / 04'];
 
         const setProgress = (value) => {
-          targetProgress = mobile ? 0.48 : clamp(value, 0, 1);
+          targetProgress = mobile ? .48 : clamp(value, 0, 1);
           container.style.setProperty('--metal-progress', String(targetProgress));
           if (stateLabel) stateLabel.textContent = stateNames[Math.min(3, Math.floor(targetProgress * 4))];
         };
@@ -164,197 +337,148 @@
         };
         hero?.addEventListener('sfai:hero-progress', onHeroProgress);
 
-        if (!mobile && hero) {
-          const rect = hero.getBoundingClientRect();
-          setProgress(-rect.top / Math.max(1, hero.scrollHeight - innerHeight));
-        }
-
         const onPointerMove = (event) => {
-          if (mobile || event.pointerType === 'touch') return;
-          const rect = container.getBoundingClientRect();
+          if (mobile || !visible || event.pointerType === 'touch') return;
+          const rect = cachedRect;
           const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-          targetPointerX = inside ? clamp(((event.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1) : 0;
-          targetPointerY = inside ? clamp(((event.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1) : 0;
+          targetPointerX = inside ? clamp(((event.clientX - rect.left) / rect.width - .5) * 2, -1, 1) : 0;
+          targetPointerY = inside ? clamp(((event.clientY - rect.top) / rect.height - .5) * 2, -1, 1) : 0;
         };
         window.addEventListener('pointermove', onPointerMove, { passive: true });
 
+        const onVoiceEnergy = (event) => {
+          if (!(event instanceof CustomEvent) || typeof event.detail?.energy !== 'number') return;
+          targetVoiceEnergy = clamp(event.detail.energy, 0, 1);
+        };
+        document.addEventListener('sfai:voice-energy', onVoiceEnergy);
+
         const resize = () => {
-          const rect = container.getBoundingClientRect();
-          const width = Math.max(1, Math.round(rect.width));
-          const height = Math.max(1, Math.round(rect.height));
-          renderer.setSize(width, height, false);
-          camera.aspect = width / height;
-          camera.updateProjectionMatrix();
+          mobile = compactQuery.matches;
+          cachedRect = container.getBoundingClientRect();
+          const rect = cachedRect;
+          const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.15 : 1.35);
+          width = Math.max(1, Math.round(rect.width * dpr));
+          height = Math.max(1, Math.round(rect.height * dpr));
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+            gl.viewport(0, 0, width, height);
+          }
         };
         const resizeObserver = new ResizeObserver(resize);
         resizeObserver.observe(container);
         resize();
 
-        const updateField = (seconds) => {
-          liquid.reset();
-          liquid.isolation = 48 + progress * 2.8;
-
-          fieldBlueprints.forEach((field, index) => {
-            const phase = field.phase + seconds * field.speed;
-            const counterPhase = field.phase * .73 - seconds * field.speed * .71;
-            const x = field.x
-              + Math.sin(phase) * field.dx
-              + Math.cos(counterPhase * .83) * field.dx * .34
-              + pointerX * field.px;
-            const y = field.y
-              + Math.cos(phase * .91) * field.dy
-              + Math.sin(counterPhase) * field.dy * .31
-              - pointerY * field.py;
-            const z = field.z
-              + Math.sin(phase * .67 + index * .41) * field.dz
-              + pointerX * pointerY * (index % 2 ? .006 : -.006);
-            const strength = field.strength * (1 + Math.sin(phase * .58) * .025);
-            liquid.addBall(x, y, z, strength, fieldSubtract);
-          });
-
-          const carveOneX = .53 + Math.sin(seconds * .13) * .012 + pointerX * .012;
-          const carveOneY = .55 + Math.cos(seconds * .11) * .011 - pointerY * .01;
-          const carveTwoX = .38 + Math.cos(seconds * .12 + 1.4) * .011 - pointerX * .009;
-          const carveTwoY = .43 + Math.sin(seconds * .14 + .8) * .012 + pointerY * .008;
-          liquid.addBall(carveOneX, carveOneY, .66, -.58, 15);
-          liquid.addBall(carveTwoX, carveTwoY, .36, -.42, 16);
-          liquid.update();
-        };
-
-        const updateScene = (time) => {
-          progress += (targetProgress - progress) * 0.05;
-          pointerX += (targetPointerX - pointerX) * 0.052;
-          pointerY += (targetPointerY - pointerY) * 0.052;
-
-          const seconds = (time - startedAt) * 0.001;
-          updateField(seconds);
-
-          liquid.rotation.x = -0.2 + progress * 0.09 + pointerY * 0.045 + Math.sin(seconds * .16) * .009;
-          liquid.rotation.y = -0.34 + progress * 0.28 + pointerX * 0.07 + seconds * .012;
-          liquid.rotation.z = -0.12 + progress * 0.06 - pointerX * 0.018;
-          sculpture.position.x = (mobile ? 0.18 : 0.48) + pointerX * 0.045;
-          sculpture.position.y = (mobile ? -0.02 : 0) - pointerY * 0.035 + Math.sin(seconds * .21) * .014;
-          material.roughness = 0.145 + progress * 0.014;
-          material.envMapIntensity += (targetEnvIntensity - material.envMapIntensity) * 0.065;
-          limeEdge.intensity = 0.74 + progress * 0.12;
-          cobaltEdge.intensity = 0.64 + progress * 0.1;
-        };
-
-        const adaptPixelRatio = (time) => {
-          if (mobile) return;
-          performanceFrames += 1;
-          const elapsed = time - performanceStarted;
-          if (elapsed < 1800) return;
-
-          const averageFrame = elapsed / Math.max(1, performanceFrames);
-          let nextPixelRatio = pixelRatio;
-          if (averageFrame > 19.5 && pixelRatio > 1) nextPixelRatio = Math.max(1, pixelRatio - 0.15);
-          if (averageFrame < 15.2 && pixelRatio < maxPixelRatio) nextPixelRatio = Math.min(maxPixelRatio, pixelRatio + 0.1);
-          if (nextPixelRatio !== pixelRatio) {
-            pixelRatio = nextPixelRatio;
-            renderer.setPixelRatio(pixelRatio);
-            resize();
-          }
-          performanceStarted = time;
-          performanceFrames = 0;
-        };
-
         const render = (time) => {
-          if (!running) return;
-          frameId = requestAnimationFrame(render);
-          if (mobile && time - lastFrame < 32) return;
+          if (!running || disposed) return;
+          frame = requestAnimationFrame(render);
+          const voiceOpen = container.classList.contains('is-voice-open');
+          const activeVoice = voiceOpen || targetVoiceEnergy > .08;
+          const frameInterval = activeVoice ? (mobile ? 22 : 15) : 30;
+          if (time - lastFrame < frameInterval) return;
+          const delta = Math.min(.05, Math.max(.001, lastFrame ? (time - lastFrame) * .001 : .016));
           lastFrame = time;
           if (document.hidden || document.body.classList.contains('menu-open')) return;
-          updateScene(time);
-          renderer.render(scene, camera);
-          adaptPixelRatio(time);
+
+          activeTime += delta;
+          const pointerBlend = 1 - Math.exp(-4.8 * delta);
+          const motionBlend = 1 - Math.exp(-3.4 * delta);
+          const voiceBlend = 1 - Math.exp(-(targetVoiceEnergy > voiceEnergy ? 12 : 3.8) * delta);
+          pointerX += (targetPointerX - pointerX) * pointerBlend;
+          pointerY += (targetPointerY - pointerY) * pointerBlend;
+          progress += (targetProgress - progress) * motionBlend;
+          voiceEnergy += (targetVoiceEnergy - voiceEnergy) * voiceBlend;
+          const targetEnergy = Math.max(voiceOpen ? .58 : .26, .26 + voiceEnergy * .74);
+          energy += (targetEnergy - energy) * motionBlend;
+
+          gl.clearColor(0, 0, 0, 0);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          gl.uniform2f(uniforms.resolution, width, height);
+          gl.uniform2f(uniforms.pointer, pointerX, pointerY);
+          gl.uniform1f(uniforms.time, activeTime);
+          gl.uniform1f(uniforms.energy, energy);
+          gl.uniform1f(uniforms.progress, progress);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
         };
 
         const start = () => {
-          if (running || !visible || disposed) return;
+          if (running || disposed || !visible) return;
           running = true;
-          performanceStarted = performance.now();
-          performanceFrames = 0;
-          frameId = requestAnimationFrame(render);
+          frame = requestAnimationFrame(render);
         };
         const stop = () => {
           running = false;
-          cancelAnimationFrame(frameId);
+          cancelAnimationFrame(frame);
         };
 
-        const intersectionObserver = new IntersectionObserver(([entry]) => {
+        const observer = new IntersectionObserver(([entry]) => {
           visible = entry.isIntersecting;
           visible ? start() : stop();
         }, { rootMargin: '140px' });
-        intersectionObserver.observe(container);
+        observer.observe(container);
 
         const onVisibility = () => document.hidden ? stop() : start();
         document.addEventListener('visibilitychange', onVisibility);
 
-        const onContextLost = (event) => {
-          event.preventDefault();
+        const onContextLost = () => {
           stop();
           container.classList.remove('is-rendered');
           container.classList.add('is-fallback');
         };
-        const onContextRestored = () => {
-          container.classList.remove('is-fallback');
-          container.classList.add('is-rendered');
-          start();
-        };
         canvas.addEventListener('webglcontextlost', onContextLost);
-        canvas.addEventListener('webglcontextrestored', onContextRestored);
-
-        updateField(0);
-        renderer.compile(scene, camera);
-        renderer.render(scene, camera);
-        requestAnimationFrame(() => {
-          if (disposed) return;
-          container.classList.remove('is-booting');
-          container.classList.add('is-ready', 'is-rendered');
-        });
-
-        import('three/examples/jsm/environments/RoomEnvironment.js').then(({ RoomEnvironment }) => {
-          if (disposed) return;
-          const pmrem = new THREE.PMREMGenerator(renderer);
-          const room = new RoomEnvironment();
-          environment = pmrem.fromScene(room, 0.038).texture;
-          scene.environment = environment;
-          targetEnvIntensity = 1.3;
-          room.dispose();
-          pmrem.dispose();
-        }).catch(() => undefined);
 
         const cleanup = () => {
           disposed = true;
           stop();
+          observer.disconnect();
           resizeObserver.disconnect();
-          intersectionObserver.disconnect();
           window.removeEventListener('pointermove', onPointerMove);
           document.removeEventListener('visibilitychange', onVisibility);
-          canvas.removeEventListener('webglcontextlost', onContextLost);
-          canvas.removeEventListener('webglcontextrestored', onContextRestored);
+          document.removeEventListener('sfai:voice-energy', onVoiceEnergy);
           hero?.removeEventListener('sfai:hero-progress', onHeroProgress);
+          canvas.removeEventListener('webglcontextlost', onContextLost);
           window.removeEventListener('pagehide', onPageHide);
           window.removeEventListener('pageshow', onPageShow);
-          liquid.geometry.dispose();
-          material.dispose();
-          environment?.dispose();
-          renderer.dispose();
+          gl.deleteBuffer(buffer);
+          gl.deleteProgram(program);
+          gl.deleteShader(vertexShader);
+          gl.deleteShader(fragmentShader);
         };
-        const onPageHide = (event) => event.persisted ? stop() : cleanup();
+        const onPageHide = (event) => {
+          if (event.persisted) {
+            stop();
+            return;
+          }
+          cleanup();
+        };
         const onPageShow = (event) => {
-          if (event.persisted) start();
+          if (!event.persisted || disposed) return;
+          resize();
+          start();
         };
         window.addEventListener('pagehide', onPageHide);
         window.addEventListener('pageshow', onPageShow);
+
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uniforms.resolution, width, height);
+        gl.uniform2f(uniforms.pointer, 0, 0);
+        gl.uniform1f(uniforms.time, 0);
+        gl.uniform1f(uniforms.energy, energy);
+        gl.uniform1f(uniforms.progress, progress);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        requestAnimationFrame(() => {
+          container.classList.remove('is-booting');
+          container.classList.add('is-ready', 'is-rendered');
+        });
       } catch (error) {
-        console.warn('Flow Core fallback:', error);
+        console.warn('Voice Aura fallback:', error);
         container.classList.remove('is-booting', 'is-rendered');
         container.classList.add('is-static', 'is-fallback', 'is-ready');
       }
-    }
+    });
   };
 
-  void bootFlowCore();
+  bootVoiceAura();
 </script>

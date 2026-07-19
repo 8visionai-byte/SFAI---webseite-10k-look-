@@ -96,6 +96,8 @@ const exploreRows = [
             sizes="(max-width: 760px) 92vw, 72vw"
             format="webp"
             quality={86}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            fetchpriority={index === 0 ? 'high' : 'auto'}
           />
         </figure>
       ))}
@@ -138,6 +140,8 @@ const exploreRows = [
                   sizes="(max-width: 760px) 78vw, 34vw"
                   format="webp"
                   quality={84}
+                  loading={rowIndex === 0 && itemIndex === 0 ? 'eager' : 'lazy'}
+                  fetchpriority={rowIndex === 0 && itemIndex === 0 ? 'high' : 'auto'}
                 />
               </div>
               <figcaption>

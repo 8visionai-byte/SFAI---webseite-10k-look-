@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FoundersSection from '../components/FoundersSection.astro';
 import ProofStream from '../components/ProofStream.astro';
+import '../styles/subpage-motion.css';
 
 const schema = {
   '@context': 'https://schema.org',
@@ -43,7 +44,7 @@ const schema = {
   schema={schema}
 >
   <main id="main" class="subpage-main">
-    <section class="subhero">
+    <section class="subhero" data-subpage-hero>
       <p class="mono-label">/ O studiu</p>
       <span class="subhero-orb" aria-hidden="true"></span>
       <h1>AI działa.<br /><em>My odpowiadamy.</em></h1>
@@ -55,7 +56,7 @@ const schema = {
     <FoundersSection />
     <ProofStream />
 
-    <section class="service-outcome">
+    <section class="service-outcome" data-motion-section>
       <div class="service-outcome-grid section-shell">
         <p class="mono-label">/ Zasada</p>
         <blockquote>Bierzemy tylko tyle wdrożeń, ile jesteśmy w stanie naprawdę dopilnować.</blockquote>
@@ -65,4 +66,7 @@ const schema = {
       </div>
     </section>
   </main>
+  <script>
+    import '../scripts/subpage-motion.js';
+  </script>
 </BaseLayout>

@@ -1,26 +1,30 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/subpage-motion.css';
 ---
 <BaseLayout title="Bezpłatna diagnoza AI — kontakt | SimpleFast.ai" description="Pokaż nam powtarzalny proces w firmie. W 30 minut ocenimy, co warto zautomatyzować i jaki pierwszy krok ma sens.">
   <main id="main" class="subpage-main">
-    <section class="subhero"><p class="mono-label">/ Kontakt</p><span class="subhero-orb" aria-hidden="true"></span><h1>Porozmawiajmy<br /><em>o pracy.</em></h1><p class="subhero-copy">Nie musisz przygotowywać briefu. Opowiedz, co wraca codziennie, gdzie ginie czas albo których klientów nie udaje się obsłużyć.</p></section>
-    <section class="section-shell contact-grid">
+    <section class="subhero" data-subpage-hero><p class="mono-label">/ Kontakt</p><span class="subhero-orb" aria-hidden="true"></span><h1>Porozmawiajmy<br /><em>o pracy.</em></h1><p class="subhero-copy">Nie musisz przygotowywać briefu. Opowiedz, co wraca codziennie, gdzie ginie czas albo których klientów nie udaje się obsłużyć.</p></section>
+    <section class="section-shell contact-grid" data-motion-section>
       <aside class="contact-aside">
         <p class="mono-label">/ Bezpłatna diagnoza</p>
         <h2>30 minut, konkretna mapa następnego kroku.</h2>
         <div class="contact-details"><a href="mailto:kontakt@simplefast.ai">kontakt@simplefast.ai</a><br /><a href="tel:+48696674874">+48 696 674 874</a><br /><br />Cała Polska / zdalnie i na miejscu<br />Dane w UE / RODO / AI Act</div>
       </aside>
-      <form class="contact-form" data-demo-form>
-        <div class="field"><label for="name">Imię i nazwisko</label><input id="name" name="name" autocomplete="name" required /></div>
-        <div class="field"><label for="company">Firma</label><input id="company" name="company" autocomplete="organization" /></div>
-        <div class="field"><label for="email">E-mail</label><input id="email" type="email" name="email" autocomplete="email" required /></div>
-        <div class="field"><label for="phone">Telefon</label><input id="phone" type="tel" name="phone" autocomplete="tel" /></div>
-        <div class="field field-wide"><label for="area">Temat</label><select id="area" name="area"><option>Jeszcze nie wiem — potrzebuję diagnozy</option><option>Agent AI</option><option>Chatbot lub voicebot</option><option>Automatyzacja procesu</option><option>Strona WWW / SEO / widoczność w AI</option><option>Opieka AI</option></select></div>
-        <div class="field field-wide"><label for="message">Co dziś zabiera najwięcej czasu?</label><textarea id="message" name="message" placeholder="Krótko opisz proces, który wraca najczęściej..."></textarea></div>
+      <form class="contact-form" data-demo-form data-motion-group>
+        <div class="field" data-motion-item><label for="name">Imię i nazwisko</label><input id="name" name="name" autocomplete="name" required /></div>
+        <div class="field" data-motion-item><label for="company">Firma</label><input id="company" name="company" autocomplete="organization" /></div>
+        <div class="field" data-motion-item><label for="email">E-mail</label><input id="email" type="email" name="email" autocomplete="email" required /></div>
+        <div class="field" data-motion-item><label for="phone">Telefon</label><input id="phone" type="tel" name="phone" autocomplete="tel" /></div>
+        <div class="field field-wide" data-motion-item><label for="area">Temat</label><select id="area" name="area"><option>Jeszcze nie wiem — potrzebuję diagnozy</option><option>Agent AI</option><option>Chatbot lub voicebot</option><option>Automatyzacja procesu</option><option>Strona WWW / SEO / widoczność w AI</option><option>Opieka AI</option></select></div>
+        <div class="field field-wide" data-motion-item><label for="message">Co dziś zabiera najwięcej czasu?</label><textarea id="message" name="message" placeholder="Krótko opisz proces, który wraca najczęściej..."></textarea></div>
         <button class="button button-primary" type="submit"><span>Wyślij i umów diagnozę</span><span>↗</span></button>
         <p class="form-note">W tym szkicu formularz nie wysyła danych. W produkcji zostanie podłączony do CRM i kalendarza.</p>
         <p class="form-status" role="status" data-form-status></p>
       </form>
     </section>
   </main>
+  <script>
+    import '../scripts/subpage-motion.js';
+  </script>
 </BaseLayout>

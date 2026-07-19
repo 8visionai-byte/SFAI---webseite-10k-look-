@@ -137,6 +137,8 @@ const schema = {
             sizes="100vw"
             format="webp"
             quality={88}
+            loading="eager"
+            fetchpriority="high"
           />
         </div>
       </div>
@@ -149,7 +151,16 @@ const schema = {
         <div class="cinematic-frames">
           {cinematicFrames.map((frame, index) => (
             <figure class:list={['cinematic-frame', `cinematic-frame-${index + 1}`, `is-${frame.side}`]} data-cinematic-frame={index}>
-              <Image src={frame.src} alt={frame.alt} widths={[540, 820, 1100]} sizes="(max-width: 760px) 82vw, 38vw" format="webp" quality={84} />
+              <Image
+                src={frame.src}
+                alt={frame.alt}
+                widths={[540, 820, 1100]}
+                sizes="(max-width: 760px) 82vw, 38vw"
+                format="webp"
+                quality={84}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchpriority={index === 0 ? 'high' : 'auto'}
+              />
               <figcaption>{frame.label}</figcaption>
             </figure>
           ))}

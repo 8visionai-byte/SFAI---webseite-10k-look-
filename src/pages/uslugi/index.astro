@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { services } from '../../data/services.js';
+import '../../styles/subpage-motion.css';
 import valueArchitectureImage from '../../assets/generated/v3/value-architecture.png';
 import chatbotKnowledgeImage from '../../assets/generated/v3/chatbot-knowledge.png';
 import seoAiCitationsImage from '../../assets/generated/v3/seo-ai-citations.png';
@@ -51,22 +52,22 @@ const serviceCards = services.map((service) => ({
   description="Architektura wartości AI, agenci, chatboty, voiceboty, automatyzacje, strony pod SEO i AI oraz stała opieka."
 >
   <main id="main" class="subpage-main">
-    <section class="subhero">
+    <section class="subhero" data-subpage-hero>
       <p class="mono-label">/ Usługi 01—07</p>
       <span class="subhero-orb" aria-hidden="true"></span>
       <h1>Cały system.<br /><em>Jeden partner.</em></h1>
       <p class="subhero-copy">Od wyboru właściwego procesu, przez projekt i wdrożenie, aż po utrzymanie. Technologia ma się łączyć w całość, a nie tworzyć kolejne silosy.</p>
     </section>
 
-    <section class="content-section">
+    <section class="content-section" data-motion-section>
       <div class="content-grid section-shell">
         <p class="mono-label">/ Wybierz obszar</p>
         <h2 data-reveal>Zaczynamy od problemu, nie od narzędzia.</h2>
         <p class="lead">Nie musisz wiedzieć, czy potrzebujesz agenta, voicebota czy automatyzacji. Na diagnozie mapujemy proces i rekomendujemy najprostsze rozwiązanie, które dowiezie efekt.</p>
-        <div class="listing-grid">
+        <div class="listing-grid" data-motion-group>
           {serviceCards.map((service) => (
-            <article class="listing-card" data-reveal>
-              <div class="listing-card-visual">
+            <article class="listing-card" data-motion-row>
+              <div class="listing-card-visual" data-image-curtain>
                 <Image
                   src={service.visualAsset.src}
                   alt={service.visualAsset.alt}
@@ -87,7 +88,7 @@ const serviceCards = services.map((service) => ({
       </div>
     </section>
 
-    <section class="service-outcome">
+    <section class="service-outcome" data-motion-section>
       <div class="service-outcome-grid section-shell">
         <p class="mono-label">/ Nie wiesz, co wybrać?</p>
         <blockquote>Wystarczy, że pokażesz nam pracę, która zabiera czas.</blockquote>
@@ -95,4 +96,7 @@ const serviceCards = services.map((service) => ({
       </div>
     </section>
   </main>
+  <script>
+    import '../../scripts/subpage-motion.js';
+  </script>
 </BaseLayout>

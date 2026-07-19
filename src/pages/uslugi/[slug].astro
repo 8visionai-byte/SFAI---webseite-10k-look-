@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { services } from '../../data/services.js';
+import '../../styles/subpage-motion.css';
 import valueArchitectureImage from '../../assets/generated/v3/value-architecture.png';
 import chatbotKnowledgeImage from '../../assets/generated/v3/chatbot-knowledge.png';
 import seoAiCitationsImage from '../../assets/generated/v3/seo-ai-citations.png';
@@ -58,19 +59,19 @@ const schema = {
 ---
 <BaseLayout title={`${service.title} dla firm — SimpleFast.ai`} description={service.short} schema={schema}>
   <main id="main" class="subpage-main">
-    <section class="subhero service-hero">
+    <section class="subhero service-hero" data-subpage-hero>
       <p class="mono-label">/ Usługa {service.index}</p>
       <div class="service-hero-copy">
         <h1>{service.title}</h1>
         <p>{service.short}</p>
       </div>
-      <div class="service-hero-visual">
+      <div class="service-hero-visual" data-image-curtain>
         <Image src={heroVisual.src} alt={heroVisual.alt} widths={[720, 1080, 1500]} sizes="(max-width: 760px) 100vw, 53vw" format="webp" quality={82} loading="eager" />
       </div>
       <div class="service-meta"><span>SimpleFast.ai / {service.index}</span><span>{service.kicker}</span><span>Dane w UE / RODO</span></div>
     </section>
 
-    <section class="service-outcome">
+    <section class="service-outcome" data-motion-section>
       <div class="service-outcome-grid section-shell">
         <p class="mono-label">/ Rezultat</p>
         <blockquote>{service.outcome}</blockquote>
@@ -78,14 +79,14 @@ const schema = {
       </div>
     </section>
 
-    <section class="content-section">
+    <section class="content-section" data-motion-section>
       <div class="content-grid section-shell">
         <p class="mono-label">/ Co wdrażamy</p>
         <h2 data-reveal>Technologia dopasowana do procesu.</h2>
         <p class="lead">Zakres ustalamy po krótkiej diagnozie. Każdy projekt ma jasno opisane zadanie, granice działania, sposób kontroli i miarę efektu.</p>
-        <div class="feature-grid">
+        <div class="feature-grid" data-motion-group>
           {service.useCases.map(([title, description], index) => (
-            <article class="feature-card" data-reveal>
+            <article class="feature-card" data-motion-row>
               <span>0{index + 1}</span>
               <h3>{title}</h3>
               <p>{description}</p>
@@ -95,20 +96,20 @@ const schema = {
       </div>
     </section>
 
-    <section class="content-section light-section">
+    <section class="content-section light-section" data-motion-section>
       <div class="content-grid section-shell">
         <p class="mono-label">/ Proces</p>
         <h2 data-reveal>Od diagnozy do działania w czterech krokach.</h2>
-        <div class="case-list">
-          <article class="case-row"><h3>Diagnoza</h3><p>Mapujemy obecny proces, koszt ręcznej pracy i miejsca, w których sprawa się zatrzymuje.</p><div><strong>01</strong><small>Wartość</small></div></article>
-          <article class="case-row"><h3>Projekt</h3><p>Definiujemy przepływ, wiedzę, integracje, wyjątki i zakres odpowiedzialności systemu.</p><div><strong>02</strong><small>Architektura</small></div></article>
-          <article class="case-row"><h3>Wdrożenie</h3><p>Uruchamiamy małą, działającą wersję i testujemy ją na realnych przypadkach.</p><div><strong>03</strong><small>Praktyka</small></div></article>
-          <article class="case-row"><h3>Rozwój</h3><p>Monitorujemy jakość, poprawiamy i dodajemy kolejne zadania, gdy efekt jest potwierdzony.</p><div><strong>04</strong><small>Skala</small></div></article>
+        <div class="case-list" data-motion-group>
+          <article class="case-row" data-motion-row data-motion-index="01" data-motion-preview="Diagnoza / Wartość"><h3>Diagnoza</h3><p>Mapujemy obecny proces, koszt ręcznej pracy i miejsca, w których sprawa się zatrzymuje.</p><div><strong>01</strong><small>Wartość</small></div></article>
+          <article class="case-row" data-motion-row data-motion-index="02" data-motion-preview="Projekt / Architektura"><h3>Projekt</h3><p>Definiujemy przepływ, wiedzę, integracje, wyjątki i zakres odpowiedzialności systemu.</p><div><strong>02</strong><small>Architektura</small></div></article>
+          <article class="case-row" data-motion-row data-motion-index="03" data-motion-preview="Wdrożenie / Praktyka"><h3>Wdrożenie</h3><p>Uruchamiamy małą, działającą wersję i testujemy ją na realnych przypadkach.</p><div><strong>03</strong><small>Praktyka</small></div></article>
+          <article class="case-row" data-motion-row data-motion-index="04" data-motion-preview="Rozwój / Skala"><h3>Rozwój</h3><p>Monitorujemy jakość, poprawiamy i dodajemy kolejne zadania, gdy efekt jest potwierdzony.</p><div><strong>04</strong><small>Skala</small></div></article>
         </div>
       </div>
     </section>
 
-    <section class="content-section">
+    <section class="content-section" data-motion-section>
       <div class="content-grid section-shell">
         <p class="mono-label">/ FAQ</p>
         <h2>Najważniejsze pytania przed startem.</h2>
@@ -120,7 +121,7 @@ const schema = {
       </div>
     </section>
 
-    <section class="care-callout">
+    <section class="care-callout" data-motion-section>
       <div class="care-callout-inner section-shell">
         <p class="mono-label">/ Bezpłatna diagnoza</p>
         <h2>Sprawdźmy, czy <em>to ma sens.</em></h2>
@@ -128,4 +129,7 @@ const schema = {
       </div>
     </section>
   </main>
+  <script>
+    import '../../scripts/subpage-motion.js';
+  </script>
 </BaseLayout>

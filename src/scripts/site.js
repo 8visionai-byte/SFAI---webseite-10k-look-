@@ -1,12 +1,54 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const compactMotion = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+const narrativeScrub = compactMotion ? 0.82 : 1.45;
+const galleryScrub = compactMotion ? 0.92 : 1.65;
 const header = document.querySelector('[data-header]');
 const menuToggle = document.querySelector('[data-menu-toggle]');
 const menuPanel = document.querySelector('[data-menu-panel]');
+
+if (!reduced && !compactMotion) {
+  const lenis = new Lenis({
+    duration: 1.08,
+    smoothWheel: true,
+    wheelMultiplier: .86,
+    syncTouch: false,
+    anchors: true,
+    prevent: (node) => node instanceof Element && Boolean(node.closest('[data-lenis-prevent]')),
+  });
+  const updateLenis = (time) => lenis.raf(time * 1000);
+  const syncLenisState = () => {
+    const overlayOpen = document.body.classList.contains('menu-open') || document.body.classList.contains('agent-console-open');
+    overlayOpen ? lenis.stop() : lenis.start();
+  };
+  const overlayObserver = new MutationObserver(syncLenisState);
+
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add(updateLenis);
+  gsap.ticker.lagSmoothing(0);
+  overlayObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  syncLenisState();
+
+  const destroyLenis = () => {
+    overlayObserver.disconnect();
+    gsap.ticker.remove(updateLenis);
+    lenis.destroy();
+    window.removeEventListener('pagehide', onPageHide);
+    window.removeEventListener('pageshow', onPageShow);
+  };
+  const onPageHide = (event) => event.persisted ? lenis.stop() : destroyLenis();
+  const onPageShow = (event) => {
+    if (event.persisted) syncLenisState();
+  };
+  window.addEventListener('pagehide', onPageHide);
+  window.addEventListener('pageshow', onPageShow);
+}
 let lastFocused = null;
 
 const updateHeader = () => header?.classList.toggle('is-scrolled', window.scrollY > 24);
@@ -56,14 +98,31 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (!entry.isIntersecting) return;
-    entry.target.classList.add('is-visible');
-    revealObserver.unobserve(entry.target);
+const revealElements = [...document.querySelectorAll('[data-reveal]')];
+if (reduced) {
+  revealElements.forEach((element) => element.classList.add('is-visible'));
+} else {
+  document.documentElement.classList.add('motion-ready');
+  ScrollTrigger.config({ ignoreMobileResize: true, limitCallbacks: true });
+  ScrollTrigger.defaults({ invalidateOnRefresh: true });
+
+  revealElements.forEach((element) => {
+    gsap.fromTo(element, {
+      opacity: 0,
+      y: compactMotion ? 22 : 34,
+    }, {
+      opacity: 1,
+      y: 0,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: element,
+        start: 'clamp(top 94%)',
+        end: 'clamp(top 70%)',
+        scrub: compactMotion ? 0.55 : 0.9,
+      },
+    });
   });
-}, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
-document.querySelectorAll('[data-reveal]').forEach((element) => revealObserver.observe(element));
+}
 
 const scrambleGlyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+-<>[]';
 const scrambleTimers = new WeakMap();
@@ -242,9 +301,9 @@ if (!reduced) {
         ease: 'none',
         scrollTrigger: {
           trigger: humanBridge,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 1.05,
+          start: 'clamp(top bottom)',
+          end: 'clamp(bottom top)',
+          scrub: narrativeScrub,
         },
       });
     }
@@ -259,36 +318,61 @@ if (!reduced) {
     const timeline = gsap.timeline({
       scrollTrigger: {
         trigger: cinematic,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.85,
+        start: 'clamp(top top)',
+        end: 'clamp(bottom bottom)',
+        scrub: galleryScrub,
       },
     });
-    timeline.fromTo(curtain, { xPercent: -101 }, { xPercent: 0, duration: 0.16, ease: 'none' }, 0);
-    timeline.fromTo(titleLines, { yPercent: 112 }, { yPercent: 0, stagger: 0.022, duration: 0.16, ease: 'none' }, 0.055);
+    timeline.fromTo(curtain, { xPercent: -101 }, { xPercent: 0, duration: 0.21, ease: 'none' }, 0);
+    timeline.fromTo(titleLines, { yPercent: 108 }, { yPercent: 0, stagger: 0.025, duration: 0.2, ease: 'none' }, 0.045);
     frames.forEach((frame, index) => {
       const bitmap = frame.querySelector('img');
-      const entry = 0.1 + index * 0.205;
+      const entry = 0.07 + index * 0.225;
+      const liftOffset = compactMotion ? 34 : 44;
+      const darkFilter = `brightness(${compactMotion ? 0.46 : 0.4}) contrast(.72) saturate(.42) blur(${compactMotion ? 3 : 5}px)`;
+
+      // Phase 1: reveal the still, shadowed frame from left to right.
       timeline.fromTo(frame, {
         xPercent: 0,
-        yPercent: 72,
-        clipPath: 'inset(0 100% 0 0)',
-        opacity: 0,
+        yPercent: liftOffset,
+        '--sfai-curtain': 1,
+        opacity: 0.04,
       }, {
-        xPercent: 0,
-        yPercent: 0,
-        clipPath: 'inset(0 0 0 0)',
-        opacity: 1,
-        duration: 0.18,
+        '--sfai-curtain': 0,
+        opacity: 0.82,
+        duration: 0.105,
         ease: 'none',
       }, entry);
-      if (bitmap) timeline.fromTo(bitmap, { scale: 1.045 }, { scale: 1, duration: 0.24, ease: 'none' }, entry);
+
+      if (bitmap) {
+        timeline.fromTo(bitmap, {
+          scale: 1.055,
+          filter: darkFilter,
+        }, {
+          filter: 'brightness(1) contrast(1.12) saturate(.84) blur(0px)',
+          duration: 0.07,
+          ease: 'none',
+        }, entry + 0.105);
+      }
+
+      // Phase 2: settle at full clarity before any positional movement begins.
+      timeline.to(frame, { opacity: 1, duration: 0.07, ease: 'none' }, entry + 0.105);
+
+      // Phase 3: only the fully revealed frame rises into the composition.
+      timeline.to(frame, { yPercent: 0, duration: 0.12, ease: 'none' }, entry + 0.195);
+      if (bitmap) timeline.to(bitmap, { scale: 1, duration: 0.14, ease: 'none' }, entry + 0.195);
+
       if (index > 0) {
-        timeline.to(frames[index - 1], { yPercent: -58, opacity: 0.16, duration: 0.18, ease: 'none' }, entry);
+        timeline.to(frames[index - 1], {
+          yPercent: compactMotion ? -12 : -18,
+          opacity: 0.2,
+          duration: 0.17,
+          ease: 'none',
+        }, entry + 0.195);
       }
     });
-    timeline.to(frames[frames.length - 1], { yPercent: -26, duration: 0.115, ease: 'none' }, 0.885);
-    timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1, ease: 'none' }, 0);
+    timeline.to(frames[frames.length - 1], { yPercent: -8, duration: 0.12, ease: 'none' }, 1.12);
+    timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1.24, ease: 'none' }, 0);
   }
 
   const fogStatement = document.querySelector('[data-fog-statement]');
@@ -300,50 +384,76 @@ if (!reduced) {
     const fogTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: fogStatement,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 1.35,
+        start: 'clamp(top top)',
+        end: 'clamp(bottom bottom)',
+        scrub: galleryScrub,
       },
     });
 
     fogImages.forEach((image, index) => {
+      const bitmap = image.querySelector('img');
       const starts = [
-        { xPercent: -24, yPercent: 24, clipPath: 'inset(0 100% 0 0)' },
-        { xPercent: 22, yPercent: 32, clipPath: 'inset(100% 0 0 0)' },
-        { xPercent: 30, yPercent: 42, clipPath: 'inset(0 0 100% 0)' },
+        { xPercent: -8, yPercent: 14 },
+        { xPercent: 7, yPercent: 18 },
+        { xPercent: 9, yPercent: 22 },
       ];
-      const entry = 0.03 + index * 0.1;
+      const entry = 0.025 + index * 0.14;
+      const finalOpacity = index === 0 ? 0.46 : 1;
+
+      // Phase 1: every layer is uncovered in the same calm reading direction.
       fogTimeline.fromTo(image, {
         ...starts[index],
+        '--sfai-curtain': 1,
         opacity: 0,
-        filter: 'blur(20px)',
       }, {
-        xPercent: 0,
-        yPercent: 0,
-        clipPath: 'inset(0 0 0 0)',
-        opacity: index === 0 ? 0.46 : 1,
-        filter: 'blur(0px)',
-        duration: 0.3,
+        '--sfai-curtain': 0,
+        opacity: finalOpacity * 0.76,
+        duration: 0.12,
         ease: 'none',
       }, entry);
-      fogTimeline.to(image, { yPercent: -10 - index * 4, scale: 1.02, duration: 0.42, ease: 'none' }, 0.58 + index * 0.035);
+
+      // Phase 2: restore clarity while the layer remains still.
+      if (bitmap) {
+        fogTimeline.fromTo(bitmap, {
+          filter: `brightness(.45) contrast(.72) saturate(.38) blur(${compactMotion ? 2 : 4}px)`,
+        }, {
+          filter: 'brightness(1) contrast(1.08) saturate(.72) blur(0px)',
+          duration: 0.075,
+          ease: 'none',
+        }, entry + 0.12);
+      }
+      fogTimeline.to(image, { opacity: finalOpacity, duration: 0.075, ease: 'none' }, entry + 0.12);
+
+      // Phase 3: move only after the layer has become fully legible.
+      fogTimeline.to(image, {
+        xPercent: 0,
+        yPercent: 0,
+        duration: 0.14,
+        ease: 'none',
+      }, entry + 0.22);
+      fogTimeline.to(image, {
+        yPercent: -5 - index * 2.5,
+        scale: 1.012,
+        duration: 0.34,
+        ease: 'none',
+      }, 0.69 + index * 0.045);
     });
     fogTimeline.fromTo(fogLines, {
       opacity: 0.035,
-      y: 34,
-      scale: 1.025,
-      filter: 'blur(32px)',
+      y: compactMotion ? 14 : 20,
+      scale: 1.012,
+      filter: `blur(${compactMotion ? 10 : 15}px)`,
     }, {
       opacity: 1,
       y: 0,
       scale: 1,
       filter: 'blur(0px)',
-      stagger: 0.04,
-      duration: 0.42,
+      stagger: 0.05,
+      duration: 0.4,
       ease: 'none',
-    }, 0.17);
-    fogTimeline.fromTo(fogNote, { opacity: 0, y: 18, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.24, ease: 'none' }, 0.61);
-    fogTimeline.fromTo(fogVeil, { opacity: 1 }, { opacity: 0.5, duration: 0.5, ease: 'none' }, 0.18);
+    }, 0.18);
+    fogTimeline.fromTo(fogNote, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.27, ease: 'none' }, 0.6);
+    fogTimeline.fromTo(fogVeil, { opacity: 1 }, { opacity: 0.48, duration: 0.62, ease: 'none' }, 0.14);
   }
 
   const systemExplore = document.querySelector('[data-system-explore]');
@@ -354,51 +464,78 @@ if (!reduced) {
     const exploreTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: systemExplore,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.88,
+        start: 'clamp(top top)',
+        end: 'clamp(bottom bottom)',
+        scrub: galleryScrub,
         onUpdate: (self) => systemExplore.style.setProperty('--explore-progress', self.progress.toFixed(3)),
       },
     });
-    exploreTimeline.fromTo(lines, { yPercent: 112 }, { yPercent: 0, stagger: 0.035, duration: 0.18, ease: 'power3.out' }, 0.02);
-    exploreTimeline.fromTo(note, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.14 }, 0.17);
+    exploreTimeline.fromTo(lines, { yPercent: 108 }, { yPercent: 0, stagger: 0.04, duration: 0.22, ease: 'none' }, 0.015);
+    exploreTimeline.fromTo(note, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.2, ease: 'none' }, 0.15);
 
     const directionState = {
-      'from-left': { xPercent: -78, yPercent: 18, clipPath: 'inset(0 100% 0 0)' },
-      'from-right': { xPercent: 78, yPercent: 14, clipPath: 'inset(0 0 0 100%)' },
-      'from-bottom-left': { xPercent: -42, yPercent: 72, clipPath: 'inset(100% 0 0 0)' },
-      'from-top-right': { xPercent: 46, yPercent: -62, clipPath: 'inset(0 0 100% 0)' },
-      'from-bottom-right': { xPercent: 48, yPercent: 74, clipPath: 'inset(100% 0 0 0)' },
+      'from-left': { xPercent: -20, yPercent: 12 },
+      'from-right': { xPercent: 20, yPercent: 10 },
+      'from-bottom-left': { xPercent: -14, yPercent: 34 },
+      'from-top-right': { xPercent: 16, yPercent: -24 },
+      'from-bottom-right': { xPercent: 16, yPercent: 36 },
     };
 
     items.forEach((item, index) => {
       const image = item.querySelector('.system-explore__image');
       const bitmap = item.querySelector('img');
       const state = directionState[item.dataset.exploreDirection] ?? directionState['from-bottom-left'];
-      const entry = 0.11 + index * 0.125;
+      const entry = 0.055 + index * 0.135;
+
+      // Phase 1: uncover a dark, soft image without translating it.
       exploreTimeline.fromTo(item, {
         xPercent: state.xPercent,
         yPercent: state.yPercent,
-        opacity: 0,
+        opacity: 0.04,
       }, {
+        opacity: 0.82,
+        duration: 0.1,
+        ease: 'none',
+      }, entry);
+      exploreTimeline.fromTo(image, { '--sfai-curtain': 1 }, { '--sfai-curtain': 0, duration: 0.1, ease: 'none' }, entry);
+
+      // Phase 2: focus and recover contrast during a short visual hold.
+      exploreTimeline.fromTo(bitmap, {
+        scale: 1.055,
+        filter: `brightness(.42) contrast(.7) saturate(.4) blur(${compactMotion ? 2 : 4}px)`,
+      }, {
+        filter: 'brightness(1) contrast(1.08) saturate(.83) blur(0px)',
+        duration: 0.065,
+        ease: 'none',
+      }, entry + 0.1);
+      exploreTimeline.to(item, { opacity: 1, duration: 0.065, ease: 'none' }, entry + 0.1);
+
+      // Phase 3: lift into place only when the complete image is visible.
+      exploreTimeline.to(item, {
         xPercent: 0,
         yPercent: 0,
-        opacity: 1,
         duration: 0.12,
-        ease: 'power3.out',
-      }, entry);
-      exploreTimeline.fromTo(image, { clipPath: state.clipPath }, { clipPath: 'inset(0 0 0 0)', duration: 0.12, ease: 'power3.out' }, entry);
-      exploreTimeline.fromTo(bitmap, { scale: 1.14 }, { scale: 1, duration: 0.18, ease: 'none' }, entry);
-      exploreTimeline.to(item, { yPercent: -48, opacity: 0.12, duration: 0.12, ease: 'none' }, Math.min(0.94, entry + 0.145));
+        ease: 'none',
+      }, entry + 0.19);
+      exploreTimeline.to(bitmap, { scale: 1, duration: 0.14, ease: 'none' }, entry + 0.19);
+
+      if (index < items.length - 1) {
+        exploreTimeline.to(item, {
+          yPercent: compactMotion ? -10 : -15,
+          opacity: 0.2,
+          duration: 0.14,
+          ease: 'none',
+        }, entry + 0.33);
+      }
     });
   }
 
   document.querySelectorAll('.service-card').forEach((card) => {
-    gsap.fromTo(card, { y: 80, rotate: card.dataset.accent === 'blue' ? -0.8 : 0.8 }, {
+    gsap.fromTo(card, { y: compactMotion ? 28 : 46, rotate: card.dataset.accent === 'blue' ? -0.35 : 0.35 }, {
       y: 0,
       rotate: 0,
       ease: 'none',
-      scrollTrigger: { trigger: card, start: 'top 100%', end: 'top 72%', scrub: 0.6 },
+      scrollTrigger: { trigger: card, start: 'clamp(top 96%)', end: 'clamp(top 68%)', scrub: narrativeScrub },
     });
   });
 
@@ -408,17 +545,24 @@ if (!reduced) {
       scale: 1,
       yPercent: 4,
       ease: 'none',
-      scrollTrigger: { trigger: '.system-story', start: 'top bottom', end: 'bottom top', scrub: 0.8 },
+      scrollTrigger: { trigger: '.system-story', start: 'clamp(top bottom)', end: 'clamp(bottom top)', scrub: narrativeScrub },
     });
   }
 
   document.querySelectorAll('.proof-card').forEach((card) => {
     gsap.from(card, {
-      clipPath: 'inset(100% 0 0 0)',
-      ease: 'power4.out',
-      scrollTrigger: { trigger: card, start: 'top 88%', end: 'top 48%', scrub: 0.6 },
+      '--proof-curtain': 1,
+      y: compactMotion ? 18 : 30,
+      ease: 'none',
+      scrollTrigger: { trigger: card, start: 'clamp(top 92%)', end: 'clamp(top 56%)', scrub: narrativeScrub },
     });
   });
+}
+
+if (!reduced) {
+  const refreshMotion = () => window.requestAnimationFrame(() => ScrollTrigger.refresh());
+  window.addEventListener('load', refreshMotion, { once: true });
+  document.fonts?.ready.then(refreshMotion);
 }
 
 document.querySelectorAll('[data-image-sequence]').forEach((sequence) => {

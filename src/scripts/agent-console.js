@@ -25,6 +25,87 @@ if (consoleRoot instanceof HTMLElement) {
   let voiceStream = null;
   let voiceAudio = null;
   let voiceChannel = null;
+  let voiceMeterContext = null;
+  let voiceMeterSource = null;
+  let voiceMeterAnalyser = null;
+  let voiceMeterData = null;
+  let voiceMeterFrame = 0;
+  let voiceStateFloor = 0;
+  let voiceSessionGeneration = 0;
+  let voiceTokenController = null;
+
+  const isVoiceSessionActive = (generation) => (
+    generation === voiceSessionGeneration
+    && !consoleRoot.hidden
+    && currentMode === 'voice'
+  );
+
+  const emitVoiceEnergy = (energy = 0, state = '') => {
+    const value = Math.min(1, Math.max(0, Number.isFinite(energy) ? energy : 0));
+    if (voiceStage instanceof HTMLElement) {
+      voiceStage.style.setProperty('--voice-energy', value.toFixed(3));
+      if (state) voiceStage.dataset.voiceState = state;
+    }
+    document.dispatchEvent(new CustomEvent('sfai:voice-energy', { detail: { energy: value, state } }));
+  };
+
+  const stopVoiceMeter = () => {
+    cancelAnimationFrame(voiceMeterFrame);
+    voiceMeterFrame = 0;
+    voiceMeterSource?.disconnect();
+    voiceMeterAnalyser?.disconnect();
+    voiceMeterContext?.close().catch(() => {});
+    voiceMeterContext = null;
+    voiceMeterSource = null;
+    voiceMeterAnalyser = null;
+    voiceMeterData = null;
+    voiceStateFloor = 0;
+    emitVoiceEnergy(0, 'idle');
+  };
+
+  const startVoiceMeter = async (stream, generation) => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass || !(stream instanceof MediaStream)) return;
+    const meterContext = new AudioContextClass();
+    try {
+      if (meterContext.state === 'suspended') await meterContext.resume();
+    } catch {
+      meterContext.close().catch(() => {});
+      return;
+    }
+    if (!isVoiceSessionActive(generation) || voiceStream !== stream) {
+      meterContext.close().catch(() => {});
+      return;
+    }
+    const meterAnalyser = meterContext.createAnalyser();
+    meterAnalyser.fftSize = 256;
+    meterAnalyser.smoothingTimeConstant = .76;
+    const meterData = new Uint8Array(meterAnalyser.fftSize);
+    const meterSource = meterContext.createMediaStreamSource(stream);
+    meterSource.connect(meterAnalyser);
+    voiceMeterContext = meterContext;
+    voiceMeterAnalyser = meterAnalyser;
+    voiceMeterData = meterData;
+    voiceMeterSource = meterSource;
+
+    let smoothEnergy = 0;
+    const measure = () => {
+      if (!voiceMeterAnalyser || !voiceMeterData) return;
+      voiceMeterAnalyser.getByteTimeDomainData(voiceMeterData);
+      let sum = 0;
+      for (const sample of voiceMeterData) {
+        const normalized = (sample - 128) / 128;
+        sum += normalized * normalized;
+      }
+      const rms = Math.sqrt(sum / voiceMeterData.length);
+      const target = Math.min(1, Math.max(voiceStateFloor, rms * 5.2));
+      const blend = target > smoothEnergy ? .38 : .1;
+      smoothEnergy += (target - smoothEnergy) * blend;
+      emitVoiceEnergy(smoothEnergy);
+      voiceMeterFrame = requestAnimationFrame(measure);
+    };
+    measure();
+  };
 
   const setConnectionStatus = (label, state = '') => {
     if (!(connectionStatus instanceof HTMLElement)) return;
@@ -35,7 +116,9 @@ if (consoleRoot instanceof HTMLElement) {
   };
 
   const switchMode = (mode) => {
-    currentMode = mode === 'voice' ? 'voice' : 'chat';
+    const nextMode = mode === 'voice' ? 'voice' : 'chat';
+    if (currentMode === 'voice' && nextMode !== 'voice') stopVoice();
+    currentMode = nextMode;
     flowCores.forEach((core) => core.classList.toggle('is-voice-open', currentMode === 'voice' && !consoleRoot.hidden));
     modeButtons.forEach((button) => {
       const active = button.getAttribute('data-agent-mode') === currentMode;
@@ -62,6 +145,10 @@ if (consoleRoot instanceof HTMLElement) {
   };
 
   const stopVoice = () => {
+    voiceSessionGeneration += 1;
+    voiceTokenController?.abort();
+    voiceTokenController = null;
+    stopVoiceMeter();
     voiceChannel?.close();
     voicePeer?.close();
     voiceStream?.getTracks().forEach((track) => track.stop());
@@ -274,22 +361,40 @@ if (consoleRoot instanceof HTMLElement) {
     transcript.textContent = 'Przygotowuję bezpieczne połączenie…';
     setConnectionStatus('łączy', 'working');
 
+    const generation = ++voiceSessionGeneration;
+    const controller = new AbortController();
+    voiceTokenController?.abort();
+    voiceTokenController = controller;
+
     try {
-      const tokenResponse = await fetch('/api/realtime-session', { method: 'POST' });
+      const tokenResponse = await fetch('/api/realtime-session', { method: 'POST', signal: controller.signal });
       const token = await tokenResponse.json();
       if (!tokenResponse.ok || !token?.value) throw new Error(token?.error || 'Brak tokenu sesji.');
+      if (!isVoiceSessionActive(generation)) return;
 
-      voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      voicePeer = new RTCPeerConnection();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!isVoiceSessionActive(generation)) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      voiceStream = stream;
+      void startVoiceMeter(stream, generation).catch(() => {});
+      const peer = new RTCPeerConnection();
+      voicePeer = peer;
       voiceAudio = document.createElement('audio');
       voiceAudio.autoplay = true;
       voiceAudio.hidden = true;
       consoleRoot.append(voiceAudio);
-      voicePeer.ontrack = (event) => { voiceAudio.srcObject = event.streams[0]; };
-      voiceStream.getTracks().forEach((track) => voicePeer.addTrack(track, voiceStream));
+      peer.ontrack = (event) => {
+        if (isVoiceSessionActive(generation) && voiceAudio) voiceAudio.srcObject = event.streams[0];
+      };
+      stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-      voiceChannel = voicePeer.createDataChannel('oai-events');
+      voiceChannel = peer.createDataChannel('oai-events');
       voiceChannel.addEventListener('open', () => {
+        if (!isVoiceSessionActive(generation)) return;
+        voiceStateFloor = .14;
+        emitVoiceEnergy(.14, 'listening');
         transcript.textContent = 'Słucham. Zacznij mówić.';
         setConnectionStatus('słucha', 'working');
         voiceStart.disabled = false;
@@ -299,44 +404,65 @@ if (consoleRoot instanceof HTMLElement) {
         voiceStage?.classList.add('is-live');
       });
       voiceChannel.addEventListener('message', (event) => {
+        if (!isVoiceSessionActive(generation)) return;
         let data;
         try { data = JSON.parse(event.data); } catch { return; }
         if (data.type === 'input_audio_buffer.speech_started') {
+          voiceStateFloor = .28;
+          emitVoiceEnergy(.42, 'listening');
           transcript.textContent = 'Słucham…';
           setConnectionStatus('słucha', 'working');
+        } else if (data.type === 'input_audio_buffer.speech_stopped') {
+          voiceStateFloor = .12;
+          emitVoiceEnergy(.18, 'thinking');
         } else if (data.type === 'response.created') {
+          voiceStateFloor = .76;
+          emitVoiceEnergy(.9, 'speaking');
           transcript.textContent = 'Odpowiadam…';
           setConnectionStatus('mówi', 'working');
         } else if (/transcript\.delta$/.test(data.type) && typeof data.delta === 'string') {
           transcript.textContent = `${transcript.textContent === 'Odpowiadam…' ? '' : transcript.textContent} ${data.delta}`.trim();
         } else if (data.type === 'response.done') {
+          voiceStateFloor = .14;
+          emitVoiceEnergy(.2, 'listening');
           setConnectionStatus('słucha', 'working');
         } else if (data.type === 'error') {
+          voiceStateFloor = 0;
+          emitVoiceEnergy(0, 'error');
           transcript.textContent = 'Połączenie zostało przerwane. Spróbuj ponownie.';
           setConnectionStatus('błąd', 'local');
         }
       });
 
-      const offer = await voicePeer.createOffer();
-      await voicePeer.setLocalDescription(offer);
+      const offer = await peer.createOffer();
+      if (!isVoiceSessionActive(generation)) return;
+      await peer.setLocalDescription(offer);
+      if (!isVoiceSessionActive(generation)) return;
       const sdpResponse = await fetch('https://api.openai.com/v1/realtime/calls', {
         method: 'POST',
         body: offer.sdp,
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${token.value}`,
           'Content-Type': 'application/sdp',
         },
       });
       if (!sdpResponse.ok) throw new Error('Nie udało się zestawić połączenia.');
-      await voicePeer.setRemoteDescription({ type: 'answer', sdp: await sdpResponse.text() });
+      const answerSdp = await sdpResponse.text();
+      if (!isVoiceSessionActive(generation)) return;
+      await peer.setRemoteDescription({ type: 'answer', sdp: answerSdp });
     } catch (error) {
+      if (!isVoiceSessionActive(generation)) return;
       stopVoice();
       transcript.textContent = error?.name === 'NotAllowedError'
         ? 'Dostęp do mikrofonu nie został udzielony.'
         : 'Agent głosowy wymaga aktywacji po stronie serwera. Czat tekstowy nadal działa.';
       setConnectionStatus('głos nieaktywny', 'local');
+    } finally {
+      if (voiceTokenController === controller) voiceTokenController = null;
     }
   };
 
   voiceStart?.addEventListener('click', startVoice);
+  window.addEventListener('pagehide', stopVoice);
 }

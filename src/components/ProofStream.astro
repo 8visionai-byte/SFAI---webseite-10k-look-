@@ -288,52 +288,79 @@ const streams = [
     margin: 0;
     opacity: 0;
     background: #121414;
-    clip-path: inset(0 100% 0 0);
     transform: translateX(-8vw);
     transition:
-      clip-path 0.62s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.62s cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 0.28s linear;
-    transition-delay: calc(var(--asset-index) * 55ms);
+      opacity 0.34s calc(var(--asset-index) * 55ms) linear,
+      transform 0.68s calc(0.58s + var(--asset-index) * 55ms) cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .proof-stream__asset:nth-child(2) { transform: translate(-8vw, -7%); }
   .proof-stream__asset:nth-child(3) { transform: translate(-8vw, 8%); }
 
+  .proof-stream__asset::before,
   .proof-stream__asset::after {
     position: absolute;
     inset: 0;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(135deg, transparent 58%, rgba(255, 255, 255, 0.09));
     content: '';
     pointer-events: none;
+  }
+
+  .proof-stream__asset::before {
+    z-index: 3;
+    background: linear-gradient(90deg, #090a0a 0%, #101212 72%, rgba(16, 18, 18, 0.96) 100%);
+    transform: scaleX(1);
+    transform-origin: right center;
+    transition: transform 0.52s calc(var(--asset-index) * 55ms) cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+
+  .proof-stream__asset::after {
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, transparent 58%, rgba(255, 255, 255, 0.09));
   }
 
   .proof-stream__asset img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: saturate(0.76) contrast(1.08);
-    transform: scale(1.045);
-    transition: filter 0.55s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    filter: blur(10px) brightness(0.4) saturate(0.38) contrast(0.78);
+    transform: scale(1.055);
+    transition:
+      filter 0.34s 0.34s cubic-bezier(0.22, 0.72, 0, 1),
+      transform 0.72s 0.62s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .proof-stream__panel.is-active .proof-stream__asset {
     opacity: 1;
-    clip-path: inset(0);
     transform: translate(0, 0);
   }
 
+  .proof-stream__panel.is-active .proof-stream__asset::before { transform: scaleX(0); }
+
   .proof-stream__panel.is-active .proof-stream__asset img {
-    filter: saturate(0.9) contrast(1.06);
+    filter: blur(0) brightness(1) saturate(0.9) contrast(1.06);
     transform: scale(1);
   }
 
   .proof-stream__panel.is-exiting .proof-stream__asset {
     opacity: 0;
-    clip-path: inset(0 0 0 100%);
     transform: translateX(10vw);
-    transition-delay: calc(var(--asset-index) * 32ms);
+    transition:
+      transform 0.5s calc(var(--asset-index) * 32ms) cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.28s calc(0.16s + var(--asset-index) * 32ms) ease;
+  }
+
+  .proof-stream__panel.is-exiting .proof-stream__asset::before {
+    transform: scaleX(1);
+    transform-origin: left center;
+    transition-delay: calc(0.18s + var(--asset-index) * 32ms);
+  }
+
+  .proof-stream__panel.is-exiting .proof-stream__asset img {
+    filter: blur(8px) brightness(0.52) saturate(0.48) contrast(0.82);
+    transform: scale(1.025);
+    transition: filter 0.32s ease, transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .proof-stream__list {
@@ -358,13 +385,12 @@ const streams = [
     opacity: 0.25;
     cursor: pointer;
     text-align: left;
-    transition: opacity 0.38s ease, background 0.38s ease, padding 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.38s ease, background 0.38s ease;
   }
 
   .proof-stream__row.is-active,
   .proof-stream__row:hover,
   .proof-stream__row:focus-visible {
-    padding-inline: 14px;
     background: rgba(9, 10, 10, 0.54);
     opacity: 1;
   }
@@ -388,7 +414,10 @@ const streams = [
     font-weight: 560;
     line-height: 0.88;
     letter-spacing: -0.06em;
+    transition: transform 0.48s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  .proof-stream__row:is(.is-active, :hover, :focus-visible) .proof-stream__title { transform: translateX(10px); }
 
   .proof-stream__meta { justify-self: end; }
 
@@ -452,9 +481,10 @@ const streams = [
       padding: 19px 0;
       opacity: 0.42;
     }
-    .proof-stream__row:hover { padding-inline: 0; background: rgba(9, 10, 10, 0.2); }
+    .proof-stream__row:hover { background: rgba(9, 10, 10, 0.2); }
     .proof-stream__row.is-active,
-    .proof-stream__row:focus-visible { padding-inline: 8px; background: rgba(9, 10, 10, 0.56); opacity: 1; }
+    .proof-stream__row:focus-visible { background: rgba(9, 10, 10, 0.56); opacity: 1; }
+    .proof-stream__row:is(.is-active, :hover, :focus-visible) .proof-stream__title { transform: translateX(6px); }
     .proof-stream__number { font-size: 0.49rem; }
     .proof-stream__title { font-size: clamp(2.2rem, 11vw, 3.8rem); }
     .proof-stream__meta { font-size: 0.48rem; }
@@ -473,9 +503,9 @@ const streams = [
     .proof-stream__panel.is-exiting { visibility: hidden; opacity: 0; }
     .proof-stream__panel.is-active .proof-stream__asset {
       opacity: 1;
-      clip-path: none;
       transform: none;
     }
+    .proof-stream__panel.is-active .proof-stream__asset::before { transform: scaleX(0); }
   }
 </style>
 
@@ -521,7 +551,7 @@ const streams = [
         clearExit(previousPanel);
       } else {
         previousPanel.classList.add('is-exiting');
-        const timer = window.setTimeout(() => clearExit(previousPanel), 720);
+        const timer = window.setTimeout(() => clearExit(previousPanel), 980);
         exitTimers.set(previousPanel, timer);
       }
 

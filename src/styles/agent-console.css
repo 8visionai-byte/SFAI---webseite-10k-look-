@@ -274,14 +274,15 @@
 
 .agent-console__mode--voice { place-items: center; grid-template-rows: 1fr; overflow: hidden; }
 .voice-agent-stage { position: relative; display: grid; width: 100%; min-height: 100%; place-items: center; align-content: center; overflow: hidden; padding: 36px; text-align: center; }
-.voice-agent-stage__field { position: absolute; inset: 0; display: grid; place-items: center; opacity: .92; }
-.voice-agent-stage__field::before { position: absolute; width: min(44vw, 420px); aspect-ratio: 1; border-radius: 42% 58% 54% 46% / 48% 45% 55% 52%; background: radial-gradient(circle at 38% 32%, rgba(247,247,242,.28), rgba(122,132,126,.12) 32%, rgba(13,14,14,.08) 67%), conic-gradient(from 25deg, rgba(223,255,63,.16), rgba(99,112,255,.13), rgba(247,247,242,.12), rgba(223,255,63,.12)); filter: blur(1px); box-shadow: 0 0 120px rgba(223,255,63,.08); content: ''; animation: voice-morph 9s ease-in-out infinite alternate; }
+.voice-agent-stage__field { position: absolute; inset: 0; display: grid; place-items: center; opacity: .92; transform: scale(calc(1 + var(--voice-energy, 0) * .035)); transition: transform .11s linear; }
+.voice-agent-stage__field::before { position: absolute; width: min(44vw, 420px); aspect-ratio: 1; border-radius: 42% 58% 54% 46% / 48% 45% 55% 52%; background: radial-gradient(circle at 38% 32%, rgba(247,247,242,.28), rgba(122,132,126,.12) 32%, rgba(13,14,14,.08) 67%), conic-gradient(from 25deg, rgba(223,255,63,.16), rgba(99,112,255,.13), rgba(247,247,242,.12), rgba(223,255,63,.12)); filter: blur(1px) brightness(calc(.92 + var(--voice-energy, 0) * .42)); box-shadow: 0 0 calc(110px + var(--voice-energy, 0) * 55px) rgba(223,255,63,calc(.07 + var(--voice-energy, 0) * .11)); content: ''; animation: voice-morph 9s ease-in-out infinite alternate; }
 .voice-agent-stage__field span { position: absolute; width: min(48vw, 460px); aspect-ratio: 1; border: 1px solid rgba(247,247,242,.08); border-radius: 48% 52% 44% 56%; animation: voice-orbit 14s linear infinite; }
 .voice-agent-stage__field span:nth-child(2) { width: min(38vw, 360px); border-color: rgba(223,255,63,.15); animation-direction: reverse; animation-duration: 11s; }
 .voice-agent-stage__field span:nth-child(3) { width: min(29vw, 280px); border-color: rgba(99,112,255,.12); animation-duration: 8s; }
 .voice-agent-stage__field i { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 28px var(--lime); }
 .voice-agent-stage.is-live .voice-agent-stage__field::before { animation-duration: 2.3s; }
 .voice-agent-stage.is-live .voice-agent-stage__field span { animation-duration: 5s; }
+.voice-agent-stage[data-voice-state='speaking'] .voice-agent-stage__field span:nth-child(3) { border-color: rgba(99,112,255,.34); box-shadow: 0 0 54px rgba(99,112,255,.12); }
 .voice-agent-stage > :not(.voice-agent-stage__field) { position: relative; z-index: 2; }
 .voice-agent-stage__eyebrow { color: var(--lime); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; }
 .voice-agent-stage h3 { margin-top: 14px; font-size: clamp(2.2rem, 5vw, 4.4rem); font-weight: 480; line-height: .94; letter-spacing: -.065em; }
