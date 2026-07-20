@@ -8,7 +8,7 @@
   <canvas data-voice-aura-canvas aria-hidden="true"></canvas>
 
   <div class="flow-metal-hud" aria-hidden="true">
-    <span>[ Voice intelligence ]</span>
+    <span>[ Agent głosowy / realtime ]</span>
     <span data-aura-state>Słucha / 01</span>
   </div>
 
@@ -23,24 +23,34 @@
     <span class="voice-core-caption" aria-hidden="true">Voice agent</span>
   </button>
 
-  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Live resonance</span><b>SF / AI</b></div>
+  <div class="flow-metal-index" aria-hidden="true"><i></i><span>Żywa modulacja</span><b>SF / AI</b></div>
 </div>
 
 <style>
+  .flow-core.voice-aura::before {
+    background: radial-gradient(ellipse at var(--flow-object-x) 49%, rgba(239, 255, 160, .14), rgba(223, 255, 63, .075) 24%, rgba(164, 228, 0, .028) 43%, transparent 66%);
+    filter: blur(30px);
+  }
+
+  .flow-core.voice-aura::after {
+    background: linear-gradient(transparent, rgba(223, 255, 63, .06) 22%, rgba(239, 255, 142, .21) 49%, rgba(190, 255, 0, .06) 72%, transparent);
+    opacity: .5;
+  }
+
   .voice-aura__ambient {
     position: absolute;
     z-index: 1;
     top: 50%;
     left: var(--flow-object-x);
-    width: min(70%, 560px);
+    width: min(58%, 470px);
     aspect-ratio: 1;
     border-radius: 50%;
     background:
-      radial-gradient(circle at 50% 50%, rgba(245, 250, 248, .095), transparent 37%),
-      radial-gradient(circle at 40% 64%, rgba(200, 255, 69, .075), transparent 30%),
-      radial-gradient(circle at 68% 35%, rgba(49, 92, 255, .075), transparent 28%);
-    filter: blur(32px);
-    opacity: .8;
+      radial-gradient(circle at 50% 50%, rgba(242, 255, 173, .12), transparent 35%),
+      radial-gradient(circle at 40% 64%, rgba(223, 255, 63, .11), transparent 31%),
+      radial-gradient(circle at 68% 35%, rgba(177, 255, 0, .075), transparent 29%);
+    filter: blur(27px);
+    opacity: .86;
     pointer-events: none;
     transform: translate(-50%, -50%);
     transition: opacity .6s ease, transform .8s cubic-bezier(.2,.75,.2,1);
@@ -48,7 +58,7 @@
 
   .voice-aura.is-voice-open .voice-aura__ambient {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.08);
+    transform: translate(-50%, -50%) scale(1.055);
   }
 
   .voice-aura__fallback {
@@ -70,29 +80,30 @@
   }
 
   .voice-aura__fallback span {
-    width: min(53%, 430px);
+    width: min(45%, 370px);
     background:
-      radial-gradient(circle at 35% 32%, rgba(255,255,255,.32), transparent 18%),
-      radial-gradient(circle at 63% 65%, rgba(200,255,69,.15), transparent 29%),
-      radial-gradient(circle at 67% 30%, rgba(49,92,255,.16), transparent 28%),
-      radial-gradient(circle, rgba(210,222,219,.18), rgba(91,105,104,.07) 48%, transparent 70%);
-    box-shadow: 0 0 75px rgba(239,245,242,.08), inset 0 0 55px rgba(255,255,255,.08);
+      radial-gradient(circle at 35% 32%, rgba(255,255,220,.48), transparent 17%),
+      radial-gradient(circle at 63% 65%, rgba(223,255,63,.2), transparent 30%),
+      radial-gradient(circle at 67% 30%, rgba(174,255,0,.18), transparent 28%),
+      radial-gradient(circle, rgba(232,255,128,.21), rgba(132,179,15,.075) 48%, transparent 70%);
+    box-shadow: 0 0 72px rgba(223,255,63,.12), inset 0 0 52px rgba(246,255,186,.12);
     filter: blur(1px);
     animation: voice-aura-breathe 7s ease-in-out infinite alternate;
   }
 
   .voice-aura__fallback i {
-    width: min(41%, 330px);
-    border: 1px solid rgba(247,247,242,.14);
-    box-shadow: 0 0 48px rgba(49,92,255,.06);
+    width: min(36%, 292px);
+    border: 1px solid rgba(239,255,150,.2);
+    box-shadow: 0 0 48px rgba(223,255,63,.08);
     opacity: .72;
     animation: voice-aura-orbit 12s linear infinite;
   }
 
   .voice-aura__fallback b {
-    width: min(29%, 230px);
-    border: 1px solid rgba(200,255,69,.18);
-    opacity: .6;
+    width: min(25%, 202px);
+    border: 1px solid rgba(223,255,63,.26);
+    box-shadow: 0 0 34px rgba(223,255,63,.07);
+    opacity: .68;
     animation: voice-aura-orbit 9s linear infinite reverse;
   }
 
@@ -106,10 +117,10 @@
   }
 
   @media (max-width: 760px) {
-    .voice-aura__ambient { width: 82%; filter: blur(24px); }
-    .voice-aura__fallback span { width: 64%; }
-    .voice-aura__fallback i { width: 50%; }
-    .voice-aura__fallback b { width: 35%; }
+    .voice-aura__ambient { width: 68%; filter: blur(22px); }
+    .voice-aura__fallback span { width: 55%; }
+    .voice-aura__fallback i { width: 44%; }
+    .voice-aura__fallback b { width: 31%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -175,58 +186,62 @@
 
       float time = u_time * (0.58 + u_energy * 0.18);
       float baseRadius = length(p);
-      if (baseRadius > .62) {
+      if (baseRadius > .52) {
         gl_FragColor = vec4(0.0);
         return;
       }
 
       float warpX = noise(p * 2.15 + vec2(time * .055, -time * .032));
       float warpY = noise(p * 2.37 + vec2(-time * .041, time * .047) + 9.7);
-      vec2 q = p + (vec2(warpX, warpY) - .5) * (.052 + u_energy * .018);
+      vec2 q = p + (vec2(warpX, warpY) - .5) * (.038 + u_energy * .014);
       float angle = atan(q.y, q.x);
       float radius = length(q);
       float grain = fbm(q * 3.5 + vec2(time * 0.075, -time * 0.052));
       float breath = sin(time * 1.18) * 0.009 + sin(time * 0.43) * 0.006;
-      float voiceWave = sin(angle * 3.0 - time * 1.16) * 0.023;
-      voiceWave += sin(angle * 5.0 + time * 0.82) * 0.012;
-      voiceWave += (grain - 0.5) * (0.025 + u_energy * 0.016);
+      float voiceWave = sin(angle * 3.0 - time * 1.16) * 0.014;
+      voiceWave += sin(angle * 6.0 + time * 0.82) * 0.008;
+      voiceWave += (grain - 0.5) * (0.016 + u_energy * 0.012);
 
-      float boundary = 0.285 + breath + voiceWave;
+      float boundary = 0.232 + breath * .82 + voiceWave;
       float outerDistance = abs(radius - boundary);
-      float innerDistance = abs(radius - (boundary - 0.052 - sin(angle * 2.0 + time) * 0.009));
-      float outerGlow = exp(-outerDistance * (18.0 - u_energy * 2.0));
-      float innerGlow = exp(-innerDistance * 31.0);
-      float body = 1.0 - smoothstep(boundary - 0.11, boundary + 0.06, radius);
-      float veil = body * (0.18 + grain * 0.2);
-      float core = exp(-radius * radius * (25.0 - u_energy * 4.0));
-      float innerMist = exp(-radius * radius * 11.0) * (0.55 + grain * .45);
+      float innerDistance = abs(radius - (boundary - 0.043 - sin(angle * 2.0 + time) * 0.007));
+      float outerGlow = exp(-outerDistance * (21.0 - u_energy * 2.2));
+      float innerGlow = exp(-innerDistance * 35.0);
+      float body = 1.0 - smoothstep(boundary - 0.09, boundary + 0.048, radius);
+      float veil = body * (0.15 + grain * 0.17);
+      float core = exp(-radius * radius * (34.0 - u_energy * 4.0));
+      float innerMist = exp(-radius * radius * 14.0) * (0.52 + grain * .42);
 
       float ribbonPhase = angle * 2.0 + time * 0.75 + grain * 1.8;
       float ribbon = exp(-abs(sin(ribbonPhase) - (radius / max(boundary, .01) - .52)) * 7.0);
       ribbon *= 1.0 - smoothstep(boundary - .08, boundary + .02, radius);
 
-      float pulse = 0.76 + sin(time * 1.35 + radius * 18.0) * 0.08 + u_energy * 0.26;
-      vec3 silver = vec3(0.80, 0.88, 0.86);
-      vec3 softWhite = vec3(0.97, 0.985, 0.975);
-      vec3 lime = vec3(0.78, 1.0, 0.23);
-      vec3 cobalt = vec3(0.18, 0.30, 1.0);
+      float signalWave = sin(angle * 7.0 - time * (1.25 + u_energy * .28)) * (.003 + u_energy * .0025);
+      float signalRing = exp(-abs(radius - (boundary + .034 + signalWave)) * 62.0);
+      signalRing *= 1.0 - smoothstep(boundary + .03, boundary + .12, radius);
+
+      float pulse = 0.75 + sin(time * 1.35 + radius * 18.0) * 0.07 + u_energy * 0.24;
+      vec3 deepLime = vec3(0.17, 0.23, 0.018);
+      vec3 softWhite = vec3(0.97, 1.0, 0.82);
+      vec3 lime = vec3(0.80, 1.0, 0.20);
+      vec3 citron = vec3(0.94, 1.0, 0.54);
       float chroma = sin(angle + time * .31) * .5 + .5;
-      vec3 spectrum = mix(cobalt, lime, chroma);
-      vec3 edgeColor = mix(silver, spectrum, .10 + u_energy * .04);
-      edgeColor = mix(edgeColor, softWhite, innerGlow * .42 + outerGlow * .18);
-      vec3 coreColor = mix(silver, softWhite, .78);
+      vec3 spectrum = mix(lime, citron, chroma);
+      vec3 edgeColor = mix(deepLime, spectrum, .68 + u_energy * .10);
+      edgeColor = mix(edgeColor, softWhite, innerGlow * .38 + outerGlow * .13);
+      vec3 coreColor = mix(lime, softWhite, .47);
 
       float halo = exp(-max(0.0, radius - boundary) * 9.0) * (1.0 - smoothstep(boundary - .01, boundary + .22, radius));
-      float alpha = (outerGlow * .46 + innerGlow * .22 + veil * .29 + ribbon * .15 + halo * .07 + core * .12) * pulse;
-      alpha *= 1.0 - smoothstep(.19, .53, radius);
+      float alpha = (outerGlow * .4 + innerGlow * .2 + veil * .25 + ribbon * .1 + signalRing * .075 + halo * .065 + core * .11) * pulse;
+      alpha *= 1.0 - smoothstep(.16, .45, radius);
       alpha *= .88 + u_progress * .08;
 
-      vec3 rgb = edgeColor * (outerGlow * .52 + innerGlow * .3 + veil * .26 + ribbon * .13);
-      rgb += coreColor * core * (.22 + u_energy * .1);
-      rgb += silver * innerMist * .055;
-      rgb += spectrum * (ribbon * .055 + outerGlow * .025);
+      vec3 rgb = edgeColor * (outerGlow * .48 + innerGlow * .29 + veil * .23 + ribbon * .10);
+      rgb += coreColor * core * (.24 + u_energy * .1);
+      rgb += lime * innerMist * .062;
+      rgb += spectrum * (ribbon * .05 + signalRing * .065 + outerGlow * .03);
       rgb += (hash(gl_FragCoord.xy + u_time) - .5) / 255.0;
-      alpha = clamp(alpha, 0.0, .86);
+      alpha = clamp(alpha, 0.0, .82);
       gl_FragColor = vec4(max(rgb, vec3(0.0)) * alpha, alpha);
     }
   `;

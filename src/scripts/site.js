@@ -7,8 +7,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const compactMotion = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
-const narrativeScrub = compactMotion ? 0.58 : 0.9;
-const galleryScrub = compactMotion ? 0.66 : 0.96;
+const narrativeScrub = compactMotion ? 0.72 : 1.05;
+const galleryScrub = compactMotion ? 0.86 : 1.2;
 const header = document.querySelector('[data-header]');
 const menuToggle = document.querySelector('[data-menu-toggle]');
 const menuPanel = document.querySelector('[data-menu-panel]');
@@ -157,6 +157,69 @@ document.querySelectorAll('[data-scramble]').forEach((element) => {
   const trigger = element.closest('a, button') ?? element;
   trigger.addEventListener('pointerenter', () => runScramble(element));
   trigger.addEventListener('focus', () => runScramble(element));
+});
+
+const hoverScrambleFrames = new WeakMap();
+const resetHoverScramble = (element) => {
+  if (!(element instanceof HTMLElement)) return;
+  const activeFrame = hoverScrambleFrames.get(element);
+  if (activeFrame) window.cancelAnimationFrame(activeFrame);
+  hoverScrambleFrames.delete(element);
+  if (element.dataset.hoverScrambleOriginal) element.textContent = element.dataset.hoverScrambleOriginal;
+  element.classList.remove('is-hover-scrambling');
+  element.style.removeProperty('--hover-scramble-height');
+};
+
+const runHoverScramble = (element) => {
+  if (!(element instanceof HTMLElement) || reduced || compactMotion) return;
+  resetHoverScramble(element);
+  const original = element.dataset.hoverScrambleOriginal ?? element.textContent ?? '';
+  if (!original.trim()) return;
+  element.dataset.hoverScrambleOriginal = original;
+  element.setAttribute('aria-label', original.trim());
+  element.setAttribute('aria-live', 'off');
+  element.style.setProperty('--hover-scramble-height', `${Math.ceil(element.getBoundingClientRect().height)}px`);
+  element.classList.add('is-hover-scrambling');
+
+  const characters = [...original];
+  const duration = element.matches('p') ? 720 : 620;
+  let startTime = null;
+  const animate = (time) => {
+    if (startTime === null) startTime = time;
+    const progress = Math.min(1, (time - startTime) / duration);
+    const revealEdge = Math.floor(progress * (characters.length + 2));
+    element.textContent = characters.map((character, index) => {
+      if (/\s/u.test(character) || !/[\p{L}\d]/u.test(character) || index < revealEdge) return character;
+      return scrambleGlyphs[Math.floor(Math.random() * scrambleGlyphs.length)];
+    }).join('');
+
+    if (progress < 1) {
+      hoverScrambleFrames.set(element, window.requestAnimationFrame(animate));
+      return;
+    }
+    element.textContent = original;
+    hoverScrambleFrames.delete(element);
+    element.classList.remove('is-hover-scrambling');
+    element.style.removeProperty('--hover-scramble-height');
+  };
+
+  hoverScrambleFrames.set(element, window.requestAnimationFrame(animate));
+};
+
+document.querySelectorAll('[data-hover-scramble-group]').forEach((group) => {
+  const targets = [...group.querySelectorAll('[data-hover-scramble]')];
+  const play = () => targets.forEach((target, index) => {
+    window.setTimeout(() => {
+      if (group.matches(':hover')) runHoverScramble(target);
+    }, index * 70);
+  });
+  const reset = () => targets.forEach(resetHoverScramble);
+  group.addEventListener('pointerenter', play);
+  group.addEventListener('pointerleave', reset);
+  group.addEventListener('pointercancel', reset);
+  group.addEventListener('focusout', (event) => {
+    if (!(event.relatedTarget instanceof Node) || !group.contains(event.relatedTarget)) reset();
+  });
 });
 
 const processScrambleFrames = new WeakMap();
@@ -403,7 +466,6 @@ if (!reduced) {
   const cinematic = document.querySelector('[data-cinematic]');
   if (cinematic) {
     const frames = [...cinematic.querySelectorAll('[data-cinematic-frame]')];
-    const title = cinematic.querySelector('.cinematic-title');
     const titleLines = cinematic.querySelectorAll('[data-cinematic-line]');
     const progressLine = cinematic.querySelector('[data-cinematic-progress]');
     const timeline = gsap.timeline({
@@ -415,13 +477,13 @@ if (!reduced) {
       },
     });
     timeline.fromTo(titleLines, {
-      xPercent: -104,
+      xPercent: -68,
       opacity: 0,
     }, {
       xPercent: 0,
       opacity: 1,
-      stagger: 0.045,
-      duration: 0.2,
+      stagger: 0.055,
+      duration: 0.24,
       ease: 'none',
     }, 0.02);
 
@@ -429,33 +491,33 @@ if (!reduced) {
       const bitmap = frame.querySelector('img');
       const entry = 0.09 + index * 0.195;
       const direction = index % 2 === 0 ? 1 : -1;
-      const startX = direction * (compactMotion ? 34 : 48);
-      const exitX = direction * (compactMotion ? -27 : -38);
+      const startX = direction * (compactMotion ? 22 : 30);
+      const exitX = direction * (compactMotion ? -17 : -23);
 
       timeline.fromTo(frame, {
         xPercent: startX,
-        yPercent: index % 2 === 0 ? -3 : 4,
-        rotate: direction * 2.2,
+        yPercent: index % 2 === 0 ? -1.5 : 2,
+        rotate: direction * 0.9,
         '--sfai-curtain': 1,
         opacity: 0,
       }, {
-        xPercent: startX * 0.2,
+        xPercent: startX * 0.12,
         yPercent: 0,
-        rotate: direction * 0.5,
+        rotate: direction * 0.18,
         '--sfai-curtain': 0,
-        opacity: 0.9,
-        duration: 0.12,
+        opacity: 0.94,
+        duration: 0.16,
         ease: 'none',
       }, entry);
 
       if (bitmap) {
         timeline.fromTo(bitmap, {
-          scale: 1.06,
-          filter: 'grayscale(.72) sepia(.16) contrast(.92) brightness(.72)',
+          scale: 1.035,
+          filter: 'grayscale(.58) sepia(.12) contrast(.96) brightness(.78)',
         }, {
           filter: 'grayscale(.32) sepia(.08) contrast(1.08) brightness(1)',
-          scale: 1.015,
-          duration: 0.15,
+          scale: 1.008,
+          duration: 0.18,
           ease: 'none',
         }, entry);
       }
@@ -464,21 +526,20 @@ if (!reduced) {
         xPercent: 0,
         rotate: 0,
         opacity: 1,
-        duration: 0.1,
+        duration: 0.12,
         ease: 'none',
-      }, entry + 0.12);
-      if (bitmap) timeline.to(bitmap, { scale: 1, duration: 0.08, ease: 'none' }, entry + 0.15);
+      }, entry + 0.14);
+      if (bitmap) timeline.to(bitmap, { scale: 1, duration: 0.1, ease: 'none' }, entry + 0.17);
       timeline.to(frame, {
         xPercent: exitX,
-        yPercent: -3,
-        rotate: direction * -1.4,
-        scale: 0.96,
+        yPercent: -1.5,
+        rotate: direction * -0.55,
+        scale: 0.985,
         opacity: 0,
-        duration: 0.14,
+        duration: 0.18,
         ease: 'none',
-      }, entry + 0.26);
+      }, entry + 0.29);
     });
-    if (title) timeline.to(title, { xPercent: -3, opacity: 0.14, duration: 0.13, ease: 'none' }, 0.88);
     timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1.02, ease: 'none' }, 0);
   }
 
@@ -488,7 +549,6 @@ if (!reduced) {
     const fogLines = fogStatement.querySelectorAll('[data-fog-line]');
     const fogNote = fogStatement.querySelector('[data-fog-note]');
     const fogVeil = fogStatement.querySelector('[data-fog-veil]');
-    const fogCopy = fogStatement.querySelector('[data-fog-copy]');
     const fogTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: fogStatement,
@@ -503,29 +563,29 @@ if (!reduced) {
       const entry = 0.03 + index * 0.12;
       const finalOpacity = [0.42, 0.78, 0.58][index] ?? 0.6;
       const drift = [
-        { xPercent: 2.5, yPercent: -1.5, scale: 0.985 },
-        { xPercent: -2, yPercent: 1, scale: 0.99 },
-        { xPercent: 0, yPercent: -2.5, scale: 1.015 },
+        { xPercent: 1.5, yPercent: -0.8, scale: 0.992 },
+        { xPercent: -1.2, yPercent: 0.6, scale: 0.995 },
+        { xPercent: 0, yPercent: -1.4, scale: 1.008 },
       ][index];
 
       fogTimeline.fromTo(image, {
         opacity: 0,
-        scale: compactMotion ? 1.035 : 1.065,
+        scale: compactMotion ? 1.018 : 1.035,
       }, {
         opacity: finalOpacity,
         scale: 1,
-        duration: 0.24,
+        duration: 0.29,
         ease: 'none',
       }, entry);
 
       if (bitmap) {
         fogTimeline.fromTo(bitmap, {
-          scale: 1.08,
-          filter: `brightness(.42) contrast(.82) saturate(.32) blur(${compactMotion ? 10 : 16}px)`,
+          scale: 1.045,
+          filter: `brightness(.5) contrast(.88) saturate(.38) blur(${compactMotion ? 7 : 11}px)`,
         }, {
           filter: 'brightness(.82) contrast(1.06) saturate(.56) blur(0px)',
           scale: 1,
-          duration: 0.26,
+          duration: 0.3,
           ease: 'none',
         }, entry);
       }
@@ -536,27 +596,26 @@ if (!reduced) {
       }, 0.38 + index * 0.025);
       fogTimeline.to(image, {
         opacity: 0,
-        scale: index === 2 ? 1.035 : 0.975,
-        duration: 0.18,
+        scale: index === 2 ? 1.018 : 0.988,
+        duration: 0.22,
         ease: 'none',
       }, 0.78 + index * 0.025);
     });
     fogTimeline.fromTo(fogLines, {
       opacity: 0.02,
-      scale: 1.03,
-      filter: `blur(${compactMotion ? 12 : 18}px)`,
+      scale: 1.016,
+      filter: `blur(${compactMotion ? 8 : 12}px)`,
     }, {
       opacity: 1,
       scale: 1,
       filter: 'blur(0px)',
       stagger: 0.065,
-      duration: 0.36,
+      duration: 0.4,
       ease: 'none',
     }, 0.12);
-    fogTimeline.fromTo(fogNote, { opacity: 0 }, { opacity: 1, duration: 0.24, ease: 'none' }, 0.42);
+    fogTimeline.fromTo(fogNote, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'none' }, 0.38);
     fogTimeline.fromTo(fogVeil, { opacity: 0.98 }, { opacity: 0.34, duration: 0.58, ease: 'none' }, 0.05);
     fogTimeline.to(fogVeil, { opacity: 0.76, duration: 0.2, ease: 'none' }, 0.78);
-    if (fogCopy) fogTimeline.to(fogCopy, { opacity: 0.14, filter: 'blur(5px)', duration: 0.14, ease: 'none' }, 0.86);
   }
 
   const systemExplore = document.querySelector('[data-system-explore]');
@@ -564,7 +623,6 @@ if (!reduced) {
     const items = [...systemExplore.querySelectorAll('[data-explore-item]')];
     const lines = systemExplore.querySelectorAll('[data-explore-line]');
     const note = systemExplore.querySelector('.system-explore__note');
-    const copy = systemExplore.querySelector('.system-explore__copy');
     const exploreTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: systemExplore,
@@ -575,16 +633,16 @@ if (!reduced) {
       },
     });
     exploreTimeline.fromTo(lines, {
-      xPercent: -106,
+      xPercent: -64,
       opacity: 0,
     }, {
       xPercent: 0,
       opacity: 1,
-      stagger: 0.05,
-      duration: 0.22,
+      stagger: 0.055,
+      duration: 0.26,
       ease: 'none',
     }, 0.02);
-    exploreTimeline.fromTo(note, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.2, ease: 'none' }, 0.16);
+    exploreTimeline.fromTo(note, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.24, ease: 'none' }, 0.16);
 
     items.forEach((item, index) => {
       const image = item.querySelector('.system-explore__image');
@@ -592,28 +650,28 @@ if (!reduced) {
       const entry = 0.045 + index * 0.145;
 
       exploreTimeline.fromTo(item, {
-        xPercent: compactMotion ? 48 : 68,
-        yPercent: index % 2 === 0 ? -4 : 5,
-        rotate: 2.4,
+        xPercent: compactMotion ? 28 : 38,
+        yPercent: index % 2 === 0 ? -2 : 2.5,
+        rotate: 0.8,
         opacity: 0,
       }, {
-        xPercent: compactMotion ? 8 : 11,
+        xPercent: compactMotion ? 5 : 7,
         yPercent: 0,
-        rotate: 0.4,
-        opacity: 0.9,
-        duration: 0.11,
+        rotate: 0.15,
+        opacity: 0.94,
+        duration: 0.15,
         ease: 'none',
       }, entry);
-      if (image) exploreTimeline.fromTo(image, { '--sfai-curtain': 1 }, { '--sfai-curtain': 0, duration: 0.11, ease: 'none' }, entry);
+      if (image) exploreTimeline.fromTo(image, { '--sfai-curtain': 1 }, { '--sfai-curtain': 0, duration: 0.15, ease: 'none' }, entry);
 
       if (bitmap) {
         exploreTimeline.fromTo(bitmap, {
-          scale: 1.045,
-          filter: 'brightness(.64) contrast(.92) saturate(.18) grayscale(.78)',
+          scale: 1.028,
+          filter: 'brightness(.7) contrast(.96) saturate(.28) grayscale(.62)',
         }, {
           filter: 'brightness(1) contrast(1.08) saturate(.82) grayscale(.05)',
-          scale: 1.012,
-          duration: 0.14,
+          scale: 1.006,
+          duration: 0.18,
           ease: 'none',
         }, entry);
       }
@@ -621,20 +679,19 @@ if (!reduced) {
         xPercent: 0,
         rotate: 0,
         opacity: 1,
-        duration: 0.09,
+        duration: 0.11,
         ease: 'none',
-      }, entry + 0.11);
-      if (bitmap) exploreTimeline.to(bitmap, { scale: 1, duration: 0.08, ease: 'none' }, entry + 0.14);
+      }, entry + 0.14);
+      if (bitmap) exploreTimeline.to(bitmap, { scale: 1, duration: 0.1, ease: 'none' }, entry + 0.17);
       exploreTimeline.to(item, {
-        xPercent: compactMotion ? -28 : -43,
-        yPercent: index % 2 === 0 ? 3 : -3,
-        rotate: -1.4,
+        xPercent: compactMotion ? -18 : -25,
+        yPercent: index % 2 === 0 ? 1.5 : -1.5,
+        rotate: -0.55,
         opacity: 0,
-        duration: 0.13,
+        duration: 0.17,
         ease: 'none',
-      }, entry + 0.22);
+      }, entry + 0.26);
     });
-    if (copy) exploreTimeline.to(copy, { xPercent: -5, opacity: 0.14, duration: 0.13, ease: 'none' }, 0.88);
   }
 
   const reelHeading = document.querySelector('[data-reel-heading]');

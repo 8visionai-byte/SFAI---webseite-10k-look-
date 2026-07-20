@@ -1,8 +1,82 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FoundersSection from '../components/FoundersSection.astro';
 import ProofStream from '../components/ProofStream.astro';
+import valueArchitectureImage from '../assets/generated/v4/service-value-diagnostic-atlas.png';
+import chatbotKnowledgeImage from '../assets/generated/v4/service-chatbot-knowledge-dialogue.png';
+import seoAiImage from '../assets/generated/v4/service-geo-citation-ecosystem.png';
+import voiceAgentImage from '../assets/generated/v4/service-voice-agent-resonance.png';
+import aiAgentImage from '../assets/generated/v4/service-agent-human-control.png';
+import automationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
+import aiCareImage from '../assets/generated/v4/service-care-command-observatory.png';
 import '../styles/subpage-motion.css';
+
+const impactAreas = [
+  {
+    index: '01',
+    title: 'Architektura wartości AI',
+    meta: 'Mapa procesów / priorytety / zwrot',
+    outcome: 'Znajdujemy proces, w którym AI ma mierzalny sens, zanim powstanie pierwszy element systemu.',
+    href: '/uslugi/architekci-wartosci-ai/',
+    image: valueArchitectureImage,
+    alt: 'Architektoniczna mapa wartości i priorytetów wdrożenia AI',
+  },
+  {
+    index: '02',
+    title: 'Chatboty AI',
+    meta: 'Wiedza / obsługa / leady',
+    outcome: 'Porządkujemy wiedzę firmy, aby klient otrzymał właściwą odpowiedź bez czekania w kolejce.',
+    href: '/uslugi/chatboty-ai/',
+    image: chatbotKnowledgeImage,
+    alt: 'Kontrolowany dialog chatbota AI połączonego z bazą wiedzy firmy',
+  },
+  {
+    index: '03',
+    title: 'Strony WWW pod SEO i AI',
+    meta: 'Design / SEO / GEO',
+    outcome: 'Budujemy treść i strukturę, które rozumieją zarówno ludzie, wyszukiwarki, jak i systemy AI.',
+    href: '/uslugi/strony-www-seo-ai/',
+    image: seoAiImage,
+    alt: 'Ekosystem cytowań i widoczności marki w wyszukiwarkach oraz odpowiedziach AI',
+  },
+  {
+    index: '04',
+    title: 'Voiceboty AI',
+    meta: 'Rozmowa / intencja / termin',
+    outcome: 'Telefon odbiera, rozumie sprawę i przeprowadza rozmówcę do kolejnego konkretnego kroku.',
+    href: '/uslugi/voiceboty-ai/',
+    image: voiceAgentImage,
+    alt: 'Rezonans głosu i aktywna forma wizualna voicebota AI',
+  },
+  {
+    index: '05',
+    title: 'Agenci AI',
+    meta: 'Decyzja / działanie / kontrola',
+    outcome: 'Agent przechodzi przez zadanie od sygnału do wyniku, z człowiekiem w punktach wymagających decyzji.',
+    href: '/uslugi/agenci-ai/',
+    image: aiAgentImage,
+    alt: 'Agent AI realizujący zadanie pod kontrolą człowieka',
+  },
+  {
+    index: '06',
+    title: 'Automatyzacja procesów',
+    meta: 'Systemy / dane / przepływ',
+    outcome: 'Usuwamy ręczne przeklejanie, przypominanie i raportowanie, łącząc narzędzia w jeden przepływ.',
+    href: '/uslugi/automatyzacja-procesow/',
+    image: automationImage,
+    alt: 'Przepływ dokumentów i danych przez zautomatyzowany proces biznesowy',
+  },
+  {
+    index: '07',
+    title: 'Opieka AI',
+    meta: 'Monitoring / rozwój / ciągłość',
+    outcome: 'Pilnujemy jakości, aktualizujemy wiedzę i rozwijamy system razem ze zmianami w firmie.',
+    href: '/uslugi/opieka-ai/',
+    image: aiCareImage,
+    alt: 'Centrum obserwacji jakości i ciągłości działania systemów AI',
+  },
+];
 
 const schema = {
   '@context': 'https://schema.org',
@@ -55,6 +129,69 @@ const schema = {
 
     <FoundersSection />
     <ProofStream />
+
+    <section class="about-impact" data-about-impact data-motion-section aria-labelledby="about-impact-title">
+      <div class="about-impact__shell">
+        <header class="about-impact__header">
+          <p class="mono-label">/ Obszary odzyskanego czasu</p>
+          <h2 id="about-impact-title">Gdzie AI <em>oddaje czas.</em></h2>
+          <p class="about-impact__lead">
+            Nie wdrażamy AI wszędzie. Wybieramy miejsca, w których technologia przejmuje powtarzalną pracę, a człowiek zachowuje decyzję i kontrolę.
+          </p>
+        </header>
+
+        <div class="about-impact__experience">
+          <nav class="about-impact__list" aria-label="Obszary usług SimpleFast.ai">
+            {impactAreas.map((area, areaIndex) => (
+              <a
+                class:list={['about-impact__item', areaIndex === 0 && 'is-active']}
+                href={area.href}
+                data-about-impact-item
+                data-about-impact-index={areaIndex}
+                aria-controls={`about-impact-panel-${areaIndex + 1}`}
+              >
+                <span class="about-impact__index">{area.index}</span>
+                <span class="about-impact__item-copy">
+                  <strong>{area.title}</strong>
+                  <small>{area.meta}</small>
+                </span>
+                <span class="about-impact__arrow" aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </nav>
+
+          <div class="about-impact__stage">
+            <div class="about-impact__frame" aria-live="polite">
+              {impactAreas.map((area, areaIndex) => (
+                <figure
+                  id={`about-impact-panel-${areaIndex + 1}`}
+                  class:list={['about-impact__panel', areaIndex === 0 && 'is-active']}
+                  data-about-impact-panel
+                  aria-hidden={areaIndex === 0 ? 'false' : 'true'}
+                >
+                  <Image
+                    src={area.image}
+                    alt={area.alt}
+                    widths={[560, 840, 1120, 1440]}
+                    sizes="(max-width: 760px) calc(100vw - 28px), (max-width: 1180px) 55vw, 48vw"
+                    format="webp"
+                    quality={88}
+                    loading={areaIndex === 0 ? 'eager' : 'lazy'}
+                  />
+                  <figcaption>
+                    <span>{area.index} / {area.title}</span>
+                    <p>{area.outcome}</p>
+                  </figcaption>
+                </figure>
+              ))}
+              <span class="about-impact__scan" aria-hidden="true"></span>
+              <span class="about-impact__status" aria-hidden="true">S/F · ACTIVE SYSTEM</span>
+            </div>
+            <p class="about-impact__stage-note">Przewiń · najedź · użyj klawiatury · dotknij, aby zobaczyć</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="service-outcome" data-motion-section>
       <div class="service-outcome-grid section-shell">

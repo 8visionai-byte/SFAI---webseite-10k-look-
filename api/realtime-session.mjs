@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
 import { VOICE_INSTRUCTIONS } from './_knowledge.mjs';
 
+const RATE_WINDOW_MS = 10 * 60 * 1_000;
+const MAX_SESSIONS_PER_WINDOW = 6;
+const sessionBuckets = new Map();
+
 const writeJson = (response, status, body) => {
   response.status(status);
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -14,6 +18,18 @@ const safetyIdentifier = (request) => {
   return createHash('sha256').update(`sfai:${address}`).digest('hex');
 };
 
+const consumeSessionQuota = (identifier) => {
+  const now = Date.now();
+  const active = (sessionBuckets.get(identifier) || []).filter((timestamp) => now - timestamp < RATE_WINDOW_MS);
+  if (active.length >= MAX_SESSIONS_PER_WINDOW) {
+    sessionBuckets.set(identifier, active);
+    return Math.max(1, Math.ceil((RATE_WINDOW_MS - (now - active[0])) / 1_000));
+  }
+  active.push(now);
+  sessionBuckets.set(identifier, active);
+  return 0;
+};
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -25,6 +41,16 @@ export default async function handler(request, response) {
     return writeJson(response, 503, {
       error: 'Agent głosowy nie został jeszcze aktywowany na serwerze.',
       code: 'agent_not_configured',
+    });
+  }
+
+  const identifier = safetyIdentifier(request);
+  const retryAfter = consumeSessionQuota(identifier);
+  if (retryAfter) {
+    response.setHeader('Retry-After', String(retryAfter));
+    return writeJson(response, 429, {
+      error: 'Limit prób uruchomienia rozmowy został osiągnięty. Spróbuj ponownie za kilka minut.',
+      code: 'voice_rate_limited',
     });
   }
 
@@ -49,7 +75,7 @@ export default async function handler(request, response) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Safety-Identifier': safetyIdentifier(request),
+        'OpenAI-Safety-Identifier': identifier,
       },
       body: JSON.stringify(sessionConfig),
     });

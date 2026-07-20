@@ -34,6 +34,7 @@ if (consoleRoot instanceof HTMLElement) {
   let voiceSessionGeneration = 0;
   let voiceTokenController = null;
   let voiceStartInFlight = false;
+  let voiceDisconnectTimer = 0;
 
   const isVoiceSessionActive = (generation) => (
     generation === voiceSessionGeneration
@@ -164,6 +165,8 @@ if (consoleRoot instanceof HTMLElement) {
   const stopVoice = () => {
     voiceSessionGeneration += 1;
     voiceStartInFlight = false;
+    window.clearTimeout(voiceDisconnectTimer);
+    voiceDisconnectTimer = 0;
     voiceTokenController?.abort();
     voiceTokenController = null;
     stopVoiceMeter();
@@ -390,7 +393,11 @@ if (consoleRoot instanceof HTMLElement) {
     try {
       const tokenResponse = await fetch('/api/realtime-session', { method: 'POST', signal: controller.signal });
       const token = await tokenResponse.json();
-      if (!tokenResponse.ok || !token?.value) throw new Error(token?.error || 'Brak tokenu sesji.');
+      if (!tokenResponse.ok || !token?.value) {
+        const sessionError = new Error(token?.error || 'Brak tokenu sesji.');
+        sessionError.code = token?.code || 'voice_session_error';
+        throw sessionError;
+      }
       if (!isVoiceSessionActive(generation)) return;
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -409,6 +416,34 @@ if (consoleRoot instanceof HTMLElement) {
       peer.ontrack = (event) => {
         if (isVoiceSessionActive(generation) && voiceAudio) voiceAudio.srcObject = event.streams[0];
       };
+      peer.addEventListener('connectionstatechange', () => {
+        if (!isVoiceSessionActive(generation) || voicePeer !== peer) return;
+        window.clearTimeout(voiceDisconnectTimer);
+        voiceDisconnectTimer = 0;
+
+        if (peer.connectionState === 'connected') {
+          setConnectionStatus('słucha', 'working');
+          return;
+        }
+
+        if (peer.connectionState === 'disconnected') {
+          transcript.textContent = 'Przywracam połączenie…';
+          setConnectionStatus('ponawia', 'working');
+          voiceDisconnectTimer = window.setTimeout(() => {
+            if (!isVoiceSessionActive(generation) || peer.connectionState !== 'disconnected') return;
+            stopVoice();
+            transcript.textContent = 'Połączenie zostało przerwane. Uruchom rozmowę ponownie.';
+            setConnectionStatus('rozłączony', 'local');
+          }, 4_000);
+          return;
+        }
+
+        if (peer.connectionState === 'failed') {
+          stopVoice();
+          transcript.textContent = 'Nie udało się utrzymać połączenia. Uruchom rozmowę ponownie.';
+          setConnectionStatus('błąd połączenia', 'local');
+        }
+      });
       stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
       voiceChannel = peer.createDataChannel('oai-events');
@@ -423,6 +458,13 @@ if (consoleRoot instanceof HTMLElement) {
         const label = voiceStart.querySelector('span');
         if (label) label.textContent = 'Zakończ rozmowę';
         voiceStage?.classList.add('is-live');
+        voiceChannel?.send(JSON.stringify({
+          type: 'response.create',
+          response: {
+            output_modalities: ['audio'],
+            instructions: 'Przywitaj użytkownika po polsku w jednym krótkim zdaniu i zapytaj, w czym możesz pomóc jego firmie.',
+          },
+        }));
       });
       voiceChannel.addEventListener('message', (event) => {
         if (!isVoiceSessionActive(generation)) return;
@@ -475,10 +517,19 @@ if (consoleRoot instanceof HTMLElement) {
     } catch (error) {
       if (!isVoiceSessionActive(generation)) return;
       stopVoice();
-      transcript.textContent = error?.name === 'NotAllowedError'
-        ? 'Dostęp do mikrofonu nie został udzielony.'
-        : 'Agent głosowy wymaga aktywacji po stronie serwera. Czat tekstowy nadal działa.';
-      setConnectionStatus('głos nieaktywny', 'local');
+      if (error?.name === 'NotAllowedError') {
+        transcript.textContent = 'Dostęp do mikrofonu nie został udzielony.';
+        setConnectionStatus('brak mikrofonu', 'local');
+      } else if (error?.code === 'voice_rate_limited') {
+        transcript.textContent = error.message;
+        setConnectionStatus('limit rozmów', 'local');
+      } else if (error?.code === 'agent_not_configured') {
+        transcript.textContent = 'Interfejs jest gotowy. Do rozmowy potrzebny jest bezpieczny klucz API ustawiony na hostingu.';
+        setConnectionStatus('oczekuje na klucz', 'local');
+      } else {
+        transcript.textContent = 'Nie udało się uruchomić rozmowy. Spróbuj ponownie lub użyj czatu tekstowego.';
+        setConnectionStatus('głos nieaktywny', 'local');
+      }
     } finally {
       if (voiceTokenController === controller) voiceTokenController = null;
       if (generation === voiceSessionGeneration) voiceStartInFlight = false;

@@ -77,18 +77,24 @@ import '../styles/agent-console.css';
         </div>
 
         <div class="agent-console__mode agent-console__mode--voice" id="agent-voice-panel" role="tabpanel" aria-labelledby="agent-voice-tab" data-agent-voice-panel hidden>
-          <div class="voice-agent-stage" data-agent-voice-stage>
+          <div class="voice-agent-stage" data-agent-voice-stage data-voice-state="idle">
             <div class="voice-agent-stage__field" aria-hidden="true">
               <span></span><span></span><span></span>
-              <i></i>
+              <i></i><b></b>
             </div>
-            <p class="voice-agent-stage__eyebrow">/ kanał realtime</p>
+            <p class="voice-agent-stage__eyebrow"><i aria-hidden="true"></i> / agent głosowy / live</p>
             <h3>Powiedz, czego<br />chcesz się dowiedzieć.</h3>
-            <p class="voice-agent-stage__transcript" data-agent-transcript aria-live="polite">Mikrofon uruchomi się dopiero po kliknięciu.</p>
+            <div class="voice-agent-stage__states" aria-hidden="true">
+              <span data-voice-state-label="listening"><i></i>Słucha</span>
+              <span data-voice-state-label="thinking"><i></i>Rozumie</span>
+              <span data-voice-state-label="speaking"><i></i>Odpowiada</span>
+            </div>
+            <p class="voice-agent-stage__transcript" data-agent-transcript aria-live="polite">Po kliknięciu uruchomimy mikrofon. Rozmowę możesz przerwać w każdej chwili.</p>
             <button class="voice-agent-stage__button" type="button" data-agent-voice-start aria-pressed="false">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"></path><path d="M6.5 11.5v.5a5.5 5.5 0 0 0 11 0v-.5M12 17.5V21M9 21h6"></path></svg>
               <span>Rozpocznij rozmowę</span>
             </button>
+            <p class="voice-agent-stage__note"><span aria-hidden="true">●</span> Kanał aktywuje się wyłącznie na Twoje polecenie.</p>
           </div>
         </div>
 

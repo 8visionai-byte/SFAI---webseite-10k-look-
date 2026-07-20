@@ -612,6 +612,262 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
     }
   }
 
+  const proofStream = root.querySelector('[data-proof-stream]');
+  if (proofStream instanceof HTMLElement && !proofStream.dataset.aboutIntroBound) {
+    proofStream.dataset.aboutIntroBound = 'true';
+    const firstPanel = proofStream.querySelector('[data-proof-panel]');
+    const firstAssets = firstPanel ? [...firstPanel.querySelectorAll('.proof-stream__asset')] : [];
+    const firstImages = firstAssets.map((asset) => asset.querySelector('img')).filter(Boolean);
+
+    if (!reducedMotion.matches && firstPanel instanceof HTMLElement && firstAssets.length) {
+      gsap.set(firstAssets, {
+        opacity: 1,
+        clipPath: 'inset(0 100% 0 0)',
+        yPercent: 13,
+      });
+      gsap.set(firstImages, {
+        filter: 'blur(11px) brightness(0.38) contrast(0.78) saturate(0.34)',
+        scale: 1.065,
+      });
+
+      ScrollTrigger.create({
+        trigger: proofStream.querySelector('.proof-stream__stage') ?? proofStream,
+        start: 'top 84%',
+        once: true,
+        onEnter: () => {
+          if (!firstPanel.classList.contains('is-active')) {
+            gsap.set(firstAssets, { clearProps: 'clipPath,opacity,transform' });
+            gsap.set(firstImages, { clearProps: 'filter,transform' });
+            return;
+          }
+
+          const intro = gsap.timeline({ defaults: { ease: 'power4.out' } });
+          intro
+            .to(
+              firstAssets,
+              {
+                clipPath: 'inset(0 0% 0 0)',
+                duration: 0.72,
+                stagger: 0.085,
+                ease: 'power3.inOut',
+              },
+              0,
+            )
+            .to(firstAssets, { yPercent: 0, duration: 0.94, stagger: 0.085 }, 0.2)
+            .to(
+              firstImages,
+              {
+                filter: 'blur(0px) brightness(1) contrast(1.04) saturate(0.94)',
+                scale: 1,
+                duration: 0.76,
+                stagger: 0.085,
+                ease: 'power3.out',
+              },
+              0.32,
+            )
+            .add(() => {
+              gsap.set(firstAssets, { clearProps: 'clipPath,opacity,transform' });
+              gsap.set(firstImages, { clearProps: 'filter,transform' });
+            });
+        },
+      });
+    }
+  }
+
+  const aboutImpact = root.querySelector('[data-about-impact]');
+  if (aboutImpact instanceof HTMLElement && !aboutImpact.dataset.impactBound) {
+    aboutImpact.dataset.impactBound = 'true';
+    const items = [...aboutImpact.querySelectorAll('[data-about-impact-item]')];
+    const panels = [...aboutImpact.querySelectorAll('[data-about-impact-panel]')];
+    const frame = aboutImpact.querySelector('.about-impact__frame');
+    const itemList = aboutImpact.querySelector('.about-impact__list');
+    let activeImpact = 0;
+    let activeOnPointerDown = 0;
+
+    const setImpactState = (index) => {
+      items.forEach((item, itemIndex) => {
+        const active = itemIndex === index;
+        item.classList.toggle('is-active', active);
+        if (active) item.setAttribute('aria-current', 'true');
+        else item.removeAttribute('aria-current');
+      });
+      panels.forEach((panel, panelIndex) => {
+        panel.setAttribute('aria-hidden', String(panelIndex !== index));
+      });
+    };
+
+    const activateImpact = (nextIndex, direction = 1, animate = true) => {
+      if (!panels[nextIndex] || !items[nextIndex]) return;
+      if (nextIndex === activeImpact) {
+        setImpactState(nextIndex);
+        return;
+      }
+
+      const previous = panels[activeImpact];
+      const next = panels[nextIndex];
+      const previousImage = previous?.querySelector('img');
+      const nextImage = next.querySelector('img');
+
+      panels.forEach((panel) => {
+        gsap.killTweensOf(panel);
+        const panelImage = panel.querySelector('img');
+        if (panelImage) gsap.killTweensOf(panelImage);
+        if (panel !== previous && panel !== next) panel.classList.remove('is-exiting');
+      });
+
+      if (previous) {
+        previous.classList.remove('is-active');
+        previous.classList.add('is-exiting');
+      }
+      next.classList.remove('is-exiting');
+      next.classList.add('is-active');
+      gsap.set(next, { opacity: 1, clipPath: 'inset(0 0% 0 0)' });
+
+      if (!animate || reducedMotion.matches) {
+        if (previous) {
+          previous.classList.remove('is-exiting');
+          gsap.set(previous, { opacity: 0, clearProps: 'clipPath' });
+        }
+        if (previousImage) gsap.set(previousImage, { clearProps: 'filter,transform' });
+        if (nextImage) gsap.set(nextImage, { clearProps: 'filter,transform' });
+      } else {
+        if (nextImage) {
+          gsap.fromTo(
+            nextImage,
+            {
+              filter: `blur(${mobileViewport.matches ? 5 : 11}px) brightness(${mobileViewport.matches ? 0.52 : 0.36}) contrast(0.78) saturate(0.34)`,
+              scale: mobileViewport.matches ? 1.035 : 1.07,
+              xPercent: direction >= 0 ? 4 : -4,
+              yPercent: mobileViewport.matches ? 2 : 4,
+            },
+            {
+              filter: 'blur(0px) brightness(1) contrast(1.04) saturate(0.94)',
+              scale: 1,
+              xPercent: 0,
+              yPercent: 0,
+              duration: mobileViewport.matches ? 0.64 : 0.82,
+              ease: 'power3.out',
+            },
+          );
+        }
+
+        if (previous) {
+          gsap.fromTo(
+            previous,
+            { opacity: 1, clipPath: 'inset(0 0% 0 0)' },
+            {
+              clipPath: 'inset(0 100% 0 0)',
+              duration: mobileViewport.matches ? 0.46 : 0.62,
+              ease: 'power3.inOut',
+              onComplete: () => {
+                if (previous.classList.contains('is-active')) return;
+                previous.classList.remove('is-exiting');
+                gsap.set(previous, { opacity: 0, clearProps: 'clipPath' });
+                if (previousImage) gsap.set(previousImage, { clearProps: 'filter,transform' });
+              },
+            },
+          );
+        }
+      }
+
+      activeImpact = nextIndex;
+      setImpactState(nextIndex);
+    };
+
+    panels.forEach((panel, index) => {
+      gsap.set(panel, {
+        opacity: index === 0 ? 1 : 0,
+        clipPath: 'inset(0 0% 0 0)',
+      });
+    });
+    setImpactState(0);
+
+    if (!reducedMotion.matches && frame instanceof HTMLElement) {
+      const firstPanel = panels[0];
+      const firstImage = firstPanel?.querySelector('img');
+      if (firstPanel) gsap.set(firstPanel, { clipPath: 'inset(0 100% 0 0)' });
+      if (firstImage) {
+        gsap.set(firstImage, {
+          filter: 'blur(11px) brightness(0.36) contrast(0.78) saturate(0.34)',
+          scale: 1.07,
+          xPercent: 4,
+          yPercent: 4,
+        });
+      }
+
+      const revealImpact = gsap.timeline({
+        scrollTrigger: {
+          trigger: frame,
+          start: 'top 84%',
+          once: true,
+        },
+      });
+      if (firstPanel) {
+        revealImpact.to(firstPanel, {
+          clipPath: 'inset(0 0% 0 0)',
+          duration: 0.86,
+          ease: 'power3.inOut',
+        }, 0);
+      }
+      if (firstImage) {
+        revealImpact.to(firstImage, {
+          filter: 'blur(0px) brightness(1) contrast(1.04) saturate(0.94)',
+          scale: 1,
+          xPercent: 0,
+          yPercent: 0,
+          duration: 0.94,
+          ease: 'power3.out',
+        }, 0.22);
+      }
+
+      if (itemList instanceof HTMLElement) {
+        gsap.fromTo(
+          items,
+          { y: mobileViewport.matches ? 18 : 30 },
+          {
+            y: 0,
+            duration: 0.9,
+            stagger: 0.055,
+            ease: 'power4.out',
+            clearProps: 'transform',
+            scrollTrigger: {
+              trigger: itemList,
+              start: 'top 88%',
+              once: true,
+            },
+          },
+        );
+      }
+    }
+
+    items.forEach((item, index) => {
+      item.addEventListener('pointerdown', () => {
+        activeOnPointerDown = activeImpact;
+      });
+      item.addEventListener('pointerenter', () => {
+        if (finePointer.matches) activateImpact(index, index >= activeImpact ? 1 : -1);
+      });
+      item.addEventListener('focus', () => {
+        activateImpact(index, index >= activeImpact ? 1 : -1);
+      });
+      item.addEventListener('click', (event) => {
+        if (!finePointer.matches && event.detail > 0 && activeOnPointerDown !== index) {
+          event.preventDefault();
+          activateImpact(index, index >= activeImpact ? 1 : -1);
+          item.focus({ preventScroll: true });
+        }
+      });
+
+      ScrollTrigger.create({
+        trigger: item,
+        start: mobileViewport.matches ? 'top 66%' : 'top 58%',
+        end: 'bottom 38%',
+        onEnter: () => activateImpact(index, 1, !reducedMotion.matches),
+        onEnterBack: () => activateImpact(index, -1, !reducedMotion.matches),
+      });
+    });
+  }
+
   if (finePointer.matches && !reducedMotion.matches) {
     root.querySelectorAll('[data-motion-row]').forEach((row) => {
       if (!(row instanceof HTMLElement)) return;
