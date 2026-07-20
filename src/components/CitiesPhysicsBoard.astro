@@ -1,0 +1,1001 @@
+---
+interface Props {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
+  titleAccent?: string;
+  intro?: string;
+  cities?: string[];
+}
+
+const defaultCities = [
+  'Warszawa',
+  'Kraków',
+  'Wrocław',
+  'Łódź',
+  'Poznań',
+  'Gdańsk',
+  'Szczecin',
+  'Lublin',
+  'Bydgoszcz',
+  'Białystok',
+  'Katowice',
+  'Gdynia',
+  'Częstochowa',
+  'Rzeszów',
+  'Toruń',
+  'Radom',
+  'Sosnowiec',
+  'Kielce',
+  'Gliwice',
+  'Olsztyn',
+  'Bielsko-Biała',
+  'Zabrze',
+  'Bytom',
+  'Zielona Góra',
+  'Rybnik',
+  'Ruda Śląska',
+  'Opole',
+  'Tychy',
+  'Gorzów Wielkopolski',
+  'Dąbrowa Górnicza',
+  'Elbląg',
+  'Płock',
+  'Koszalin',
+  'Tarnów',
+  'Chorzów',
+  'Włocławek',
+  'Wałbrzych',
+  'Kalisz',
+  'Legnica',
+  'Grudziądz',
+  'Jaworzno',
+  'Słupsk',
+  'Jastrzębie-Zdrój',
+  'Nowy Sącz',
+  'Siedlce',
+  'Jelenia Góra',
+  'Mysłowice',
+  'Piła',
+  'Ostrów Wielkopolski',
+  'Suwałki',
+  'Lubin',
+  'Pruszków',
+  'Inowrocław',
+  'Stargard',
+  'Piotrków Trybunalski',
+  'Konin',
+  'Siemianowice Śląskie',
+  'Gniezno',
+  'Żory',
+  'Tarnowskie Góry',
+  'Głogów',
+  'Ostrowiec Świętokrzyski',
+  'Pabianice',
+  'Łomża',
+  'Ełk',
+  'Leszno',
+  'Zamość',
+  'Tomaszów Mazowiecki',
+  'Mielec',
+  'Tczew',
+  'Chełm',
+  'Przemyśl',
+  'Rumia',
+  'Stalowa Wola',
+  'Biała Podlaska',
+  'Kędzierzyn-Koźle',
+  'Będzin',
+  'Zgierz',
+  'Legionowo',
+  'Piaseczno',
+  'Świdnica',
+  'Piekary Śląskie',
+  'Bełchatów',
+];
+
+const accentCities = new Set([
+  'Warszawa',
+  'Kraków',
+  'Wrocław',
+  'Poznań',
+  'Gdańsk',
+  'Katowice',
+]);
+
+const {
+  id = 'cities-physics',
+  eyebrow = '/ SFAI / POLSKA',
+  title = 'Jeden system.',
+  titleAccent = 'Cała Polska.',
+  intro = 'Diagnozę, wdrożenie i opiekę prowadzimy niezależnie od kodu pocztowego. Technologia trafia tam, gdzie istnieje realny proces do usprawnienia.',
+  cities: suppliedCities,
+} = Astro.props;
+
+const cities = suppliedCities?.length ? suppliedCities : defaultCities;
+const titleId = `${id}-title`;
+const instructionId = `${id}-instruction`;
+---
+
+<section
+  class="cities-physics"
+  id={id}
+  data-cities-physics
+  data-testid="cities-physics-board"
+  data-reduced="false"
+  data-physics-ready="false"
+  aria-labelledby={titleId}
+>
+  <div class="cities-physics__shell">
+    <header class="cities-physics__header">
+      <p class="cities-physics__eyebrow">{eyebrow}</p>
+      <h2 id={titleId}>{title}<br /><em>{titleAccent}</em></h2>
+      <div class="cities-physics__intro">
+        <p>{intro}</p>
+        <span aria-hidden="true">PL / 01—16</span>
+      </div>
+    </header>
+
+    <div
+      class="cities-physics__stage"
+      data-city-stage
+      data-testid="cities-physics-stage"
+    >
+      <div class="cities-physics__hud cities-physics__hud--top" aria-hidden="true">
+        <span>[ ZŁAP / PRZESUŃ / PUŚĆ ]</span>
+        <span>OBSZAR DZIAŁANIA / PL</span>
+      </div>
+
+      <p class="cities-physics__instruction" id={instructionId}>
+        Przeciągnij dowolne miasto. Kafelki reagują na siebie i na krawędzie planszy.
+      </p>
+
+      <ul
+        class="cities-physics__world"
+        data-city-world
+        aria-label="Duże polskie miasta objęte zdalną współpracą SimpleFast.ai"
+        aria-describedby={instructionId}
+      >
+        {cities.map((city, index) => (
+          <li
+            class="cities-physics__tile"
+            data-city-tile
+            data-city-index={index}
+            data-tier={index < 6 ? 'hero' : index < 20 ? 'major' : 'city'}
+            data-accent={accentCities.has(city) ? 'true' : 'false'}
+          >
+            <i aria-hidden="true"></i>
+            <span>{city}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div class="cities-physics__hud cities-physics__hud--bottom" aria-hidden="true">
+        <span><i></i> SYSTEM ONLINE</span>
+        <span>CAŁA POLSKA / JEDEN STANDARD</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cities-physics {
+    --cities-cobalt: #1738d1;
+    --cities-cobalt-dark: #1028aa;
+    --cities-cobalt-deep: #091858;
+    --cities-lime: var(--lime, #dfff3f);
+    --cities-white: #f6f7f1;
+    position: relative;
+    overflow: hidden;
+    padding: clamp(6rem, 10vw, 10rem) 0 clamp(2rem, 4vw, 4rem);
+    background:
+      radial-gradient(circle at 84% 2%, rgba(143, 171, 255, 0.3), transparent 25rem),
+      linear-gradient(145deg, var(--cities-cobalt) 0%, #1534c8 52%, var(--cities-cobalt-dark) 100%);
+    color: var(--cities-white);
+    isolation: isolate;
+  }
+
+  .cities-physics::before {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+    background-position: center;
+    background-size: clamp(4rem, 7vw, 7.5rem) clamp(4rem, 7vw, 7.5rem);
+    content: '';
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.74), transparent 85%);
+    opacity: 0.42;
+    pointer-events: none;
+  }
+
+  .cities-physics::after {
+    position: absolute;
+    top: -22rem;
+    left: 52%;
+    width: min(62rem, 82vw);
+    aspect-ratio: 1;
+    border: 1px solid rgba(223, 255, 63, 0.15);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 7rem rgba(255, 255, 255, 0.018),
+      0 0 0 15rem rgba(255, 255, 255, 0.012);
+    content: '';
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+
+  .cities-physics__shell {
+    position: relative;
+    z-index: 1;
+    width: min(calc(100% - 40px), 1540px);
+    margin-inline: auto;
+  }
+
+  .cities-physics__header {
+    display: grid;
+    grid-template-columns: minmax(0, 8fr) minmax(18rem, 3fr);
+    gap: clamp(2rem, 6vw, 8rem);
+    align-items: end;
+    margin-bottom: clamp(3.5rem, 7vw, 7rem);
+  }
+
+  .cities-physics__eyebrow {
+    grid-column: 1 / -1;
+    margin: 0 0 clamp(0.5rem, 1.4vw, 1.2rem);
+    color: var(--cities-lime);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .cities-physics__header h2 {
+    max-width: 12ch;
+    margin: 0;
+    font-family: var(--font-display, sans-serif);
+    font-size: clamp(4rem, 8.7vw, 9.7rem);
+    font-weight: 520;
+    letter-spacing: -0.075em;
+    line-height: 0.82;
+  }
+
+  .cities-physics__header h2 em {
+    color: transparent;
+    font-style: normal;
+    -webkit-text-stroke: 1px rgba(246, 247, 241, 0.68);
+    text-stroke: 1px rgba(246, 247, 241, 0.68);
+  }
+
+  .cities-physics__intro {
+    display: flex;
+    min-height: 9rem;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.26);
+    padding-top: 1.25rem;
+  }
+
+  .cities-physics__intro p {
+    max-width: 31rem;
+    margin: 0;
+    color: rgba(246, 247, 241, 0.76);
+    font-size: clamp(1rem, 1.28vw, 1.2rem);
+    line-height: 1.48;
+  }
+
+  .cities-physics__intro span {
+    color: rgba(246, 247, 241, 0.48);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    letter-spacing: 0.11em;
+  }
+
+  .cities-physics__stage {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.27);
+    background:
+      radial-gradient(circle at 50% 112%, rgba(223, 255, 63, 0.15), transparent 35%),
+      linear-gradient(180deg, rgba(8, 17, 73, 0.13), rgba(7, 16, 64, 0.42));
+    box-shadow:
+      inset 0 1px rgba(255, 255, 255, 0.12),
+      0 2.5rem 7rem rgba(5, 11, 50, 0.24);
+  }
+
+  .cities-physics__stage::before,
+  .cities-physics__stage::after {
+    position: absolute;
+    z-index: 4;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-color: var(--cities-lime);
+    content: '';
+    pointer-events: none;
+  }
+
+  .cities-physics__stage::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+
+  .cities-physics__stage::after {
+    right: -1px;
+    bottom: -1px;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+  }
+
+  .cities-physics__instruction {
+    position: absolute;
+    z-index: 5;
+    top: 1.35rem;
+    left: 50%;
+    max-width: min(30rem, 62%);
+    margin: 0;
+    color: rgba(246, 247, 241, 0.64);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+    text-align: center;
+    text-transform: uppercase;
+    transform: translateX(-50%);
+  }
+
+  .cities-physics__hud {
+    position: absolute;
+    z-index: 5;
+    right: 1.25rem;
+    left: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    color: rgba(246, 247, 241, 0.48);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+
+  .cities-physics__hud--top { top: 1.35rem; }
+  .cities-physics__hud--bottom { bottom: 1.25rem; }
+
+  .cities-physics__hud--bottom span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--cities-lime);
+  }
+
+  .cities-physics__hud--bottom i {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 1rem currentColor;
+  }
+
+  .cities-physics__world {
+    position: relative;
+    display: flex;
+    height: clamp(43rem, 63vw, 53rem);
+    align-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    overflow: hidden;
+    margin: 0;
+    padding: 4.6rem 1.25rem 4rem;
+    list-style: none;
+    touch-action: pan-y;
+  }
+
+  .cities-physics__world::after {
+    position: absolute;
+    right: 0;
+    bottom: 3.2rem;
+    left: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(223, 255, 63, 0.45), transparent);
+    content: '';
+    pointer-events: none;
+  }
+
+  .cities-physics__tile {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    gap: 0.55rem;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    border-radius: 2px;
+    padding: 0.58rem 0.82rem;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045)),
+      rgba(8, 18, 75, 0.82);
+    box-shadow:
+      inset 0 1px rgba(255, 255, 255, 0.12),
+      0 0.5rem 1.3rem rgba(3, 8, 40, 0.16);
+    color: var(--cities-white);
+    font-family: var(--font-mono, monospace);
+    font-size: clamp(0.53rem, 0.7vw, 0.67rem);
+    font-weight: 500;
+    letter-spacing: 0.045em;
+    line-height: 1;
+    text-transform: uppercase;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .cities-physics__tile i {
+    width: 0.28rem;
+    height: 0.28rem;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .cities-physics__tile[data-tier='major'] {
+    min-height: 2.25rem;
+    padding-inline: 0.95rem;
+    font-size: clamp(0.58rem, 0.78vw, 0.72rem);
+  }
+
+  .cities-physics__tile[data-tier='hero'] {
+    min-height: 2.65rem;
+    padding-inline: 1.2rem;
+    font-size: clamp(0.65rem, 0.9vw, 0.82rem);
+  }
+
+  .cities-physics__tile[data-accent='true'] {
+    border-color: var(--cities-lime);
+    background: var(--cities-lime);
+    box-shadow: 0 0.8rem 2.4rem rgba(14, 25, 75, 0.25);
+    color: #08113f;
+  }
+
+  .cities-physics__tile[data-accent='true'] i { background: #08113f; }
+
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__tile {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    margin: 0;
+    cursor: grab;
+    touch-action: none;
+    transform: translate3d(0, 0, 0);
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__tile.is-dragged {
+    z-index: 3;
+    border-color: var(--cities-lime);
+    box-shadow:
+      0 0 0 1px rgba(223, 255, 63, 0.24),
+      0 1.4rem 3.8rem rgba(2, 7, 37, 0.34);
+    cursor: grabbing;
+  }
+
+  .cities-physics[data-reduced='true'] .cities-physics__world {
+    height: auto;
+    min-height: 0;
+    justify-content: center;
+    padding-block: 5rem;
+  }
+
+  .cities-physics[data-reduced='true'] .cities-physics__tile {
+    position: static;
+    transform: none !important;
+  }
+
+  @media (max-width: 900px) {
+    .cities-physics__header {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .cities-physics__eyebrow { grid-column: auto; }
+    .cities-physics__intro { min-height: 0; }
+    .cities-physics__world { height: 52rem; }
+  }
+
+  @media (max-width: 700px) {
+    .cities-physics {
+      padding-top: 5.5rem;
+    }
+
+    .cities-physics__shell {
+      width: calc(100% - 1.25rem);
+    }
+
+    .cities-physics__header h2 {
+      font-size: clamp(3.7rem, 18vw, 6rem);
+    }
+
+    .cities-physics__world {
+      height: 57rem;
+      padding: 4.25rem 0.55rem 3.8rem;
+    }
+
+    .cities-physics__instruction {
+      top: 2.15rem;
+      max-width: calc(100% - 2rem);
+      font-size: 0.48rem;
+    }
+
+    .cities-physics__hud {
+      right: 0.65rem;
+      left: 0.65rem;
+      font-size: 0.45rem;
+    }
+
+    .cities-physics__hud--top span:first-child { display: none; }
+    .cities-physics__hud--top { justify-content: flex-end; }
+
+    .cities-physics__tile,
+    .cities-physics__tile[data-tier='major'] {
+      min-height: 1.7rem;
+      gap: 0.35rem;
+      padding: 0.43rem 0.56rem;
+      font-size: 0.48rem;
+    }
+
+    .cities-physics__tile[data-tier='hero'] {
+      min-height: 2rem;
+      padding-inline: 0.72rem;
+      font-size: 0.56rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cities-physics__world {
+      height: auto;
+      min-height: 0;
+      justify-content: center;
+      padding-block: 5rem;
+    }
+
+    .cities-physics__tile {
+      position: static !important;
+      cursor: default !important;
+      transform: none !important;
+      will-change: auto !important;
+    }
+  }
+</style>
+
+<script is:inline>
+  document.querySelectorAll('[data-cities-physics]').forEach((root) => {
+    if (!(root instanceof HTMLElement) || root.dataset.citiesPhysicsBound) return;
+    root.dataset.citiesPhysicsBound = 'true';
+
+    const world = root.querySelector('[data-city-world]');
+    const tileElements = [...root.querySelectorAll('[data-city-tile]')];
+    if (!(world instanceof HTMLElement) || !tileElements.length) return;
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const FIXED_STEP = 1 / 120;
+    const MAX_FRAME = 1 / 24;
+    const MAX_SUBSTEPS = 6;
+    const GRAVITY = 1320;
+    const RESTITUTION = 0.42;
+    const WALL_RESTITUTION = 0.48;
+    const CELL_SIZE = 148;
+    const TRANSFORM_DPR = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+
+    let seed = 0x5fa12026;
+    let width = 0;
+    let height = 0;
+    let initialized = false;
+    let reducedMotion = motionQuery.matches;
+    let inView = false;
+    let running = false;
+    let rafId = 0;
+    let resizeFrame = 0;
+    let lastTime = 0;
+    let accumulator = 0;
+    let idleFrames = 0;
+    let observer = null;
+    let resizeObserver = null;
+
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+    const bodies = tileElements.map((element, index) => ({
+      element,
+      index,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      vx: 0,
+      vy: 0,
+      angle: 0,
+      angularVelocity: 0,
+      mass: 1,
+      dragged: false,
+      pointerId: null,
+      dragOffsetX: 0,
+      dragOffsetY: 0,
+      targetX: 0,
+      targetY: 0,
+      dragWorldLeft: 0,
+      dragWorldTop: 0,
+      lastTransform: '',
+    }));
+
+    const renderBody = (body) => {
+      const x = Number.isFinite(body.x) ? body.x : 0;
+      const y = Number.isFinite(body.y) ? body.y : 0;
+      const angle = Number.isFinite(body.angle) ? body.angle : 0;
+      const renderX = Math.round(x * TRANSFORM_DPR) / TRANSFORM_DPR;
+      const renderY = Math.round(y * TRANSFORM_DPR) / TRANSFORM_DPR;
+      const renderAngle = Math.round(angle * 20) / 20;
+      const transform = `translate3d(${renderX}px, ${renderY}px, 0) rotate(${renderAngle}deg)`;
+      if (transform === body.lastTransform) return;
+      body.lastTransform = transform;
+      body.element.style.transform = transform;
+    };
+
+    const measureBodies = () => {
+      bodies.forEach((body) => {
+        body.w = Math.max(1, body.element.offsetWidth);
+        body.h = Math.max(1, body.element.offsetHeight);
+        body.mass = Math.max(0.72, (body.w * body.h) / 2700);
+      });
+    };
+
+    const spawnBodies = () => {
+      seed = 0x5fa12026;
+      const laneWidth = Math.max(78, Math.min(168, width / Math.max(4, Math.floor(width / 125))));
+      const laneCount = Math.max(4, Math.floor(width / laneWidth));
+
+      bodies.forEach((body, index) => {
+        const lane = index % laneCount;
+        const row = Math.floor(index / laneCount);
+        const laneCenter = ((lane + 0.5) / laneCount) * width;
+        body.x = clamp(laneCenter - body.w / 2 + (random() - 0.5) * laneWidth * 0.72, 0, Math.max(0, width - body.w));
+        body.y = -body.h - 46 - row * 48 - random() * 96;
+        body.vx = (random() - 0.5) * 92;
+        body.vy = 24 + random() * 68;
+        body.angle = (random() - 0.5) * 7;
+        body.angularVelocity = (random() - 0.5) * 12;
+      });
+    };
+
+    const resize = () => {
+      resizeFrame = 0;
+      if (!root.isConnected || reducedMotion) return;
+      const previousWidth = width;
+      const previousHeight = height;
+      const bounds = world.getBoundingClientRect();
+      width = Math.max(1, bounds.width);
+      height = Math.max(1, bounds.height);
+      measureBodies();
+
+      if (!initialized) {
+        spawnBodies();
+        initialized = true;
+      } else if (previousWidth > 1 && previousHeight > 1) {
+        bodies.forEach((body) => {
+          const xRatio = body.x / previousWidth;
+          const yRatio = body.y / previousHeight;
+          body.x = clamp(xRatio * width, 0, Math.max(0, width - body.w));
+          body.y = clamp(yRatio * height, -body.h, Math.max(0, height - body.h));
+          body.targetX = body.x;
+          body.targetY = body.y;
+        });
+      }
+
+      bodies.forEach(renderBody);
+      root.dataset.physicsReady = 'true';
+    };
+
+    const scheduleResize = () => {
+      if (resizeFrame || reducedMotion) return;
+      resizeFrame = requestAnimationFrame(resize);
+    };
+
+    const constrainBody = (body) => {
+      if (body.dragged) return;
+
+      if (body.x < 0) {
+        body.x = 0;
+        if (body.vx < 0) body.vx *= -WALL_RESTITUTION;
+        body.angularVelocity *= 0.82;
+      } else if (body.x + body.w > width) {
+        body.x = Math.max(0, width - body.w);
+        if (body.vx > 0) body.vx *= -WALL_RESTITUTION;
+        body.angularVelocity *= 0.82;
+      }
+
+      if (body.y + body.h > height) {
+        body.y = Math.max(0, height - body.h);
+        if (body.vy > 0) body.vy *= -WALL_RESTITUTION;
+        body.vx *= 0.91;
+        body.angularVelocity *= 0.72;
+        if (Math.abs(body.vy) < 18) body.vy = 0;
+        if (Math.abs(body.vx) < 2.2) body.vx = 0;
+        if (Math.abs(body.angularVelocity) < 0.16) body.angularVelocity = 0;
+      } else if (body.y < 0 && body.vy < 0) {
+        body.y = 0;
+        body.vy *= -WALL_RESTITUTION;
+      }
+    };
+
+    const resolveCollision = (a, b) => {
+      const deltaX = (a.x + a.w / 2) - (b.x + b.w / 2);
+      const deltaY = (a.y + a.h / 2) - (b.y + b.h / 2);
+      const overlapX = (a.w + b.w) / 2 - Math.abs(deltaX);
+      const overlapY = (a.h + b.h) / 2 - Math.abs(deltaY);
+      if (overlapX <= 0 || overlapY <= 0) return;
+
+      const inverseA = a.dragged ? 0 : 1 / a.mass;
+      const inverseB = b.dragged ? 0 : 1 / b.mass;
+      const inverseTotal = inverseA + inverseB;
+      if (inverseTotal <= 0) return;
+
+      let normalX = 0;
+      let normalY = 0;
+      let penetration = 0;
+      if (overlapX < overlapY) {
+        normalX = deltaX < 0 ? -1 : 1;
+        penetration = overlapX;
+      } else {
+        normalY = deltaY < 0 ? -1 : 1;
+        penetration = overlapY;
+      }
+
+      const correction = Math.max(0, penetration - 0.18) * 0.76 / inverseTotal;
+      a.x += normalX * correction * inverseA;
+      a.y += normalY * correction * inverseA;
+      b.x -= normalX * correction * inverseB;
+      b.y -= normalY * correction * inverseB;
+
+      const relativeVelocity = (a.vx - b.vx) * normalX + (a.vy - b.vy) * normalY;
+      if (relativeVelocity >= 0) return;
+      const impulse = -(1 + RESTITUTION) * relativeVelocity / inverseTotal;
+      a.vx += impulse * normalX * inverseA;
+      a.vy += impulse * normalY * inverseA;
+      b.vx -= impulse * normalX * inverseB;
+      b.vy -= impulse * normalY * inverseB;
+
+      const tangentX = -normalY;
+      const tangentY = normalX;
+      const tangentSpeed = (a.vx - b.vx) * tangentX + (a.vy - b.vy) * tangentY;
+      const frictionImpulse = clamp(-tangentSpeed / inverseTotal, -impulse * 0.15, impulse * 0.15);
+      a.vx += frictionImpulse * tangentX * inverseA;
+      a.vy += frictionImpulse * tangentY * inverseA;
+      b.vx -= frictionImpulse * tangentX * inverseB;
+      b.vy -= frictionImpulse * tangentY * inverseB;
+
+      if (!a.dragged) a.angularVelocity += (normalX || -normalY) * tangentSpeed * 0.018;
+      if (!b.dragged) b.angularVelocity -= (normalX || -normalY) * tangentSpeed * 0.018;
+    };
+
+    const solveCollisions = () => {
+      const buckets = new Map();
+      bodies.forEach((body) => {
+        if (body.y + body.h < -2) return;
+        const minColumn = Math.floor(body.x / CELL_SIZE);
+        const maxColumn = Math.floor((body.x + body.w) / CELL_SIZE);
+        const minRow = Math.floor(body.y / CELL_SIZE);
+        const maxRow = Math.floor((body.y + body.h) / CELL_SIZE);
+        for (let column = minColumn; column <= maxColumn; column += 1) {
+          for (let row = minRow; row <= maxRow; row += 1) {
+            const key = `${column}:${row}`;
+            const bucket = buckets.get(key);
+            if (bucket) bucket.push(body);
+            else buckets.set(key, [body]);
+          }
+        }
+      });
+
+      const checked = new Set();
+      buckets.forEach((bucket) => {
+        for (let aIndex = 0; aIndex < bucket.length; aIndex += 1) {
+          for (let bIndex = aIndex + 1; bIndex < bucket.length; bIndex += 1) {
+            const a = bucket[aIndex];
+            const b = bucket[bIndex];
+            const key = a.index < b.index ? `${a.index}:${b.index}` : `${b.index}:${a.index}`;
+            if (checked.has(key)) continue;
+            checked.add(key);
+            resolveCollision(a, b);
+          }
+        }
+      });
+    };
+
+    const simulate = (step) => {
+      bodies.forEach((body) => {
+      if (body.dragged) {
+        const nextX = clamp(body.targetX, 0, Math.max(0, width - body.w));
+        const nextY = clamp(body.targetY, 0, Math.max(0, height - body.h));
+        const deltaX = nextX - body.x;
+        const deltaY = nextY - body.y;
+        body.vx = Math.abs(deltaX) > 0.01
+          ? clamp(deltaX / step, -1450, 1450)
+          : body.vx * 0.9;
+        body.vy = Math.abs(deltaY) > 0.01
+          ? clamp(deltaY / step, -1450, 1450)
+          : body.vy * 0.9;
+          body.x = nextX;
+          body.y = nextY;
+          body.angularVelocity *= 0.82;
+          return;
+        }
+
+        body.vy += GRAVITY * step;
+        body.vx *= 0.9991;
+        body.vy *= 0.9994;
+        body.angularVelocity *= 0.996;
+        body.x += body.vx * step;
+        body.y += body.vy * step;
+        body.angle = clamp(body.angle + body.angularVelocity * step, -7, 7);
+        constrainBody(body);
+      });
+
+      for (let iteration = 0; iteration < 2; iteration += 1) {
+        solveCollisions();
+        bodies.forEach(constrainBody);
+      }
+    };
+
+    const frame = (time) => {
+      if (!running) return;
+      if (!root.isConnected) {
+        cleanup();
+        return;
+      }
+
+      if (!lastTime) lastTime = time;
+      accumulator += Math.min(MAX_FRAME, (time - lastTime) / 1000);
+      lastTime = time;
+      let substeps = 0;
+      while (accumulator >= FIXED_STEP && substeps < MAX_SUBSTEPS) {
+        simulate(FIXED_STEP);
+        accumulator -= FIXED_STEP;
+        substeps += 1;
+      }
+      if (substeps === MAX_SUBSTEPS) accumulator = 0;
+      bodies.forEach(renderBody);
+      const physicallyActive = bodies.some((body) => (
+        body.dragged
+        || body.y < -1
+        || Math.abs(body.vx) > 4
+        || Math.abs(body.vy) > 4
+        || Math.abs(body.angularVelocity) > 0.45
+      ));
+      idleFrames = physicallyActive ? 0 : idleFrames + 1;
+      if (idleFrames > 100) {
+        stop();
+        return;
+      }
+      rafId = requestAnimationFrame(frame);
+    };
+
+    const start = () => {
+      if (running || reducedMotion || !inView || document.hidden) return;
+      running = true;
+      lastTime = 0;
+      accumulator = 0;
+      idleFrames = 0;
+      rafId = requestAnimationFrame(frame);
+    };
+
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+      lastTime = 0;
+      accumulator = 0;
+    };
+
+    const finishDrag = (body, event) => {
+      if (!body.dragged || (event && body.pointerId !== event.pointerId)) return;
+      body.dragged = false;
+      body.pointerId = null;
+      body.element.classList.remove('is-dragged');
+      if (event && body.element.hasPointerCapture?.(event.pointerId)) {
+        try { body.element.releasePointerCapture(event.pointerId); } catch {}
+      }
+    };
+
+    bodies.forEach((body) => {
+      body.element.addEventListener('pointerdown', (event) => {
+        if (reducedMotion || event.button !== 0) return;
+        event.preventDefault();
+        const bounds = world.getBoundingClientRect();
+        body.dragged = true;
+        body.pointerId = event.pointerId;
+        body.dragOffsetX = event.clientX - bounds.left - body.x;
+        body.dragOffsetY = event.clientY - bounds.top - body.y;
+        body.dragWorldLeft = bounds.left;
+        body.dragWorldTop = bounds.top;
+        body.targetX = body.x;
+        body.targetY = body.y;
+        body.element.classList.add('is-dragged');
+        try { body.element.setPointerCapture(event.pointerId); } catch {}
+        start();
+      });
+
+      body.element.addEventListener('pointermove', (event) => {
+        if (!body.dragged || body.pointerId !== event.pointerId) return;
+        body.targetX = event.clientX - body.dragWorldLeft - body.dragOffsetX;
+        body.targetY = event.clientY - body.dragWorldTop - body.dragOffsetY;
+      });
+
+      body.element.addEventListener('pointerup', (event) => finishDrag(body, event));
+      body.element.addEventListener('pointercancel', (event) => finishDrag(body, event));
+      body.element.addEventListener('lostpointercapture', (event) => finishDrag(body, event));
+    });
+
+    const applyMotionPreference = () => {
+      reducedMotion = motionQuery.matches;
+      root.dataset.reduced = String(reducedMotion);
+      if (reducedMotion) {
+        stop();
+        initialized = false;
+        root.dataset.physicsReady = 'false';
+        bodies.forEach((body) => {
+          finishDrag(body);
+          body.lastTransform = '';
+          body.element.style.removeProperty('transform');
+        });
+      } else {
+        scheduleResize();
+        start();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    const cleanup = () => {
+      stop();
+      cancelAnimationFrame(resizeFrame);
+      observer?.disconnect();
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', scheduleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      document.removeEventListener('astro:before-swap', cleanup);
+      motionQuery.removeEventListener?.('change', applyMotionPreference);
+    };
+
+    if ('ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(scheduleResize);
+      resizeObserver.observe(world);
+    } else {
+      window.addEventListener('resize', scheduleResize, { passive: true });
+    }
+
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        inView = Boolean(entry?.isIntersecting && entry.intersectionRatio > 0.025);
+        if (inView) start();
+        else stop();
+      }, { rootMargin: '18% 0px 18% 0px', threshold: [0, 0.025, 0.15] });
+      observer.observe(root);
+    } else {
+      inView = true;
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    document.addEventListener('astro:before-swap', cleanup, { once: true });
+    motionQuery.addEventListener?.('change', applyMotionPreference);
+    root.dataset.reduced = String(reducedMotion);
+    if (!reducedMotion) scheduleResize();
+    if (inView) start();
+  });
+</script>

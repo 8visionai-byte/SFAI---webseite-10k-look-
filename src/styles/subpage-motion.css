@@ -511,17 +511,57 @@ body:has(.subpage-main) .insight-preview.is-visible img {
 }
 
 .case-showcase__list {
+  min-width: 0;
+  overflow: visible;
   border-top: 1px solid var(--line-dark);
 }
 
 .case-showcase .case-row {
   min-height: clamp(270px, 38svh, 410px);
-  grid-template-columns: minmax(0, 1.2fr) minmax(190px, 0.74fr) 92px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(170px, 0.78fr) minmax(118px, 0.3fr);
+  gap: clamp(20px, 2.4vw, 38px);
   padding-block: clamp(38px, 5vw, 72px);
   opacity: 0.34;
   filter: blur(4px);
   transition: color 0.42s ease, background-color 0.42s ease, opacity 0.42s ease;
   will-change: opacity, filter, transform;
+}
+
+.subpage-main .case-showcase .case-row[data-motion-row] {
+  overflow: visible;
+}
+
+.case-showcase .case-row > * {
+  min-width: 0;
+}
+
+.case-showcase .case-row > div {
+  min-width: 118px;
+  justify-self: end;
+  padding-right: clamp(4px, 0.8vw, 12px);
+}
+
+.case-showcase .case-row strong {
+  overflow: visible;
+  padding-block: 0.08em;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.86;
+  white-space: nowrap;
+}
+
+.case-showcase .case-row small {
+  display: block;
+  margin-top: 12px;
+  line-height: 1.35;
+}
+
+.case-showcase .case-row [data-case-scramble] {
+  transition: color 0.24s ease, text-shadow 0.24s ease;
+}
+
+.case-showcase .case-row [data-case-scramble].is-scrambling {
+  color: #657300;
+  text-shadow: 0 0 18px rgba(130, 150, 0, 0.12);
 }
 
 .case-showcase .case-row.is-active {
@@ -777,6 +817,26 @@ body:has(.subpage-main) .insight-preview.is-visible img {
 }
 
 @media (max-width: 1380px) and (min-width: 761px) {
+  .case-showcase {
+    grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+    gap: 30px;
+  }
+
+  .case-showcase .case-row {
+    grid-template-columns: minmax(0, 1fr) minmax(118px, auto);
+    gap: 24px;
+  }
+
+  .case-showcase .case-row > p {
+    grid-column: 1 / -1;
+  }
+
+  .case-showcase .case-row > div {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+  }
+
   .method-sequence {
     grid-template-columns: 82px minmax(0, 1fr);
     gap: 30px;
@@ -865,6 +925,27 @@ body:has(.subpage-main) .insight-preview.is-visible img {
     min-height: 44svh;
     padding-block: 48px;
     filter: none;
+  }
+
+  .case-showcase .case-row > div {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-right: 6px;
+  }
+
+  .case-showcase .case-row strong {
+    flex: 0 0 auto;
+    padding-right: 0.08em;
+  }
+
+  .case-showcase .case-row small {
+    max-width: 12rem;
+    margin-top: 0;
+    text-align: right;
   }
 
   .case-showcase .case-row p {

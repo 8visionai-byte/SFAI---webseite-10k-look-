@@ -228,7 +228,43 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
   if (caseShowcase instanceof HTMLElement) {
     const panels = [...caseShowcase.querySelectorAll('[data-case-panel]')];
     const rows = [...caseShowcase.querySelectorAll('[data-case-row]')];
+    const scrambleAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const scrambleNumbers = '0123456789';
     let activeCase = 0;
+
+    const scrambleTarget = (entry, delay = 0) => {
+      entry.tween?.kill();
+      entry.target.classList.add('is-scrambling');
+
+      const originalCharacters = [...entry.original];
+      const mutableCharacters = originalCharacters.filter((character) => !/[\s/—–-]/u.test(character));
+      const state = { progress: 0 };
+
+      entry.tween = gsap.to(state, {
+        progress: 1,
+        delay,
+        duration: Math.min(0.82, 0.46 + entry.original.length * 0.011),
+        ease: 'power3.out',
+        onUpdate: () => {
+          const revealedCount = Math.floor(state.progress * mutableCharacters.length);
+          let mutableIndex = 0;
+
+          entry.target.textContent = originalCharacters.map((character) => {
+            if (/[\s/—–-]/u.test(character)) return character;
+            const shouldReveal = mutableIndex < revealedCount;
+            mutableIndex += 1;
+            if (shouldReveal) return character;
+            const pool = /\d/u.test(character) ? scrambleNumbers : scrambleAlphabet;
+            return pool[Math.floor(Math.random() * pool.length)];
+          }).join('');
+        },
+        onComplete: () => {
+          entry.target.textContent = entry.original;
+          entry.target.classList.remove('is-scrambling');
+          entry.tween = null;
+        },
+      });
+    };
 
     const setCaseState = (index) => {
       rows.forEach((row, rowIndex) => row.classList.toggle('is-active', rowIndex === index));
@@ -328,6 +364,12 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
       });
     } else {
       rows.forEach((row, index) => {
+        const scrambleEntries = [...row.querySelectorAll('[data-case-scramble]')].map((target) => ({
+          target,
+          original: target.textContent ?? '',
+          tween: null,
+        }));
+
         gsap.fromTo(
           row,
           {
@@ -358,7 +400,18 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
         });
 
         row.addEventListener('pointerenter', () => {
-          if (finePointer.matches) activateCase(index, index >= activeCase ? 1 : -1);
+          if (!finePointer.matches) return;
+          activateCase(index, index >= activeCase ? 1 : -1);
+          scrambleEntries.forEach((entry, entryIndex) => scrambleTarget(entry, entryIndex * 0.045));
+        });
+
+        row.addEventListener('pointerleave', () => {
+          scrambleEntries.forEach((entry) => {
+            entry.tween?.kill();
+            entry.tween = null;
+            entry.target.textContent = entry.original;
+            entry.target.classList.remove('is-scrambling');
+          });
         });
       });
     }
@@ -370,6 +423,7 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
     const panels = [...methodSequence.querySelectorAll('[data-method-panel]')];
     const railIndex = methodSequence.querySelector('.method-sequence__rail-index');
     let activeMethodPanel = 0;
+    let activeMethodStep = 0;
 
     const setMethodPanelState = (index) => {
       panels.forEach((panel, panelIndex) => {
@@ -465,9 +519,13 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
     setMethodPanelState(0);
 
     const markMethodStep = (index, direction = 1, animate = true) => {
+      if (!steps[index]) return;
       steps.forEach((step, stepIndex) => step.classList.toggle('is-active', stepIndex === index));
       if (railIndex) railIndex.textContent = steps[index]?.dataset.methodIndex ?? '01';
-      activateMethodPanel(Math.min(index, Math.max(0, panels.length - 1)), direction, animate);
+      const mappedPanelIndex = Number.parseInt(steps[index]?.dataset.methodPanelIndex ?? '', 10);
+      const panelIndex = Number.isInteger(mappedPanelIndex) ? mappedPanelIndex : index;
+      activateMethodPanel(Math.min(panelIndex, Math.max(0, panels.length - 1)), direction, animate);
+      activeMethodStep = index;
     };
 
     markMethodStep(0, 1, false);
@@ -483,6 +541,19 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
         step.style.removeProperty('filter');
         step.style.removeProperty('transform');
       });
+
+      const reducedMotionObserver = new IntersectionObserver((entries) => {
+        const visibleEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((first, second) => Math.abs(first.boundingClientRect.top - window.innerHeight * 0.5)
+            - Math.abs(second.boundingClientRect.top - window.innerHeight * 0.5))[0];
+        if (!visibleEntry) return;
+        const nextIndex = steps.indexOf(visibleEntry.target);
+        if (nextIndex < 0) return;
+        markMethodStep(nextIndex, nextIndex >= activeMethodStep ? 1 : -1, false);
+      }, { rootMargin: '-42% 0px -42% 0px' });
+
+      steps.forEach((step) => reducedMotionObserver.observe(step));
     } else {
       gsap.fromTo(
         methodSequence,
@@ -522,11 +593,21 @@ if (root instanceof HTMLElement && !root.dataset.motionBound) {
 
         ScrollTrigger.create({
           trigger: step,
-          start: 'top 58%',
-          end: 'bottom 42%',
+          start: mobileViewport.matches ? 'top 66%' : 'top 58%',
+          end: 'bottom top',
           onEnter: () => markMethodStep(index, 1),
           onEnterBack: () => markMethodStep(index, -1),
+          onLeaveBack: () => markMethodStep(Math.max(0, index - 1), -1),
         });
+      });
+
+      requestAnimationFrame(() => {
+        const activationLine = window.innerHeight * (mobileViewport.matches ? 0.66 : 0.58);
+        let initialStep = 0;
+        steps.forEach((step, index) => {
+          if (step.getBoundingClientRect().top <= activationLine) initialStep = index;
+        });
+        markMethodStep(initialStep, initialStep >= activeMethodStep ? 1 : -1, false);
       });
     }
   }

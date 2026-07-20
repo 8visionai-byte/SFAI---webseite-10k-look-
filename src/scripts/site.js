@@ -266,12 +266,9 @@ if (storySteps.length) {
 }
 
 const hero = document.querySelector('[data-hero]');
-const heroScenes = [...document.querySelectorAll('[data-hero-scene]')];
-if (hero && heroScenes.length) {
+if (hero) {
   const applyHeroProgress = (value) => {
     const progress = Math.min(1, Math.max(0, value));
-    const active = Math.min(heroScenes.length - 1, Math.floor(progress * heroScenes.length));
-    heroScenes.forEach((scene, index) => scene.classList.toggle('is-active', index === active));
     hero.dispatchEvent(new CustomEvent('sfai:hero-progress', { detail: { progress } }));
   };
 
@@ -405,7 +402,6 @@ if (!reduced) {
 
   const cinematic = document.querySelector('[data-cinematic]');
   if (cinematic) {
-    const curtain = cinematic.querySelector('[data-cinematic-curtain]');
     const frames = [...cinematic.querySelectorAll('[data-cinematic-frame]')];
     const title = cinematic.querySelector('.cinematic-title');
     const titleLines = cinematic.querySelectorAll('[data-cinematic-line]');
@@ -418,65 +414,71 @@ if (!reduced) {
         scrub: galleryScrub,
       },
     });
-    timeline.fromTo(curtain, { xPercent: -101 }, { xPercent: 0, duration: 0.12, ease: 'none' }, 0);
     timeline.fromTo(titleLines, {
-      yPercent: 108,
+      xPercent: -104,
       opacity: 0,
-      filter: 'blur(9px)',
     }, {
-      yPercent: 0,
+      xPercent: 0,
       opacity: 1,
-      filter: 'blur(0px)',
-      stagger: 0.035,
-      duration: 0.18,
+      stagger: 0.045,
+      duration: 0.2,
       ease: 'none',
-    }, 0.035);
+    }, 0.02);
 
     frames.forEach((frame, index) => {
       const bitmap = frame.querySelector('img');
-      const entry = 0.1 + index * 0.195;
-      const liftOffset = compactMotion ? 28 : 36;
-      const darkFilter = `brightness(.38) contrast(.74) saturate(.38) blur(${compactMotion ? 7 : 11}px)`;
+      const entry = 0.09 + index * 0.195;
+      const direction = index % 2 === 0 ? 1 : -1;
+      const startX = direction * (compactMotion ? 34 : 48);
+      const exitX = direction * (compactMotion ? -27 : -38);
 
       timeline.fromTo(frame, {
-        yPercent: liftOffset,
+        xPercent: startX,
+        yPercent: index % 2 === 0 ? -3 : 4,
+        rotate: direction * 2.2,
         '--sfai-curtain': 1,
         opacity: 0,
       }, {
-        yPercent: compactMotion ? 9 : 12,
+        xPercent: startX * 0.2,
+        yPercent: 0,
+        rotate: direction * 0.5,
         '--sfai-curtain': 0,
-        opacity: 0.84,
-        duration: 0.1,
+        opacity: 0.9,
+        duration: 0.12,
         ease: 'none',
       }, entry);
 
       if (bitmap) {
         timeline.fromTo(bitmap, {
-          scale: 1.075,
-          filter: darkFilter,
+          scale: 1.06,
+          filter: 'grayscale(.72) sepia(.16) contrast(.92) brightness(.72)',
         }, {
-          filter: 'brightness(1) contrast(1.12) saturate(.84) blur(0px)',
-          scale: 1.018,
-          duration: 0.14,
+          filter: 'grayscale(.32) sepia(.08) contrast(1.08) brightness(1)',
+          scale: 1.015,
+          duration: 0.15,
           ease: 'none',
         }, entry);
       }
 
       timeline.to(frame, {
-        yPercent: 0,
+        xPercent: 0,
+        rotate: 0,
         opacity: 1,
-        duration: 0.09,
+        duration: 0.1,
         ease: 'none',
-      }, entry + 0.1);
-      if (bitmap) timeline.to(bitmap, { scale: 1, duration: 0.09, ease: 'none' }, entry + 0.14);
+      }, entry + 0.12);
+      if (bitmap) timeline.to(bitmap, { scale: 1, duration: 0.08, ease: 'none' }, entry + 0.15);
       timeline.to(frame, {
-        yPercent: compactMotion ? -24 : -31,
+        xPercent: exitX,
+        yPercent: -3,
+        rotate: direction * -1.4,
+        scale: 0.96,
         opacity: 0,
-        duration: 0.13,
+        duration: 0.14,
         ease: 'none',
-      }, entry + 0.25);
+      }, entry + 0.26);
     });
-    if (title) timeline.to(title, { opacity: 0.18, filter: 'blur(3px)', duration: 0.13, ease: 'none' }, 0.88);
+    if (title) timeline.to(title, { xPercent: -3, opacity: 0.14, duration: 0.13, ease: 'none' }, 0.88);
     timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1.02, ease: 'none' }, 0);
   }
 
@@ -498,64 +500,63 @@ if (!reduced) {
 
     fogImages.forEach((image, index) => {
       const bitmap = image.querySelector('img');
-      const entry = 0.04 + index * 0.205;
-      const finalOpacity = index === 0 ? 0.64 : 1;
+      const entry = 0.03 + index * 0.12;
+      const finalOpacity = [0.42, 0.78, 0.58][index] ?? 0.6;
+      const drift = [
+        { xPercent: 2.5, yPercent: -1.5, scale: 0.985 },
+        { xPercent: -2, yPercent: 1, scale: 0.99 },
+        { xPercent: 0, yPercent: -2.5, scale: 1.015 },
+      ][index];
 
       fogTimeline.fromTo(image, {
-        xPercent: 0,
-        yPercent: compactMotion ? 29 : 38,
-        '--sfai-curtain': 1,
         opacity: 0,
+        scale: compactMotion ? 1.035 : 1.065,
       }, {
-        yPercent: compactMotion ? 9 : 12,
-        '--sfai-curtain': 0,
-        opacity: finalOpacity * 0.82,
-        duration: 0.13,
+        opacity: finalOpacity,
+        scale: 1,
+        duration: 0.24,
         ease: 'none',
       }, entry);
 
       if (bitmap) {
         fogTimeline.fromTo(bitmap, {
-          scale: 1.075,
-          filter: `brightness(.38) contrast(.72) saturate(.34) blur(${compactMotion ? 8 : 12}px)`,
+          scale: 1.08,
+          filter: `brightness(.42) contrast(.82) saturate(.32) blur(${compactMotion ? 10 : 16}px)`,
         }, {
-          filter: 'brightness(1) contrast(1.08) saturate(.72) blur(0px)',
-          scale: 1.018,
-          duration: 0.16,
+          filter: 'brightness(.82) contrast(1.06) saturate(.56) blur(0px)',
+          scale: 1,
+          duration: 0.26,
           ease: 'none',
         }, entry);
       }
       fogTimeline.to(image, {
-        yPercent: 0,
-        opacity: finalOpacity,
-        duration: 0.1,
+        ...drift,
+        duration: 0.45,
         ease: 'none',
-      }, entry + 0.13);
-      if (bitmap) fogTimeline.to(bitmap, { scale: 1, duration: 0.1, ease: 'none' }, entry + 0.16);
+      }, 0.38 + index * 0.025);
       fogTimeline.to(image, {
-        yPercent: compactMotion ? -24 : -32,
-        opacity: index === 0 ? 0.08 : 0,
-        duration: 0.15,
+        opacity: 0,
+        scale: index === 2 ? 1.035 : 0.975,
+        duration: 0.18,
         ease: 'none',
-      }, entry + 0.35);
+      }, 0.78 + index * 0.025);
     });
     fogTimeline.fromTo(fogLines, {
-      opacity: 0.035,
-      y: compactMotion ? 14 : 20,
-      scale: 1.012,
-      filter: `blur(${compactMotion ? 10 : 15}px)`,
+      opacity: 0.02,
+      scale: 1.03,
+      filter: `blur(${compactMotion ? 12 : 18}px)`,
     }, {
       opacity: 1,
-      y: 0,
       scale: 1,
       filter: 'blur(0px)',
-      stagger: 0.05,
-      duration: 0.28,
+      stagger: 0.065,
+      duration: 0.36,
       ease: 'none',
-    }, 0.11);
-    fogTimeline.fromTo(fogNote, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.2, ease: 'none' }, 0.34);
-    fogTimeline.fromTo(fogVeil, { opacity: 1 }, { opacity: 0.42, duration: 0.64, ease: 'none' }, 0.08);
-    if (fogCopy) fogTimeline.to(fogCopy, { opacity: 0.2, filter: 'blur(3px)', duration: 0.13, ease: 'none' }, 0.86);
+    }, 0.12);
+    fogTimeline.fromTo(fogNote, { opacity: 0 }, { opacity: 1, duration: 0.24, ease: 'none' }, 0.42);
+    fogTimeline.fromTo(fogVeil, { opacity: 0.98 }, { opacity: 0.34, duration: 0.58, ease: 'none' }, 0.05);
+    fogTimeline.to(fogVeil, { opacity: 0.76, duration: 0.2, ease: 'none' }, 0.78);
+    if (fogCopy) fogTimeline.to(fogCopy, { opacity: 0.14, filter: 'blur(5px)', duration: 0.14, ease: 'none' }, 0.86);
   }
 
   const systemExplore = document.querySelector('[data-system-explore]');
@@ -574,18 +575,16 @@ if (!reduced) {
       },
     });
     exploreTimeline.fromTo(lines, {
-      yPercent: 108,
+      xPercent: -106,
       opacity: 0,
-      filter: 'blur(8px)',
     }, {
-      yPercent: 0,
+      xPercent: 0,
       opacity: 1,
-      filter: 'blur(0px)',
-      stagger: 0.035,
-      duration: 0.18,
+      stagger: 0.05,
+      duration: 0.22,
       ease: 'none',
     }, 0.02);
-    exploreTimeline.fromTo(note, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.18, ease: 'none' }, 0.14);
+    exploreTimeline.fromTo(note, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.2, ease: 'none' }, 0.16);
 
     items.forEach((item, index) => {
       const image = item.querySelector('.system-explore__image');
@@ -593,43 +592,49 @@ if (!reduced) {
       const entry = 0.045 + index * 0.145;
 
       exploreTimeline.fromTo(item, {
-        xPercent: 0,
-        yPercent: compactMotion ? 28 : 36,
+        xPercent: compactMotion ? 48 : 68,
+        yPercent: index % 2 === 0 ? -4 : 5,
+        rotate: 2.4,
         opacity: 0,
       }, {
-        yPercent: compactMotion ? 8 : 11,
-        opacity: 0.84,
-        duration: 0.09,
+        xPercent: compactMotion ? 8 : 11,
+        yPercent: 0,
+        rotate: 0.4,
+        opacity: 0.9,
+        duration: 0.11,
         ease: 'none',
       }, entry);
-      if (image) exploreTimeline.fromTo(image, { '--sfai-curtain': 1 }, { '--sfai-curtain': 0, duration: 0.1, ease: 'none' }, entry);
+      if (image) exploreTimeline.fromTo(image, { '--sfai-curtain': 1 }, { '--sfai-curtain': 0, duration: 0.11, ease: 'none' }, entry);
 
       if (bitmap) {
         exploreTimeline.fromTo(bitmap, {
-          scale: 1.075,
-          filter: `brightness(.38) contrast(.7) saturate(.36) blur(${compactMotion ? 7 : 11}px)`,
+          scale: 1.045,
+          filter: 'brightness(.64) contrast(.92) saturate(.18) grayscale(.78)',
         }, {
-          filter: 'brightness(1) contrast(1.08) saturate(.83) blur(0px)',
-          scale: 1.018,
+          filter: 'brightness(1) contrast(1.08) saturate(.82) grayscale(.05)',
+          scale: 1.012,
           duration: 0.14,
           ease: 'none',
         }, entry);
       }
       exploreTimeline.to(item, {
-        yPercent: 0,
+        xPercent: 0,
+        rotate: 0,
         opacity: 1,
         duration: 0.09,
         ease: 'none',
-      }, entry + 0.09);
+      }, entry + 0.11);
       if (bitmap) exploreTimeline.to(bitmap, { scale: 1, duration: 0.08, ease: 'none' }, entry + 0.14);
       exploreTimeline.to(item, {
-        yPercent: compactMotion ? -23 : -30,
+        xPercent: compactMotion ? -28 : -43,
+        yPercent: index % 2 === 0 ? 3 : -3,
+        rotate: -1.4,
         opacity: 0,
-        duration: 0.12,
+        duration: 0.13,
         ease: 'none',
-      }, entry + 0.19);
+      }, entry + 0.22);
     });
-    if (copy) exploreTimeline.to(copy, { opacity: 0.18, filter: 'blur(3px)', duration: 0.13, ease: 'none' }, 0.88);
+    if (copy) exploreTimeline.to(copy, { xPercent: -5, opacity: 0.14, duration: 0.13, ease: 'none' }, 0.88);
   }
 
   const reelHeading = document.querySelector('[data-reel-heading]');

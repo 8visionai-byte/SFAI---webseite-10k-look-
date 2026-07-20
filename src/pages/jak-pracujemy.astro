@@ -6,6 +6,8 @@ import valueDiagnosis from '../assets/generated/v4/story-02-value-diagnosis.png'
 import systemArchitecture from '../assets/generated/v4/story-04-system-architecture.png';
 import livePilot from '../assets/generated/v4/story-05-live-pilot.png';
 import scaleAndCare from '../assets/generated/v4/story-08-scale-and-care.png';
+import controlledAction from '../assets/generated/v4/story-06-controlled-action.png';
+import observableResult from '../assets/generated/v4/story-07-observable-result.png';
 
 const methodSteps = [
   ['01', 'Sygnał / wartość', 'Diagnoza wartości', 'Rozkładamy proces na kroki, liczymy koszt i wybieramy miejsce z najlepszą relacją efektu do ryzyka.'],
@@ -21,6 +23,8 @@ const methodVisuals = [
   { index: '02', label: 'Architektura / przepływ', image: systemArchitecture },
   { index: '03', label: 'Pilot / kontrola', image: livePilot },
   { index: '04', label: 'Opieka / skala', image: scaleAndCare },
+  { index: 'A', label: 'Bezpieczeństwo / nadzór', image: controlledAction },
+  { index: 'B', label: 'Wynik / obserwowalność', image: observableResult },
 ];
 ---
 <BaseLayout title="Jak wdrażamy AI w firmie — SimpleFast.ai" description="Diagnoza wartości, małe wdrożenie, test na realnym procesie i stały rozwój agentów AI oraz automatyzacji.">
@@ -49,8 +53,8 @@ const methodVisuals = [
               <p class="method-sequence__stage-note">Proces / obraz aktywnego etapu</p>
             </div>
             <div class="method-sequence__steps">
-              {methodSteps.map(([index, kicker, title, description]) => (
-                <article class="method-step" data-method-step data-method-index={index}>
+              {methodSteps.map(([index, kicker, title, description], stepIndex) => (
+                <article class="method-step" data-method-step data-method-index={index} data-method-panel-index={stepIndex}>
                   <span class="method-step__index">{index}</span>
                   <div class="method-step__title">
                     <p class="mono-label">{kicker}</p>

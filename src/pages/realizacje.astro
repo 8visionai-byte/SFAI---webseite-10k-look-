@@ -45,9 +45,9 @@ const cases = [
           <div class="case-showcase__list">
             {cases.map(({ title, description, label, result }, index) => (
               <article class="case-row" data-case-row data-motion-row data-motion-index={`0${index + 1}`}>
-                <h3>{title}</h3>
+                <h3 data-case-scramble>{title}</h3>
                 <p>{description}</p>
-                <div><strong>0{index + 1}</strong><small>{label} / {result}</small></div>
+                <div><strong data-case-scramble>0{index + 1}</strong><small data-case-scramble>{label} / {result}</small></div>
               </article>
             ))}
           </div>

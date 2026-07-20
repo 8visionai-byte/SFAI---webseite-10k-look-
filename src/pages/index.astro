@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowCore from '../components/FlowCore.astro';
 import EditorialJourney from '../components/EditorialJourney.astro';
+import CitiesPhysicsBoard from '../components/CitiesPhysicsBoard.astro';
 import { services } from '../data/services.js';
 import valueArchitectureImage from '../assets/generated/v4/service-value-diagnostic-atlas.png';
 import chatbotKnowledgeImage from '../assets/generated/v4/service-chatbot-knowledge-dialogue.png';
@@ -100,13 +101,6 @@ const schema = {
           <li><span data-scramble>Web / SEO / GEO</span></li>
         </ul>
 
-        <div class="hero-scenes" aria-hidden="true">
-          <div class="hero-scene" data-hero-scene><span>01 / Sygnał</span><b>Słucha</b></div>
-          <div class="hero-scene" data-hero-scene><span>02 / Kontekst</span><b>Rozumie</b></div>
-          <div class="hero-scene" data-hero-scene><span>03 / Proces</span><b>Działa</b></div>
-          <div class="hero-scene" data-hero-scene><span>04 / Wynik</span><b>Dowozi</b></div>
-        </div>
-
         <div class="hero-bottom">
           <p class="hero-intro">Projektujemy agentów, automatyzacje i cyfrowe doświadczenia, które zdejmują z zespołu realną pracę — nie tylko robią wrażenie na demo.</p>
           <div class="hero-actions">
@@ -164,7 +158,6 @@ const schema = {
 
     <section class="cinematic-system" data-cinematic aria-label="System AI w ruchu">
       <div class="cinematic-sticky">
-        <div class="cinematic-curtain" data-cinematic-curtain></div>
         <div class="cinematic-chapter"><span>[ System / 01—04 ]</span><span>Scroll to orchestrate</span></div>
         <div class="cinematic-frames">
           {cinematicFrames.map((frame, index) => (
@@ -392,5 +385,7 @@ const schema = {
         </div>
       </div>
     </section>
+
+    <CitiesPhysicsBoard />
   </main>
 </BaseLayout>
