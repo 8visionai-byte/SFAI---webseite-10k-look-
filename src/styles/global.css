@@ -637,7 +637,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .reel-heading > p:last-child { grid-column: 10 / -1; color: #555a56; }
 .services-reel { overflow: hidden; }
 .services-reel-track { display: flex; width: max-content; gap: 18px; padding-inline: 18px; animation: services-reel 54s linear infinite; backface-visibility: hidden; transform: translate3d(0,0,0); will-change: transform; }
-.services-reel:hover .services-reel-track { animation-play-state: paused; }
+.services-reel { cursor: pointer; }
+.services-reel.is-paused .services-reel-track { animation-play-state: paused; }
 @keyframes services-reel { to { transform: translate3d(calc(-50% - 9px),0,0); } }
 .reel-card { display: block; width: clamp(300px,30vw,520px); flex: 0 0 auto; }
 .reel-card-media { position: relative; aspect-ratio: .82; overflow: hidden; background: #111; }

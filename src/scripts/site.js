@@ -869,6 +869,14 @@ document.querySelectorAll('[data-demo-form]').forEach((form) => {
   });
 });
 
+// Karuzela usług: NIE zatrzymuje się na hover — pauza tylko na klik (klik w kartę = nawigacja).
+document.querySelectorAll('[data-services-reel]').forEach((reel) => {
+  reel.addEventListener('click', (event) => {
+    if (event.target.closest('a')) return;
+    reel.classList.toggle('is-paused');
+  });
+});
+
 document.addEventListener('click', (event) => {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   const anchor = event.target.closest('a');
