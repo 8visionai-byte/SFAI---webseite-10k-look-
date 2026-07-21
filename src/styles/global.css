@@ -983,3 +983,29 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .video-divider { height: 42vh; min-height: 300px; }
   .video-divider--lg { height: 56vh; }
 }
+
+/* --- proof „Explore" (Technologia znika) --- */
+.proof-explore { position: relative; height: 300svh; background: var(--ink); }
+.proof-explore__sticky { position: sticky; top: 0; height: 100svh; overflow: hidden; isolation: isolate; display: grid; place-items: center; padding: 24px; }
+.proof-explore__media { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.proof-explore__img { position: absolute; margin: 0; overflow: hidden; clip-path: inset(50% 0% 50% 0%); opacity: 0; will-change: transform, clip-path, opacity; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+.proof-explore__img img { width: 100%; height: 100%; object-fit: cover; }
+.proof-explore__img--1 { top: 7%; left: calc(50% - min(21vw, 320px)); width: min(42vw, 640px); height: 44%; }
+.proof-explore__img--2 { top: 20%; left: 5%; width: min(24vw, 360px); height: 56%; }
+.proof-explore__img--3 { top: 52%; right: 4%; width: min(36vw, 540px); height: 34%; }
+.proof-explore__img--4 { top: 11%; left: 7%; width: min(36vw, 540px); height: 32%; }
+.proof-explore__img--5 { top: 40%; right: 6%; width: min(23vw, 350px); height: 52%; }
+.proof-explore__title { position: relative; z-index: 2; margin: 0; max-width: 16ch; color: #fff; mix-blend-mode: difference; font-family: var(--font-display); font-weight: 560; font-size: clamp(3rem, 7.2vw, 8.2rem); line-height: .92; letter-spacing: -.05em; text-align: center; }
+.proof-explore__title span { display: block; }
+.proof-explore__kicker { position: absolute; z-index: 2; top: clamp(28px, 8vh, 88px); left: 50%; transform: translateX(-50%); color: #fff; mix-blend-mode: difference; letter-spacing: .14em; }
+@media (max-width: 760px) {
+  .proof-explore { height: 240svh; }
+  .proof-explore__img { width: 66vw !important; height: 34% !important; left: 17vw !important; right: auto !important; }
+  .proof-explore__title { font-size: clamp(2.6rem, 12vw, 4.4rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proof-explore { height: auto; }
+  .proof-explore__sticky { position: relative; height: auto; min-height: 78svh; }
+  .proof-explore__img { display: none; }
+  .proof-explore__title { mix-blend-mode: normal; }
+}

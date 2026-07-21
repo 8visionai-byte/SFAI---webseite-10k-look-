@@ -747,15 +747,33 @@ if (!reduced) {
     });
   }
 
-  document.querySelectorAll('.proof-card').forEach((card) => {
-    gsap.from(card, {
-      '--proof-curtain': 1,
-      y: compactMotion ? 18 : 30,
-      duration: 1.05,
-      ease: 'power3.out',
-      scrollTrigger: { trigger: card, start: 'top 86%', toggleActions: 'play none none none' },
+  const proofExplore = document.querySelector('[data-proof-explore]');
+  if (proofExplore) {
+    const title = proofExplore.querySelector('[data-proof-title]');
+    const lines = [...proofExplore.querySelectorAll('[data-proof-line]')];
+    const kicker = proofExplore.querySelector('[data-proof-kicker]');
+    const imgs = [...proofExplore.querySelectorAll('[data-proof-img]')];
+
+    gsap.set(lines, { opacity: 0, yPercent: 60, filter: 'blur(16px)' });
+    if (kicker) gsap.set(kicker, { opacity: 0 });
+
+    const proofTl = gsap.timeline({
+      scrollTrigger: { trigger: proofExplore, start: 'top top', end: 'bottom bottom', scrub: galleryScrub },
     });
-  });
+    if (kicker) proofTl.to(kicker, { opacity: 1, duration: 0.05, ease: 'none' }, 0.02);
+    proofTl.to(lines, { opacity: 1, yPercent: 0, filter: 'blur(0px)', stagger: 0.05, duration: 0.16, ease: 'none' }, 0.03);
+    proofTl.to(title, { yPercent: -12, duration: 0.2, ease: 'none' }, 0.24);
+    proofTl.to(title, { yPercent: 0, duration: 0.2, ease: 'none' }, 0.72);
+
+    imgs.forEach((img, index) => {
+      const at = 0.16 + index * 0.135;
+      proofTl.fromTo(img,
+        { clipPath: 'inset(50% 0% 50% 0%)', opacity: 0, yPercent: 10, filter: 'blur(10px)' },
+        { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, yPercent: 0, filter: 'blur(0px)', duration: 0.12, ease: 'none' }, at);
+      proofTl.to(img, { yPercent: -10, duration: 0.14, ease: 'none' }, at + 0.12);
+      proofTl.to(img, { opacity: 0, filter: 'blur(8px)', duration: 0.1, ease: 'none' }, at + 0.22);
+    });
+  }
 }
 
 if (!reduced) {

@@ -290,35 +290,24 @@ const schema = {
       </div>
     </section>
 
-    <section class="proof-section">
-      <div class="section-shell">
-        <div class="proof-head">
-          <p class="mono-label">/ Efekt w procesie</p>
-          <h2 data-reveal>Technologia znika. Zostaje lepsza praca.</h2>
+    <section class="proof-explore" data-proof-explore aria-labelledby="proof-explore-title">
+      <div class="proof-explore__sticky">
+        <div class="proof-explore__media" aria-hidden="true">
+          <figure class="proof-explore__img proof-explore__img--1" data-proof-img><Image src={valueArchitectureImage} alt="" widths={[640,960,1280]} sizes="42vw" format="webp" quality={82} loading="lazy" /></figure>
+          <figure class="proof-explore__img proof-explore__img--2" data-proof-img><Image src={voicebotRobotImage} alt="" widths={[520,760,1080]} sizes="26vw" format="webp" quality={82} loading="lazy" /></figure>
+          <figure class="proof-explore__img proof-explore__img--3" data-proof-img><Image src={seoAiCitationsImage} alt="" widths={[640,960,1280]} sizes="38vw" format="webp" quality={82} loading="lazy" /></figure>
+          <figure class="proof-explore__img proof-explore__img--4" data-proof-img><Image src={processAutomationImage} alt="" widths={[640,960,1280]} sizes="38vw" format="webp" quality={82} loading="lazy" /></figure>
+          <figure class="proof-explore__img proof-explore__img--5" data-proof-img><Image src={careObservatoryImage} alt="" widths={[520,760,1080]} sizes="26vw" format="webp" quality={82} loading="lazy" /></figure>
         </div>
-        <div class="proof-grid">
-          <a class="proof-card" href="/uslugi/voiceboty-ai/">
-            <div class="proof-card-media"><Image src={voicebotRobotImage} alt="Profesjonalny robot voicebota prowadzący naturalną rozmowę głosową" widths={[760,1100,1500]} sizes="(max-width:760px) 100vw, 54vw" format="webp" quality={84} /></div>
-            <div class="proof-card-copy">
-              <p class="mono-label">Scenariusz / Obsługa klienta</p>
-              <h3>Telefon odebrany. Termin zapisany. Zespół nadal pracuje.</h3>
-              <div class="proof-metrics"><div><strong>24/7</strong><span>dostępność</span></div><div><strong>PL</strong><span>naturalna rozmowa</span></div><div><strong>CRM</strong><span>zapis wyniku</span></div></div>
-            </div>
-          </a>
-          <a class="proof-card" href="/uslugi/strony-www-seo-ai/">
-            <div class="proof-card-media"><Image src={seoAiCitationsImage} alt="Treści strony i źródła prowadzące do cytowanej odpowiedzi systemu AI" widths={[640,960,1280]} sizes="(max-width:760px) 100vw, 46vw" format="webp" quality={84} /></div>
-            <div class="proof-card-copy">
-              <p class="mono-label">Scenariusz / Widoczność</p>
-              <h3>Jedna strona. Dwa ekosystemy wyszukiwania.</h3>
-              <div class="proof-metrics"><div><strong>SEO</strong><span>Google</span></div><div><strong>GEO</strong><span>odpowiedzi AI</span></div><div><strong>UX</strong><span>konwersja</span></div></div>
-            </div>
-          </a>
-          <div class="proof-note"><p>Nie publikujemy zmyślonych wskaźników. W realizacjach pokazujemy tylko efekty, które można przypisać do konkretnego procesu i potwierdzić z klientem.</p></div>
-        </div>
+        <p class="proof-explore__kicker mono-label" data-proof-kicker>[ Efekt w procesie ]</p>
+        <h2 class="proof-explore__title" id="proof-explore-title" data-proof-title>
+          <span data-proof-line>Technologia znika.</span>
+          <span data-proof-line>Zostaje lepsza praca.</span>
+        </h2>
       </div>
     </section>
 
-    <VideoDivider name="datacenter" kicker="/ Dane w UE · 24/7" height="md" />
+    <VideoDivider name="datacenter" kicker="/ Dane w UE · 24/7" height="lg" />
 
     <section class="process-section">
       <div class="section-shell">
