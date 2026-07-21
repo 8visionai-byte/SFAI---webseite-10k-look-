@@ -461,6 +461,22 @@ if (!reduced) {
         },
       });
     }
+
+    const bridgeLines = [...humanBridge.querySelectorAll('[data-hb-line]')];
+    const bridgeKicker = humanBridge.querySelector('[data-hb-kicker]');
+    if (bridgeLines.length) {
+      gsap.set(bridgeLines, { yPercent: 118, opacity: 0, filter: 'blur(6px)' });
+      if (bridgeKicker) gsap.set(bridgeKicker, { opacity: 0, y: 14 });
+      ScrollTrigger.create({
+        trigger: humanBridge,
+        start: 'top 58%',
+        once: true,
+        onEnter: () => {
+          if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
+          gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power3.out', stagger: 0.12, delay: 0.08 });
+        },
+      });
+    }
   }
 
   const cinematic = document.querySelector('[data-cinematic]');

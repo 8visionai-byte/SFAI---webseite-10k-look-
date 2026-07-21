@@ -13,6 +13,7 @@ import careObservatoryImage from '../assets/generated/v4/service-care-command-ob
 import seoAiCitationsImage from '../assets/generated/v4/service-geo-citation-ecosystem.png';
 import aiAgentControlImage from '../assets/generated/v4/service-agent-human-control.png';
 import processAutomationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
+import humanAiTouchImage from '../assets/generated/v3/human-ai-touch.png';
 import storyFirstSignalImage from '../assets/generated/v4/story-01-first-signal.png';
 import storyValueDiagnosisImage from '../assets/generated/v4/story-02-value-diagnosis.png';
 import storyContextMemoryImage from '../assets/generated/v4/story-03-context-memory.png';
@@ -141,22 +142,23 @@ const schema = {
 
     <section class="human-ai-bridge" data-human-bridge>
       <div class="human-ai-bridge__sticky">
-        <div class="human-ai-bridge__media" data-human-bridge-media role="img" aria-label="Ludzka dłoń i precyzyjna dłoń robota spotykające się na granicy dwóch światów">
-          <video
-            class="human-ai-bridge__video"
-            data-ambient-video
-            autoplay
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            poster="/videos/human-ai-touch-poster.webp"
-            tabindex="-1"
-            aria-hidden="true"
-          >
-            <source src="/videos/human-ai-touch-720.webm" type="video/webm" />
-            <source src="/videos/human-ai-touch-720.mp4" type="video/mp4" />
-          </video>
+        <div class="human-ai-bridge__media" data-human-bridge-media>
+          <Image
+            src={humanAiTouchImage}
+            alt="Ludzka dłoń i precyzyjna dłoń robota spotykające się na granicy dwóch światów"
+            widths={[960, 1440, 1920, 2400]}
+            sizes="100vw"
+            format="webp"
+            quality={88}
+            loading="lazy"
+          />
+        </div>
+        <div class="human-ai-bridge__overlay" data-hb-overlay>
+          <p class="mono-label" data-hb-kicker>/ Punkt styku</p>
+          <h2 class="human-ai-bridge__title" aria-label="Zderzenie z technologią.">
+            <span class="hb-line"><span data-hb-line>Zderzenie</span></span>
+            <span class="hb-line"><span data-hb-line>z technologią.</span></span>
+          </h2>
         </div>
       </div>
     </section>
