@@ -526,9 +526,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .human-ai-bridge__media img,
 .human-ai-bridge__media video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.9) contrast(1.035); }
 .human-ai-bridge__video { background: #0d0e0e; }
-.human-ai-bridge__overlay { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 20px; padding: 24px; text-align: center; pointer-events: none; }
-.human-ai-bridge__overlay .mono-label { color: rgba(247,247,242,.9); text-shadow: 0 1px 10px rgba(0,0,0,.4); }
-.human-ai-bridge__title { margin: 0; color: #f7f7f2; font-family: var(--font-display); font-weight: 560; font-size: clamp(2.7rem, 7.4vw, 6.6rem); line-height: .96; letter-spacing: -.03em; text-shadow: 0 1px 14px rgba(0,0,0,.4); }
+.human-ai-bridge__overlay { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 20px; padding: 24px; text-align: center; pointer-events: none; mix-blend-mode: difference; }
+.human-ai-bridge__overlay .mono-label { color: #fff; }
+.human-ai-bridge__title { margin: 0; color: #fff; font-family: var(--font-display); font-weight: 560; font-size: clamp(2.7rem, 7.4vw, 6.6rem); line-height: .96; letter-spacing: -.03em; }
 .human-ai-bridge__title .hb-line { display: block; overflow: hidden; padding-bottom: .08em; }
 .human-ai-bridge__title [data-hb-line] { display: block; }
 

@@ -467,14 +467,19 @@ if (!reduced) {
     if (bridgeLines.length) {
       gsap.set(bridgeLines, { yPercent: 118, opacity: 0, filter: 'blur(6px)' });
       if (bridgeKicker) gsap.set(bridgeKicker, { opacity: 0, y: 14 });
+      const showBridge = () => {
+        if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: true });
+        gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power3.out', stagger: 0.14, overwrite: true });
+      };
+      const hideBridge = () => {
+        if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 0, y: 14, duration: 0.4, ease: 'power2.in', overwrite: true });
+        gsap.to(bridgeLines, { yPercent: 118, opacity: 0, filter: 'blur(6px)', duration: 0.5, ease: 'power2.in', stagger: 0.06, overwrite: true });
+      };
       ScrollTrigger.create({
         trigger: humanBridge,
         start: 'top -32%',
-        once: true,
-        onEnter: () => {
-          if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
-          gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power3.out', stagger: 0.14, delay: 0.05 });
-        },
+        onEnter: showBridge,
+        onLeaveBack: hideBridge,
       });
     }
   }
@@ -492,18 +497,20 @@ if (!reduced) {
         scrub: galleryScrub,
       },
     });
-    timeline.fromTo(titleLines, {
-      yPercent: 120,
-      opacity: 0,
-      filter: 'blur(6px)',
-    }, {
-      yPercent: 0,
-      opacity: 1,
-      filter: 'blur(0px)',
-      stagger: 0.13,
-      duration: 0.34,
-      ease: 'power3.out',
-    }, 0);
+    gsap.set(titleLines, { yPercent: 120, opacity: 0, filter: 'blur(8px)' });
+    ScrollTrigger.create({
+      trigger: cinematic,
+      start: 'top 62%',
+      once: true,
+      onEnter: () => gsap.to(titleLines, {
+        yPercent: 0,
+        opacity: 1,
+        filter: 'blur(0px)',
+        duration: 0.7,
+        ease: 'power3.out',
+        stagger: 0.16,
+      }),
+    });
 
     frames.forEach((frame, index) => {
       const bitmap = frame.querySelector('img');
