@@ -520,16 +520,15 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 @keyframes voice-breathe { 0%,100% { opacity: .42; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.08); } }
 
 /* Full-bleed human / technology interlude */
-.human-ai-bridge { position: relative; height: 104svh; background: #dfe3e1; }
+.human-ai-bridge { position: relative; height: 168svh; background: #dfe3e1; }
 .human-ai-bridge__sticky { position: sticky; top: 0; height: 100svh; min-height: min(620px,100svh); overflow: hidden; isolation: isolate; }
 .human-ai-bridge__media { position: absolute; inset: -4%; transform-origin: 50% 50%; will-change: transform; }
 .human-ai-bridge__media img,
 .human-ai-bridge__media video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.9) contrast(1.035); }
 .human-ai-bridge__video { background: #0d0e0e; }
 .human-ai-bridge__overlay { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 20px; padding: 24px; text-align: center; pointer-events: none; }
-.human-ai-bridge__overlay::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(58% 46% at 50% 52%, rgba(13,14,14,.52), transparent 74%); }
-.human-ai-bridge__overlay .mono-label { color: rgba(247,247,242,.82); }
-.human-ai-bridge__title { margin: 0; color: #f7f7f2; font-family: var(--font-display); font-weight: 560; font-size: clamp(2.7rem, 7.4vw, 6.6rem); line-height: .96; letter-spacing: -.03em; text-shadow: 0 2px 46px rgba(0,0,0,.42); }
+.human-ai-bridge__overlay .mono-label { color: rgba(247,247,242,.9); text-shadow: 0 1px 10px rgba(0,0,0,.4); }
+.human-ai-bridge__title { margin: 0; color: #f7f7f2; font-family: var(--font-display); font-weight: 560; font-size: clamp(2.7rem, 7.4vw, 6.6rem); line-height: .96; letter-spacing: -.03em; text-shadow: 0 1px 14px rgba(0,0,0,.4); }
 .human-ai-bridge__title .hb-line { display: block; overflow: hidden; padding-bottom: .08em; }
 .human-ai-bridge__title [data-hb-line] { display: block; }
 

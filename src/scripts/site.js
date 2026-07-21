@@ -469,11 +469,11 @@ if (!reduced) {
       if (bridgeKicker) gsap.set(bridgeKicker, { opacity: 0, y: 14 });
       ScrollTrigger.create({
         trigger: humanBridge,
-        start: 'top 58%',
+        start: 'top -32%',
         once: true,
         onEnter: () => {
           if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
-          gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power3.out', stagger: 0.12, delay: 0.08 });
+          gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power3.out', stagger: 0.14, delay: 0.05 });
         },
       });
     }

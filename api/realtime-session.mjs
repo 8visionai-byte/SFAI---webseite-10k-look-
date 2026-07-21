@@ -36,7 +36,7 @@ export default async function handler(request, response) {
     return writeJson(response, 405, { error: 'Method not allowed.' });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY || process.env.voicebotapi || process.env.VOICEBOTAPI;
   if (!apiKey) {
     return writeJson(response, 503, {
       error: 'Agent głosowy nie został jeszcze aktywowany na serwerze.',
