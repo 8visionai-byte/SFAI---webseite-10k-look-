@@ -15,9 +15,10 @@ const menuPanel = document.querySelector('[data-menu-panel]');
 
 if (!reduced && !compactMotion) {
   const lenis = new Lenis({
-    duration: 1.08,
+    duration: 0.82,
     smoothWheel: true,
-    wheelMultiplier: .86,
+    wheelMultiplier: 1.15,
+    touchMultiplier: 1.6,
     syncTouch: false,
     anchors: true,
     prevent: (node) => node instanceof Element && Boolean(node.closest('[data-lenis-prevent]')),
@@ -148,7 +149,7 @@ const runScramble = (element) => {
       element.textContent = original;
       scrambleTimers.delete(element);
     }
-  }, 28);
+  }, 44);
   scrambleTimers.set(element, timer);
 };
 
@@ -181,7 +182,7 @@ const runHoverScramble = (element) => {
   element.classList.add('is-hover-scrambling');
 
   const characters = [...original];
-  const duration = element.matches('p') ? 720 : 620;
+  const duration = element.matches('p') ? 1120 : 980;
   let startTime = null;
   const animate = (time) => {
     if (startTime === null) startTime = time;
@@ -242,7 +243,7 @@ const runProcessScramble = (row, element) => {
   if (activeFrame) window.cancelAnimationFrame(activeFrame);
 
   const characters = [...original];
-  const duration = 760;
+  const duration = 1180;
   let startTime = null;
   row.classList.add('is-scrambling');
 

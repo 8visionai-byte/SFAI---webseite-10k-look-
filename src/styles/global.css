@@ -198,7 +198,7 @@ body.has-cursor .cursor-orbit { opacity: 1; }
 body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transform: scale(1.75); }
 
 /* Hero */
-.home-hero { position: relative; min-height: 160svh; background: radial-gradient(circle at 70% 36%, rgba(66,77,135,.17), transparent 32%), var(--ink); }
+.home-hero { position: relative; min-height: 118svh; background: radial-gradient(circle at 70% 36%, rgba(66,77,135,.17), transparent 32%), var(--ink); }
 .hero-sticky { position: sticky; top: 0; display: grid; height: 100svh; min-height: min(650px,100svh); grid-template-columns: repeat(12, 1fr); grid-template-rows: 1fr auto; align-items: center; gap: 20px; overflow: hidden; padding: calc(var(--header-h) + 34px) max(20px, calc((100vw - 1540px) / 2)) 30px; }
 .hero-grid-lines { position: absolute; inset: 0; pointer-events: none; opacity: .42; background-image: linear-gradient(90deg, transparent calc(50% - .5px), rgba(255,255,255,.035) 50%, transparent calc(50% + .5px)), linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px); background-size: 100% 100%, 100% 9.5vh; mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 82%, transparent); }
 .hero-copy { position: relative; z-index: 3; grid-column: 1 / 11; align-self: center; padding-top: 5vh; pointer-events: none; }
