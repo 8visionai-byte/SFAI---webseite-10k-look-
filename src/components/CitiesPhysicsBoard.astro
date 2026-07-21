@@ -8,6 +8,32 @@ interface Props {
   cities?: string[];
 }
 
+// Realne, przybliżone liczby mieszkańców (GUS, w tysiącach).
+// Powierzchnia bańki jest proporcjonalna do populacji (promień ~ sqrt(populacja)).
+const population: Record<string, number> = {
+  'Warszawa': 1860, 'Kraków': 800, 'Łódź': 660, 'Wrocław': 674, 'Poznań': 540,
+  'Gdańsk': 486, 'Szczecin': 391, 'Bydgoszcz': 330, 'Lublin': 331, 'Białystok': 295,
+  'Katowice': 285, 'Gdynia': 240, 'Częstochowa': 214, 'Radom': 200, 'Sosnowiec': 190,
+  'Toruń': 196, 'Kielce': 190, 'Gliwice': 174, 'Zabrze': 168, 'Bytom': 156,
+  'Olsztyn': 170, 'Bielsko-Biała': 168, 'Rzeszów': 197, 'Ruda Śląska': 132, 'Rybnik': 132,
+  'Tychy': 126, 'Dąbrowa Górnicza': 114, 'Płock': 116, 'Elbląg': 117, 'Opole': 127,
+  'Gorzów Wielkopolski': 122, 'Wałbrzych': 103, 'Włocławek': 106, 'Zielona Góra': 141,
+  'Tarnów': 105, 'Chorzów': 105, 'Koszalin': 105, 'Kalisz': 96, 'Legnica': 97,
+  'Grudziądz': 92, 'Słupsk': 88, 'Jaworzno': 88, 'Jastrzębie-Zdrój': 84, 'Nowy Sącz': 83,
+  'Jelenia Góra': 76, 'Konin': 71, 'Siedlce': 77, 'Mysłowice': 74, 'Piła': 71,
+  'Ostrów Wielkopolski': 72, 'Lubin': 71, 'Suwałki': 69, 'Stargard': 66, 'Gniezno': 67,
+  'Piotrków Trybunalski': 70, 'Pabianice': 62, 'Inowrocław': 71, 'Ostrowiec Świętokrzyski': 62,
+  'Siemianowice Śląskie': 63, 'Głogów': 66, 'Zamość': 62, 'Leszno': 62, 'Chełm': 60,
+  'Łomża': 62, 'Żory': 61, 'Tarnowskie Góry': 61, 'Tomaszów Mazowiecki': 60, 'Ełk': 62,
+  'Mielec': 60, 'Przemyśl': 58, 'Stalowa Wola': 58, 'Tczew': 59, 'Kędzierzyn-Koźle': 58,
+  'Bełchatów': 56, 'Świdnica': 55, 'Będzin': 55, 'Zgierz': 55, 'Piekary Śląskie': 54,
+  'Rumia': 50, 'Legionowo': 54, 'Piaseczno': 48, 'Biała Podlaska': 57,
+};
+
+const DEFAULT_POP = 45;
+const ACCENT_THRESHOLD = 480; // limonka dla największych miast (>= ~480 tys.)
+const populationOf = (name: string) => population[name] ?? DEFAULT_POP;
+
 const defaultCities = [
   'Warszawa',
   'Kraków',
@@ -94,15 +120,6 @@ const defaultCities = [
   'Bełchatów',
 ];
 
-const accentCities = new Set([
-  'Warszawa',
-  'Kraków',
-  'Wrocław',
-  'Poznań',
-  'Gdańsk',
-  'Katowice',
-]);
-
 const {
   id = 'cities-physics',
   eyebrow = '/ SFAI / POLSKA',
@@ -147,7 +164,7 @@ const instructionId = `${id}-instruction`;
       </div>
 
       <p class="cities-physics__instruction" id={instructionId}>
-        Przeciągnij dowolne miasto. Kafelki reagują na siebie i na krawędzie planszy.
+        Przeciągnij dowolne miasto. Banieczki żyją, odbijają się od siebie i od krawędzi.
       </p>
 
       <ul
@@ -158,13 +175,13 @@ const instructionId = `${id}-instruction`;
       >
         {cities.map((city, index) => (
           <li
-            class="cities-physics__tile"
+            class="cities-physics__bubble"
             data-city-tile
             data-city-index={index}
-            data-tier={index < 6 ? 'hero' : index < 20 ? 'major' : 'city'}
-            data-accent={accentCities.has(city) ? 'true' : 'false'}
+            data-city={city}
+            data-pop={populationOf(city)}
+            data-accent={populationOf(city) >= ACCENT_THRESHOLD ? 'true' : 'false'}
           >
-            <i aria-hidden="true"></i>
             <span>{city}</span>
           </li>
         ))}
@@ -382,8 +399,10 @@ const instructionId = `${id}-instruction`;
     position: relative;
     display: flex;
     height: clamp(43rem, 63vw, 53rem);
-    align-content: flex-start;
+    align-content: center;
+    align-items: center;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.5rem;
     overflow: hidden;
     margin: 0;
@@ -392,78 +411,63 @@ const instructionId = `${id}-instruction`;
     touch-action: pan-y;
   }
 
-  .cities-physics__world::after {
-    position: absolute;
-    right: 0;
-    bottom: 3.2rem;
-    left: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(223, 255, 63, 0.45), transparent);
-    content: '';
-    pointer-events: none;
-  }
-
-  .cities-physics__tile {
+  /* Bańka: bazowo (SSR / brak JS / reduced-motion) czytelny pigułkowy chip */
+  .cities-physics__bubble {
     display: inline-flex;
     min-height: 2rem;
     align-items: center;
-    gap: 0.55rem;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.36);
-    border-radius: 2px;
-    padding: 0.58rem 0.82rem;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 999px;
+    padding: 0.55rem 0.9rem;
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045)),
-      rgba(8, 18, 75, 0.82);
+      linear-gradient(150deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+      rgba(8, 18, 75, 0.7);
     box-shadow:
-      inset 0 1px rgba(255, 255, 255, 0.12),
-      0 0.5rem 1.3rem rgba(3, 8, 40, 0.16);
+      inset 0 1px rgba(255, 255, 255, 0.14),
+      0 0.5rem 1.4rem rgba(3, 8, 40, 0.18);
     color: var(--cities-white);
     font-family: var(--font-mono, monospace);
-    font-size: clamp(0.53rem, 0.7vw, 0.67rem);
+    font-size: clamp(0.55rem, 0.72vw, 0.7rem);
     font-weight: 500;
-    letter-spacing: 0.045em;
+    letter-spacing: 0.04em;
     line-height: 1;
+    text-align: center;
     text-transform: uppercase;
     user-select: none;
     -webkit-user-select: none;
   }
 
-  .cities-physics__tile i {
-    width: 0.28rem;
-    height: 0.28rem;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.55);
-  }
+  .cities-physics__bubble span { display: block; }
 
-  .cities-physics__tile[data-tier='major'] {
-    min-height: 2.25rem;
-    padding-inline: 0.95rem;
-    font-size: clamp(0.58rem, 0.78vw, 0.72rem);
-  }
-
-  .cities-physics__tile[data-tier='hero'] {
-    min-height: 2.65rem;
-    padding-inline: 1.2rem;
-    font-size: clamp(0.65rem, 0.9vw, 0.82rem);
-  }
-
-  .cities-physics__tile[data-accent='true'] {
+  .cities-physics__bubble[data-accent='true'] {
     border-color: var(--cities-lime);
     background: var(--cities-lime);
     box-shadow: 0 0.8rem 2.4rem rgba(14, 25, 75, 0.25);
     color: #08113f;
   }
 
-  .cities-physics__tile[data-accent='true'] i { background: #08113f; }
+  /* Bańka: tryb fizyki (crypto-bubble) — okrągła, rozmiar ustala JS inline */
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__world {
+    padding: 0;
+  }
 
-  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__tile {
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble {
     position: absolute;
     top: 0;
     left: 0;
     z-index: 2;
-    margin: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.07) 42%, rgba(9, 20, 84, 0.55) 78%, rgba(6, 14, 60, 0.72) 100%);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.34),
+      inset 0 -0.4rem 0.85rem rgba(4, 10, 52, 0.5),
+      0 0.6rem 1.8rem rgba(3, 8, 40, 0.32);
     cursor: grab;
     touch-action: none;
     transform: translate3d(0, 0, 0);
@@ -471,12 +475,35 @@ const instructionId = `${id}-instruction`;
     will-change: transform;
   }
 
-  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__tile.is-dragged {
-    z-index: 3;
-    border-color: var(--cities-lime);
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble span {
+    max-width: 86%;
+    line-height: 1.03;
+    letter-spacing: 0.02em;
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
+
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble[data-accent='true'] {
+    border-color: rgba(223, 255, 63, 0.9);
+    background:
+      radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.55), var(--cities-lime) 46%, #c7e838 82%, #b6d92f 100%);
     box-shadow:
-      0 0 0 1px rgba(223, 255, 63, 0.24),
-      0 1.4rem 3.8rem rgba(2, 7, 37, 0.34);
+      inset 0 1px 2px rgba(255, 255, 255, 0.7),
+      inset 0 -0.4rem 0.85rem rgba(120, 150, 10, 0.4),
+      0 0 0 1px rgba(223, 255, 63, 0.25),
+      0 0.7rem 2.2rem rgba(80, 110, 10, 0.35),
+      0 0 2.4rem rgba(223, 255, 63, 0.28);
+    color: #08113f;
+  }
+
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble.is-dragged {
+    z-index: 3;
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.4),
+      0 0 0 1px rgba(223, 255, 63, 0.35),
+      0 1.4rem 3.6rem rgba(2, 7, 37, 0.4),
+      0 0 2.6rem rgba(223, 255, 63, 0.25);
     cursor: grabbing;
   }
 
@@ -487,8 +514,11 @@ const instructionId = `${id}-instruction`;
     padding-block: 5rem;
   }
 
-  .cities-physics[data-reduced='true'] .cities-physics__tile {
+  .cities-physics[data-reduced='true'] .cities-physics__bubble {
     position: static;
+    width: auto !important;
+    height: auto !important;
+    font-size: clamp(0.55rem, 0.72vw, 0.7rem) !important;
     transform: none !important;
   }
 
@@ -517,7 +547,7 @@ const instructionId = `${id}-instruction`;
     }
 
     .cities-physics__world {
-      height: 57rem;
+      height: 46rem;
       padding: 4.25rem 0.55rem 3.8rem;
     }
 
@@ -536,18 +566,10 @@ const instructionId = `${id}-instruction`;
     .cities-physics__hud--top span:first-child { display: none; }
     .cities-physics__hud--top { justify-content: flex-end; }
 
-    .cities-physics__tile,
-    .cities-physics__tile[data-tier='major'] {
+    .cities-physics__bubble {
       min-height: 1.7rem;
-      gap: 0.35rem;
-      padding: 0.43rem 0.56rem;
+      padding: 0.43rem 0.62rem;
       font-size: 0.48rem;
-    }
-
-    .cities-physics__tile[data-tier='hero'] {
-      min-height: 2rem;
-      padding-inline: 0.72rem;
-      font-size: 0.56rem;
     }
   }
 
@@ -559,9 +581,12 @@ const instructionId = `${id}-instruction`;
       padding-block: 5rem;
     }
 
-    .cities-physics__tile {
+    .cities-physics__bubble {
       position: static !important;
+      width: auto !important;
+      height: auto !important;
       cursor: default !important;
+      font-size: clamp(0.55rem, 0.72vw, 0.7rem) !important;
       transform: none !important;
       will-change: auto !important;
     }
@@ -578,18 +603,29 @@ const instructionId = `${id}-instruction`;
     if (!(world instanceof HTMLElement) || !tileElements.length) return;
 
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const FIXED_STEP = 1 / 120;
+
+    // --- Parametry symulacji (crypto-bubble: wieczny, subtelny ruch) ---
+    const FIXED_STEP = 1 / 120;      // stały krok symulacji
     const MAX_FRAME = 1 / 24;
     const MAX_SUBSTEPS = 6;
-    const GRAVITY = 520;
-    const RESTITUTION = 0.36;
-    const WALL_RESTITUTION = 0.42;
-    const CELL_SIZE = 148;
+    const CENTER_K = 0.11;           // delikatne przyciąganie do środka (1/s^2 * dystans)
+    const WANDER_TURN = 2.4;         // dryf kierunku wędrówki (rad/s)
+    const WANDER_ACCEL = 22;         // siła wędrówki (px/s^2)
+    const DAMP = 1.25;               // liniowe tłumienie (1/s)
+    const MIN_SPEED = 5;             // dolny próg prędkości — nic nigdy nie zamiera (px/s)
+    const MAX_SPEED = 120;           // górny limit (pozwala na rzut po puszczeniu)
+    const RESTITUTION = 0.92;        // sprężystość kolizji bańka-bańka
+    const WALL_RESTITUTION = 0.85;   // odbicie od krawędzi
+    const CORRECTION = 0.85;         // korekcja pozycji przy nakładaniu
     const TRANSFORM_DPR = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
 
     let seed = 0x5fa12026;
     let width = 0;
     let height = 0;
+    let maxRadius = 1;
+    let cellSize = 96;
+    let refRadius = 24;
+    let totalPop = 0;
     let initialized = false;
     let reducedMotion = motionQuery.matches;
     let inView = false;
@@ -598,7 +634,6 @@ const instructionId = `${id}-instruction`;
     let resizeFrame = 0;
     let lastTime = 0;
     let accumulator = 0;
-    let idleFrames = 0;
     let observer = null;
     let resizeObserver = null;
 
@@ -609,69 +644,59 @@ const instructionId = `${id}-instruction`;
 
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-    const bodies = tileElements.map((element, index) => ({
-      element,
-      index,
-      x: 0,
-      y: 0,
-      w: 1,
-      h: 1,
-      vx: 0,
-      vy: 0,
-      angle: 0,
-      angularVelocity: 0,
-      mass: 1,
-      dragged: false,
-      pointerId: null,
-      dragOffsetX: 0,
-      dragOffsetY: 0,
-      targetX: 0,
-      targetY: 0,
-      dragWorldLeft: 0,
-      dragWorldTop: 0,
-      lastTransform: '',
-    }));
+    const bodies = tileElements.map((element, index) => {
+      const label = (element.dataset.city || element.textContent || '').trim();
+      const longest = label
+        .split(/[\s-]+/)
+        .reduce((acc, word) => Math.max(acc, word.length), 1);
+      const pop = Number(element.dataset.pop) || 45;
+      totalPop += pop;
+      return {
+        element,
+        index,
+        pop,
+        longest,
+        r: 24,
+        mass: 1,
+        speedScale: 1,
+        cx: 0,
+        cy: 0,
+        vx: 0,
+        vy: 0,
+        heading: 0,
+        dragged: false,
+        pointerId: null,
+        dragOffsetX: 0,
+        dragOffsetY: 0,
+        dragWorldLeft: 0,
+        dragWorldTop: 0,
+        targetX: 0,
+        targetY: 0,
+        lastTransform: '',
+      };
+    });
 
     const renderBody = (body) => {
-      const x = Number.isFinite(body.x) ? body.x : 0;
-      const y = Number.isFinite(body.y) ? body.y : 0;
-      const angle = Number.isFinite(body.angle) ? body.angle : 0;
+      const x = Number.isFinite(body.cx) ? body.cx - body.r : 0;
+      const y = Number.isFinite(body.cy) ? body.cy - body.r : 0;
       const renderX = Math.round(x * TRANSFORM_DPR) / TRANSFORM_DPR;
       const renderY = Math.round(y * TRANSFORM_DPR) / TRANSFORM_DPR;
-      const renderAngle = Math.round(angle * 20) / 20;
-      const transform = `translate3d(${renderX}px, ${renderY}px, 0) rotate(${renderAngle}deg)`;
+      const transform = `translate3d(${renderX}px, ${renderY}px, 0)`;
       if (transform === body.lastTransform) return;
       body.lastTransform = transform;
       body.element.style.transform = transform;
     };
 
-    const measureBodies = () => {
-      bodies.forEach((body) => {
-        body.w = Math.max(1, body.element.offsetWidth);
-        body.h = Math.max(1, body.element.offsetHeight);
-        body.mass = Math.max(0.72, (body.w * body.h) / 2700);
-      });
+    const clearInline = (body) => {
+      body.lastTransform = '';
+      body.element.style.removeProperty('transform');
+      body.element.style.removeProperty('width');
+      body.element.style.removeProperty('height');
+      body.element.style.removeProperty('font-size');
     };
 
-    const spawnBodies = () => {
-      seed = 0x5fa12026;
-      const laneWidth = Math.max(78, Math.min(168, width / Math.max(4, Math.floor(width / 125))));
-      const laneCount = Math.max(4, Math.floor(width / laneWidth));
-
-      bodies.forEach((body, index) => {
-        const lane = index % laneCount;
-        const row = Math.floor(index / laneCount);
-        const laneCenter = ((lane + 0.5) / laneCount) * width;
-        body.x = clamp(laneCenter - body.w / 2 + (random() - 0.5) * laneWidth * 0.72, 0, Math.max(0, width - body.w));
-        body.y = -body.h - 54 - row * 44 - random() * 88;
-        body.vx = (random() - 0.5) * 68;
-        body.vy = 8 + random() * 30;
-        body.angle = (random() - 0.5) * 7;
-        body.angularVelocity = (random() - 0.5) * 12;
-      });
-    };
-
-    const resize = () => {
+    // Rozmiar bańki: pole ∝ populacja (r ~ sqrt(pop)), skala dopasowana do planszy.
+    const layout = () => {
       resizeFrame = 0;
       if (!root.isConnected || reducedMotion) return;
       const previousWidth = width;
@@ -679,19 +704,54 @@ const instructionId = `${id}-instruction`;
       const bounds = world.getBoundingClientRect();
       width = Math.max(1, bounds.width);
       height = Math.max(1, bounds.height);
-      measureBodies();
+
+      const area = width * height;
+      const isMobile = width < 620;
+      const targetFill = isMobile ? 0.5 : 0.56;
+      const scale = (targetFill * area) / Math.max(1, totalPop);
+      const minR = clamp(Math.min(width, height) * 0.05, isMobile ? 17 : 22, 46);
+      const maxR = clamp(Math.min(width, height) * 0.17, minR + 8, isMobile ? 66 : 118);
+
+      maxRadius = 1;
+      bodies.forEach((body) => {
+        const raw = Math.sqrt((scale * body.pop) / Math.PI);
+        body.r = clamp(raw, minR, maxR);
+        maxRadius = Math.max(maxRadius, body.r);
+        body.mass = Math.max(0.4, body.pop / 300);
+        const diameter = Math.round(body.r * 2);
+        body.element.style.width = `${diameter}px`;
+        body.element.style.height = `${diameter}px`;
+        // font tak, by najdłuższe słowo zmieściło się w cięciwie bańki
+        const fit = (1.75 * body.r) / (body.longest * 0.6);
+        const fontPx = clamp(fit, isMobile ? 7 : 7.5, body.r * 0.5);
+        body.element.style.fontSize = `${fontPx.toFixed(2)}px`;
+      });
+
+      refRadius = (minR + maxR) / 2;
+      cellSize = Math.max(64, maxRadius * 2);
+      bodies.forEach((body) => {
+        body.speedScale = clamp(refRadius / body.r, 0.6, 1.65);
+      });
 
       if (!initialized) {
-        spawnBodies();
+        seed = 0x5fa12026;
+        bodies.forEach((body) => {
+          const spanX = Math.max(0, width - 2 * body.r);
+          const spanY = Math.max(0, height - 2 * body.r);
+          body.cx = body.r + random() * spanX;
+          body.cy = body.r + random() * spanY;
+          body.heading = random() * Math.PI * 2;
+          const s0 = (MIN_SPEED + random() * 22) * body.speedScale;
+          body.vx = Math.cos(body.heading) * s0;
+          body.vy = Math.sin(body.heading) * s0;
+        });
         initialized = true;
       } else if (previousWidth > 1 && previousHeight > 1) {
+        const rx = width / previousWidth;
+        const ry = height / previousHeight;
         bodies.forEach((body) => {
-          const xRatio = body.x / previousWidth;
-          const yRatio = body.y / previousHeight;
-          body.x = clamp(xRatio * width, 0, Math.max(0, width - body.w));
-          body.y = clamp(yRatio * height, -body.h, Math.max(0, height - body.h));
-          body.targetX = body.x;
-          body.targetY = body.y;
+          body.cx = clamp(body.cx * rx, body.r, Math.max(body.r, width - body.r));
+          body.cy = clamp(body.cy * ry, body.r, Math.max(body.r, height - body.r));
         });
       }
 
@@ -701,94 +761,131 @@ const instructionId = `${id}-instruction`;
 
     const scheduleResize = () => {
       if (resizeFrame || reducedMotion) return;
-      resizeFrame = requestAnimationFrame(resize);
+      resizeFrame = requestAnimationFrame(layout);
     };
 
-    const constrainBody = (body) => {
-      if (body.dragged) return;
-
-      if (body.x < 0) {
-        body.x = 0;
+    const constrainWalls = (body) => {
+      const minX = Math.min(body.r, width / 2);
+      const maxX = Math.max(width - body.r, width / 2);
+      const minY = Math.min(body.r, height / 2);
+      const maxY = Math.max(height - body.r, height / 2);
+      if (body.cx < minX) {
+        body.cx = minX;
         if (body.vx < 0) body.vx *= -WALL_RESTITUTION;
-        body.angularVelocity *= 0.82;
-      } else if (body.x + body.w > width) {
-        body.x = Math.max(0, width - body.w);
+      } else if (body.cx > maxX) {
+        body.cx = maxX;
         if (body.vx > 0) body.vx *= -WALL_RESTITUTION;
-        body.angularVelocity *= 0.82;
       }
-
-      if (body.y + body.h > height) {
-        body.y = Math.max(0, height - body.h);
+      if (body.cy < minY) {
+        body.cy = minY;
+        if (body.vy < 0) body.vy *= -WALL_RESTITUTION;
+      } else if (body.cy > maxY) {
+        body.cy = maxY;
         if (body.vy > 0) body.vy *= -WALL_RESTITUTION;
-        body.vx *= 0.91;
-        body.angularVelocity *= 0.72;
-        if (Math.abs(body.vy) < 18) body.vy = 0;
-        if (Math.abs(body.vx) < 2.2) body.vx = 0;
-        if (Math.abs(body.angularVelocity) < 0.16) body.angularVelocity = 0;
-      } else if (body.y < 0 && body.vy < 0) {
-        body.y = 0;
-        body.vy *= -WALL_RESTITUTION;
       }
     };
 
-    const resolveCollision = (a, b) => {
-      const deltaX = (a.x + a.w / 2) - (b.x + b.w / 2);
-      const deltaY = (a.y + a.h / 2) - (b.y + b.h / 2);
-      const overlapX = (a.w + b.w) / 2 - Math.abs(deltaX);
-      const overlapY = (a.h + b.h) / 2 - Math.abs(deltaY);
-      if (overlapX <= 0 || overlapY <= 0) return;
-
-      const inverseA = a.dragged ? 0 : 1 / a.mass;
-      const inverseB = b.dragged ? 0 : 1 / b.mass;
-      const inverseTotal = inverseA + inverseB;
-      if (inverseTotal <= 0) return;
-
-      let normalX = 0;
-      let normalY = 0;
-      let penetration = 0;
-      if (overlapX < overlapY) {
-        normalX = deltaX < 0 ? -1 : 1;
-        penetration = overlapX;
-      } else {
-        normalY = deltaY < 0 ? -1 : 1;
-        penetration = overlapY;
+    const integrate = (body, step, cx, cy) => {
+      if (body.dragged) {
+        const nx = clamp(body.targetX, body.r, Math.max(body.r, width - body.r));
+        const ny = clamp(body.targetY, body.r, Math.max(body.r, height - body.r));
+        body.vx = clamp((nx - body.cx) / step, -1600, 1600);
+        body.vy = clamp((ny - body.cy) / step, -1600, 1600);
+        body.cx = nx;
+        body.cy = ny;
+        return;
       }
 
-      const correction = Math.max(0, penetration - 0.18) * 0.76 / inverseTotal;
-      a.x += normalX * correction * inverseA;
-      a.y += normalY * correction * inverseA;
-      b.x -= normalX * correction * inverseB;
-      b.y -= normalY * correction * inverseB;
+      // wędrówka (ciągły subtelny dryf)
+      body.heading += (random() - 0.5) * WANDER_TURN * step;
+      const wander = WANDER_ACCEL * body.speedScale;
+      body.vx += Math.cos(body.heading) * wander * step;
+      body.vy += Math.sin(body.heading) * wander * step;
 
-      const relativeVelocity = (a.vx - b.vx) * normalX + (a.vy - b.vy) * normalY;
-      if (relativeVelocity >= 0) return;
-      const impulse = -(1 + RESTITUTION) * relativeVelocity / inverseTotal;
-      a.vx += impulse * normalX * inverseA;
-      a.vy += impulse * normalY * inverseA;
-      b.vx -= impulse * normalX * inverseB;
-      b.vy -= impulse * normalY * inverseB;
+      // delikatne przyciąganie do środka planszy
+      body.vx += (cx - body.cx) * CENTER_K * step;
+      body.vy += (cy - body.cy) * CENTER_K * step;
 
-      const tangentX = -normalY;
-      const tangentY = normalX;
-      const tangentSpeed = (a.vx - b.vx) * tangentX + (a.vy - b.vy) * tangentY;
-      const frictionImpulse = clamp(-tangentSpeed / inverseTotal, -impulse * 0.15, impulse * 0.15);
-      a.vx += frictionImpulse * tangentX * inverseA;
-      a.vy += frictionImpulse * tangentY * inverseA;
-      b.vx -= frictionImpulse * tangentX * inverseB;
-      b.vy -= frictionImpulse * tangentY * inverseB;
+      // tłumienie
+      const damp = Math.max(0, 1 - DAMP * step);
+      body.vx *= damp;
+      body.vy *= damp;
 
-      if (!a.dragged) a.angularVelocity += (normalX || -normalY) * tangentSpeed * 0.018;
-      if (!b.dragged) b.angularVelocity -= (normalX || -normalY) * tangentSpeed * 0.018;
+      body.cx += body.vx * step;
+      body.cy += body.vy * step;
+
+      // limity prędkości: nic nie zamiera i nic nie wybucha
+      const speed = Math.hypot(body.vx, body.vy);
+      const minSpeed = MIN_SPEED * body.speedScale;
+      if (speed > MAX_SPEED) {
+        const k = MAX_SPEED / speed;
+        body.vx *= k;
+        body.vy *= k;
+      } else if (speed < minSpeed) {
+        if (speed > 0.0001) {
+          const k = minSpeed / speed;
+          body.vx *= k;
+          body.vy *= k;
+        } else {
+          body.heading = random() * Math.PI * 2;
+          body.vx = Math.cos(body.heading) * minSpeed;
+          body.vy = Math.sin(body.heading) * minSpeed;
+        }
+      }
+
+      constrainWalls(body);
     };
 
+    // Kolizja okrąg-okrąg (rozpychanie + sprężyste odbicie)
+    const resolvePair = (a, b) => {
+      let dx = b.cx - a.cx;
+      let dy = b.cy - a.cy;
+      const minDist = a.r + b.r;
+      let dist2 = dx * dx + dy * dy;
+      if (dist2 >= minDist * minDist) return;
+
+      let dist = Math.sqrt(dist2);
+      if (dist < 0.0001) {
+        // idealne pokrycie — rozepchnij losowym kierunkiem
+        const angle = random() * Math.PI * 2;
+        dx = Math.cos(angle);
+        dy = Math.sin(angle);
+        dist = 0.0001;
+      }
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const overlap = minDist - dist;
+
+      const invA = a.dragged ? 0 : 1 / a.mass;
+      const invB = b.dragged ? 0 : 1 / b.mass;
+      const invTotal = invA + invB;
+      if (invTotal <= 0) return;
+
+      // korekcja pozycji proporcjonalna do odwrotności masy
+      const corr = (overlap * CORRECTION) / invTotal;
+      a.cx -= nx * corr * invA;
+      a.cy -= ny * corr * invA;
+      b.cx += nx * corr * invB;
+      b.cy += ny * corr * invB;
+
+      // impuls sprężysty wzdłuż normalnej
+      const relN = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (relN > 0) return; // już się rozdzielają
+      const j = (-(1 + RESTITUTION) * relN) / invTotal;
+      a.vx -= j * nx * invA;
+      a.vy -= j * ny * invA;
+      b.vx += j * nx * invB;
+      b.vy += j * ny * invB;
+    };
+
+    // Spatial hashing — bbox bańki wpada do pokrywanych komórek
     const solveCollisions = () => {
       const buckets = new Map();
       bodies.forEach((body) => {
-        if (body.y + body.h < -2) return;
-        const minColumn = Math.floor(body.x / CELL_SIZE);
-        const maxColumn = Math.floor((body.x + body.w) / CELL_SIZE);
-        const minRow = Math.floor(body.y / CELL_SIZE);
-        const maxRow = Math.floor((body.y + body.h) / CELL_SIZE);
+        const minColumn = Math.floor((body.cx - body.r) / cellSize);
+        const maxColumn = Math.floor((body.cx + body.r) / cellSize);
+        const minRow = Math.floor((body.cy - body.r) / cellSize);
+        const maxRow = Math.floor((body.cy + body.r) / cellSize);
         for (let column = minColumn; column <= maxColumn; column += 1) {
           for (let row = minRow; row <= maxRow; row += 1) {
             const key = `${column}:${row}`;
@@ -808,44 +905,19 @@ const instructionId = `${id}-instruction`;
             const key = a.index < b.index ? `${a.index}:${b.index}` : `${b.index}:${a.index}`;
             if (checked.has(key)) continue;
             checked.add(key);
-            resolveCollision(a, b);
+            resolvePair(a, b);
           }
         }
       });
     };
 
     const simulate = (step) => {
-      bodies.forEach((body) => {
-      if (body.dragged) {
-        const nextX = clamp(body.targetX, 0, Math.max(0, width - body.w));
-        const nextY = clamp(body.targetY, 0, Math.max(0, height - body.h));
-        const deltaX = nextX - body.x;
-        const deltaY = nextY - body.y;
-        body.vx = Math.abs(deltaX) > 0.01
-          ? clamp(deltaX / step, -1450, 1450)
-          : body.vx * 0.9;
-        body.vy = Math.abs(deltaY) > 0.01
-          ? clamp(deltaY / step, -1450, 1450)
-          : body.vy * 0.9;
-          body.x = nextX;
-          body.y = nextY;
-          body.angularVelocity *= 0.82;
-          return;
-        }
-
-        body.vy += GRAVITY * step;
-        body.vx *= 0.9991;
-        body.vy *= 0.9994;
-        body.angularVelocity *= 0.996;
-        body.x += body.vx * step;
-        body.y += body.vy * step;
-        body.angle = clamp(body.angle + body.angularVelocity * step, -7, 7);
-        constrainBody(body);
-      });
-
+      const cx = width / 2;
+      const cy = height / 2;
+      bodies.forEach((body) => integrate(body, step, cx, cy));
       for (let iteration = 0; iteration < 2; iteration += 1) {
         solveCollisions();
-        bodies.forEach(constrainBody);
+        bodies.forEach(constrainWalls);
       }
     };
 
@@ -855,7 +927,6 @@ const instructionId = `${id}-instruction`;
         cleanup();
         return;
       }
-
       if (!lastTime) lastTime = time;
       accumulator += Math.min(MAX_FRAME, (time - lastTime) / 1000);
       lastTime = time;
@@ -867,28 +938,14 @@ const instructionId = `${id}-instruction`;
       }
       if (substeps === MAX_SUBSTEPS) accumulator = 0;
       bodies.forEach(renderBody);
-      const physicallyActive = bodies.some((body) => (
-        body.dragged
-        || body.y < -1
-        || Math.abs(body.vx) > 4
-        || Math.abs(body.vy) > 4
-        || Math.abs(body.angularVelocity) > 0.45
-      ));
-      idleFrames = physicallyActive ? 0 : idleFrames + 1;
-      if (idleFrames > 100) {
-        stop();
-        return;
-      }
       rafId = requestAnimationFrame(frame);
     };
 
     const start = () => {
       if (running || reducedMotion || !inView || document.hidden) return;
-      root.dataset.dropStarted = 'true';
       running = true;
       lastTime = 0;
       accumulator = 0;
-      idleFrames = 0;
       rafId = requestAnimationFrame(frame);
     };
 
@@ -917,12 +974,12 @@ const instructionId = `${id}-instruction`;
         const bounds = world.getBoundingClientRect();
         body.dragged = true;
         body.pointerId = event.pointerId;
-        body.dragOffsetX = event.clientX - bounds.left - body.x;
-        body.dragOffsetY = event.clientY - bounds.top - body.y;
         body.dragWorldLeft = bounds.left;
         body.dragWorldTop = bounds.top;
-        body.targetX = body.x;
-        body.targetY = body.y;
+        body.dragOffsetX = event.clientX - bounds.left - body.cx;
+        body.dragOffsetY = event.clientY - bounds.top - body.cy;
+        body.targetX = body.cx;
+        body.targetY = body.cy;
         body.element.classList.add('is-dragged');
         try { body.element.setPointerCapture(event.pointerId); } catch {}
         start();
@@ -948,8 +1005,7 @@ const instructionId = `${id}-instruction`;
         root.dataset.physicsReady = 'false';
         bodies.forEach((body) => {
           finishDrag(body);
-          body.lastTransform = '';
-          body.element.style.removeProperty('transform');
+          clearInline(body);
         });
       } else {
         scheduleResize();
