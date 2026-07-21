@@ -476,12 +476,15 @@ const instructionId = `${id}-instruction`;
   }
 
   .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble span {
-    max-width: 86%;
-    line-height: 1.03;
-    letter-spacing: 0.02em;
-    word-break: break-word;
-    -webkit-hyphens: auto;
-    hyphens: auto;
+    max-width: 90%;
+    line-height: 1.05;
+    letter-spacing: 0.01em;
+    /* Pełna nazwa w bańce: łamanie tylko po spacji/myślniku, NIGDY w środku słowa */
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+    -webkit-hyphens: none;
+    hyphens: none;
   }
 
   .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble[data-accent='true'] {
@@ -710,20 +713,33 @@ const instructionId = `${id}-instruction`;
       const targetFill = isMobile ? 0.5 : 0.56;
       const scale = (targetFill * area) / Math.max(1, totalPop);
       const minR = clamp(Math.min(width, height) * 0.05, isMobile ? 17 : 22, 46);
-      const maxR = clamp(Math.min(width, height) * 0.17, minR + 8, isMobile ? 66 : 118);
+      const maxR = clamp(Math.min(width, height) * 0.17, minR + 8, isMobile ? 72 : 122);
+
+      // Dopasowanie tekstu: najdłuższe SŁOWO nazwy musi zmieścić się w cięciwie
+      // koła na jednej linii (font mono ~0.62em/znak, ~82% średnicy na tekst).
+      const CHAR_W = 0.62;
+      const TEXT_FRAC = 0.82;
+      const FLOOR_FONT = isMobile ? 6.5 : 7.5; // czytelny dolny próg fontu
 
       maxRadius = 1;
       bodies.forEach((body) => {
         const raw = Math.sqrt((scale * body.pop) / Math.PI);
-        body.r = clamp(raw, minR, maxR);
-        maxRadius = Math.max(maxRadius, body.r);
+        let r = clamp(raw, minR, maxR);
+        // Priorytet czytelności: podnieś promień, jeśli najdłuższe słowo nie
+        // zmieściłoby się przy dolnym progu fontu.
+        const minRForName = (body.longest * CHAR_W * FLOOR_FONT) / (2 * TEXT_FRAC);
+        r = clamp(Math.max(r, minRForName), minR, maxR);
+        body.r = r;
+        maxRadius = Math.max(maxRadius, r);
         body.mass = Math.max(0.4, body.pop / 300);
-        const diameter = Math.round(body.r * 2);
+        const diameter = Math.round(r * 2);
         body.element.style.width = `${diameter}px`;
         body.element.style.height = `${diameter}px`;
-        // font tak, by najdłuższe słowo zmieściło się w cięciwie bańki
-        const fit = (1.75 * body.r) / (body.longest * 0.6);
-        const fontPx = clamp(fit, isMobile ? 7 : 7.5, body.r * 0.5);
+        // Font liczony z cięciwy: najdłuższe słowo mieści się na jednej linii.
+        // Gdy maxR ograniczy promień, font może zejść nieco niżej, byle nazwa
+        // była cała widoczna (nigdy nie łamiemy w środku słowa).
+        const fitFont = (2 * r * TEXT_FRAC) / (body.longest * CHAR_W);
+        const fontPx = clamp(fitFont, 5.5, r * 0.5);
         body.element.style.fontSize = `${fontPx.toFixed(2)}px`;
       });
 
