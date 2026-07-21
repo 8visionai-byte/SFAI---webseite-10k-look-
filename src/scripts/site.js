@@ -493,68 +493,56 @@ if (!reduced) {
       },
     });
     timeline.fromTo(titleLines, {
-      xPercent: -68,
+      yPercent: 120,
       opacity: 0,
+      filter: 'blur(6px)',
     }, {
-      xPercent: 0,
+      yPercent: 0,
       opacity: 1,
-      stagger: 0.055,
-      duration: 0.24,
-      ease: 'none',
-    }, 0.02);
+      filter: 'blur(0px)',
+      stagger: 0.13,
+      duration: 0.34,
+      ease: 'power3.out',
+    }, 0);
 
     frames.forEach((frame, index) => {
       const bitmap = frame.querySelector('img');
-      const entry = 0.09 + index * 0.195;
-      const direction = index % 2 === 0 ? 1 : -1;
-      const startX = direction * (compactMotion ? 22 : 30);
-      const exitX = direction * (compactMotion ? -17 : -23);
+      const entry = 0.36 + index * 0.15;
 
+      gsap.set(frame, { '--sfai-curtain': 0 });
       timeline.fromTo(frame, {
-        xPercent: startX,
-        yPercent: index % 2 === 0 ? -1.5 : 2,
-        rotate: direction * 0.9,
-        '--sfai-curtain': 1,
         opacity: 0,
+        scale: 1.07,
+        yPercent: index % 2 === 0 ? 3.5 : -3.5,
+        filter: 'blur(18px)',
       }, {
-        xPercent: startX * 0.12,
+        opacity: 0.97,
+        scale: 1,
         yPercent: 0,
-        rotate: direction * 0.18,
-        '--sfai-curtain': 0,
-        opacity: 0.94,
-        duration: 0.16,
-        ease: 'none',
+        filter: 'blur(0px)',
+        duration: 0.2,
+        ease: 'power2.out',
       }, entry);
 
       if (bitmap) {
         timeline.fromTo(bitmap, {
-          scale: 1.035,
-          filter: 'grayscale(.58) sepia(.12) contrast(.96) brightness(.78)',
+          scale: 1.08,
+          filter: 'grayscale(.5) sepia(.1) contrast(.98) brightness(.82)',
         }, {
-          filter: 'grayscale(.32) sepia(.08) contrast(1.08) brightness(1)',
-          scale: 1.008,
-          duration: 0.18,
-          ease: 'none',
+          scale: 1,
+          filter: 'grayscale(.28) sepia(.06) contrast(1.08) brightness(1)',
+          duration: 0.24,
+          ease: 'power2.out',
         }, entry);
       }
 
       timeline.to(frame, {
-        xPercent: 0,
-        rotate: 0,
-        opacity: 1,
-        duration: 0.12,
-        ease: 'none',
-      }, entry + 0.14);
-      if (bitmap) timeline.to(bitmap, { scale: 1, duration: 0.1, ease: 'none' }, entry + 0.17);
-      timeline.to(frame, {
-        xPercent: exitX,
-        yPercent: -1.5,
-        rotate: direction * -0.55,
-        scale: 0.985,
         opacity: 0,
-        duration: 0.18,
-        ease: 'none',
-      }, entry + 0.29);
+        scale: 0.99,
+        filter: 'blur(12px)',
+        duration: 0.16,
+        ease: 'power1.in',
+      }, entry + 0.32);
     });
     timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1.02, ease: 'none' }, 0);
   }
