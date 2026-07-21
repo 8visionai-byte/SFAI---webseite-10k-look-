@@ -106,21 +106,20 @@ if (reduced) {
   ScrollTrigger.config({ ignoreMobileResize: true, limitCallbacks: true });
   ScrollTrigger.defaults({ invalidateOnRefresh: true });
 
-  revealElements.forEach((element) => {
-    gsap.fromTo(element, {
-      opacity: 0,
-      y: compactMotion ? 22 : 34,
-    }, {
+  const revealDistance = compactMotion ? 22 : 34;
+  gsap.set(revealElements, { opacity: 0, y: revealDistance });
+  ScrollTrigger.batch(revealElements, {
+    start: 'top 88%',
+    once: true,
+    onEnter: (batch) => gsap.to(batch, {
       opacity: 1,
       y: 0,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: element,
-        start: 'clamp(top 94%)',
-        end: 'clamp(top 70%)',
-        scrub: compactMotion ? 0.55 : 0.9,
-      },
-    });
+      duration: compactMotion ? 0.7 : 0.92,
+      ease: 'power3.out',
+      stagger: 0.08,
+      overwrite: true,
+      onComplete: () => batch.forEach((element) => element.classList.add('is-visible')),
+    }),
   });
 }
 
@@ -705,13 +704,13 @@ if (!reduced) {
       yPercent: 0,
       opacity: 1,
       filter: 'blur(0px)',
-      stagger: 0.08,
-      ease: 'none',
+      stagger: 0.09,
+      duration: 0.95,
+      ease: 'power3.out',
       scrollTrigger: {
         trigger: reelHeading,
-        start: 'clamp(top 84%)',
-        end: 'clamp(top 42%)',
-        scrub: narrativeScrub,
+        start: 'top 82%',
+        toggleActions: 'play none none none',
       },
     });
   }
@@ -720,8 +719,9 @@ if (!reduced) {
     gsap.fromTo(card, { y: compactMotion ? 28 : 46, rotate: card.dataset.accent === 'blue' ? -0.35 : 0.35 }, {
       y: 0,
       rotate: 0,
-      ease: 'none',
-      scrollTrigger: { trigger: card, start: 'clamp(top 96%)', end: 'clamp(top 68%)', scrub: narrativeScrub },
+      duration: 1,
+      ease: 'power3.out',
+      scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' },
     });
   });
 
@@ -739,8 +739,9 @@ if (!reduced) {
     gsap.from(card, {
       '--proof-curtain': 1,
       y: compactMotion ? 18 : 30,
-      ease: 'none',
-      scrollTrigger: { trigger: card, start: 'clamp(top 92%)', end: 'clamp(top 56%)', scrub: narrativeScrub },
+      duration: 1.05,
+      ease: 'power3.out',
+      scrollTrigger: { trigger: card, start: 'top 86%', toggleActions: 'play none none none' },
     });
   });
 }

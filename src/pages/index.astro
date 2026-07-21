@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FlowCore from '../components/FlowCore.astro';
 import EditorialJourney from '../components/EditorialJourney.astro';
 import CitiesPhysicsBoard from '../components/CitiesPhysicsBoard.astro';
+import VideoDivider from '../components/VideoDivider.astro';
 import { services } from '../data/services.js';
 import valueArchitectureImage from '../assets/generated/v4/service-value-diagnostic-atlas.png';
 import chatbotKnowledgeImage from '../assets/generated/v4/service-chatbot-knowledge-dialogue.png';
@@ -12,7 +13,6 @@ import careObservatoryImage from '../assets/generated/v4/service-care-command-ob
 import seoAiCitationsImage from '../assets/generated/v4/service-geo-citation-ecosystem.png';
 import aiAgentControlImage from '../assets/generated/v4/service-agent-human-control.png';
 import processAutomationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
-import humanAiTouchImage from '../assets/generated/v3/human-ai-touch.png';
 import storyFirstSignalImage from '../assets/generated/v4/story-01-first-signal.png';
 import storyValueDiagnosisImage from '../assets/generated/v4/story-02-value-diagnosis.png';
 import storyContextMemoryImage from '../assets/generated/v4/story-03-context-memory.png';
@@ -141,17 +141,22 @@ const schema = {
 
     <section class="human-ai-bridge" data-human-bridge>
       <div class="human-ai-bridge__sticky">
-        <div class="human-ai-bridge__media" data-human-bridge-media>
-          <Image
-            src={humanAiTouchImage}
-            alt="Ludzka dłoń i precyzyjna dłoń robota spotykające się na granicy dwóch światów"
-            widths={[960, 1440, 1920, 2400]}
-            sizes="100vw"
-            format="webp"
-            quality={88}
-            loading="eager"
-            fetchpriority="high"
-          />
+        <div class="human-ai-bridge__media" data-human-bridge-media role="img" aria-label="Ludzka dłoń i precyzyjna dłoń robota spotykające się na granicy dwóch światów">
+          <video
+            class="human-ai-bridge__video"
+            data-ambient-video
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            poster="/videos/human-ai-touch-poster.webp"
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <source src="/videos/human-ai-touch-720.webm" type="video/webm" />
+            <source src="/videos/human-ai-touch-720.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
     </section>
@@ -252,6 +257,8 @@ const schema = {
       </div>
     </section>
 
+    <VideoDivider name="flow-tunnel" kicker="/ System w ruchu" height="md" />
+
     <section class="services-section" id="uslugi">
       <div class="section-shell">
         <div class="section-heading">
@@ -309,6 +316,8 @@ const schema = {
       </div>
     </section>
 
+    <VideoDivider name="datacenter" kicker="/ Dane w UE · 24/7" height="md" />
+
     <section class="process-section">
       <div class="section-shell">
         <div class="process-title">
@@ -361,6 +370,8 @@ const schema = {
         </div>
       </div>
     </section>
+
+    <VideoDivider name="core-rings" kicker="/ Silnik, który pracuje" height="md" />
 
     <section class="insights-section">
       <div class="section-shell">

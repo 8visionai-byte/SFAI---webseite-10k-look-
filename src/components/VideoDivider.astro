@@ -1,0 +1,32 @@
+---
+// Pełnoekranowy wideo-przerywnik (loop, bez dźwięku, sterowany IntersectionObserverem).
+// Wideo ładuje się dopiero przy wejściu w viewport (preload="none") i pauzuje poza nim.
+// Fallback: poster .webp. Reduced-motion: samo poster (JS nie startuje odtwarzania).
+const {
+  name,            // bazowa nazwa pliku w /public/videos (bez sufiksu)
+  kicker = '',     // krótki monospace podpis w rogu (styl "/ ...")
+  label = '',      // aria-label dla czytników ekranu (pusty => dekoracja)
+  height = 'md',   // 'sm' | 'md' | 'lg'
+} = Astro.props;
+
+const base = `/videos/${name}`;
+---
+<div class:list={['video-divider', `video-divider--${height}`]} role={label ? 'img' : undefined} aria-label={label || undefined} aria-hidden={label ? undefined : 'true'} data-video-divider>
+  <video
+    class="video-divider__media"
+    data-ambient-video
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    poster={`${base}-poster.webp`}
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <source src={`${base}-720.webm`} type="video/webm" />
+    <source src={`${base}-720.mp4`} type="video/mp4" />
+  </video>
+  <span class="video-divider__scrim" aria-hidden="true"></span>
+  {kicker && <span class="video-divider__kicker mono-label">{kicker}</span>}
+</div>
