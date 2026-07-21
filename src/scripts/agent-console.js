@@ -462,7 +462,7 @@ if (consoleRoot instanceof HTMLElement) {
           type: 'response.create',
           response: {
             output_modalities: ['audio'],
-            instructions: 'Przywitaj użytkownika po polsku w jednym krótkim zdaniu i zapytaj, w czym możesz pomóc jego firmie.',
+            instructions: 'Przywitaj użytkownika naturalną, rodzimą polszczyzną z neutralnym, ogólnopolskim akcentem, jednym krótkim i w pełni dokończonym zdaniem, a potem zapytaj, w czym możesz pomóc jego firmie.',
           },
         }));
       });
@@ -481,10 +481,7 @@ if (consoleRoot instanceof HTMLElement) {
         } else if (data.type === 'response.created') {
           voiceStateFloor = .76;
           emitVoiceEnergy(.9, 'speaking');
-          transcript.textContent = 'Odpowiadam…';
           setConnectionStatus('mówi', 'working');
-        } else if (/transcript\.delta$/.test(data.type) && typeof data.delta === 'string') {
-          transcript.textContent = `${transcript.textContent === 'Odpowiadam…' ? '' : transcript.textContent} ${data.delta}`.trim();
         } else if (data.type === 'response.done') {
           voiceStateFloor = .14;
           emitVoiceEnergy(.2, 'listening');

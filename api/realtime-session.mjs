@@ -62,7 +62,7 @@ export default async function handler(request, response) {
       output_modalities: ['audio'],
       audio: {
         output: {
-          voice: process.env.OPENAI_VOICE || 'marin',
+          voice: process.env.OPENAI_VOICE || 'cedar',
         },
       },
     },

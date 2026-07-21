@@ -511,14 +511,12 @@
   color: var(--lime);
 }
 
+/* Transkrypt odpowiedzi celowo ukryty: napisy pojawiały się urwane w połowie
+   zdania i wyglądały nieprofesjonalnie. Element zostaje w DOM (używa go logika
+   startu głosu), ale nie jest widoczny. Stan rozmowy pokazuje wskaźnik i pigułka
+   statusu. */
 .voice-agent-stage__transcript {
-  width: min(520px, 90%);
-  min-height: 42px;
-  margin-top: 16px;
-  color: #c6cac0;
-  font-size: .78rem;
-  line-height: 1.48;
-  text-shadow: 0 2px 18px #090b09;
+  display: none;
 }
 
 .voice-agent-stage__button {
