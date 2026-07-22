@@ -881,25 +881,16 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     if (!(preview instanceof HTMLElement)) return;
     preview.setAttribute('aria-hidden', 'true');
     document.body.append(preview);
-    const xTo = gsap.quickTo(preview, 'x', { duration: 0.45, ease: 'power3' });
-    const yTo = gsap.quickTo(preview, 'y', { duration: 0.45, ease: 'power3' });
-    const movePreview = (event) => {
+    // Podgląd rośnie od punktu najechania („od kropeczki") i ZOSTAJE w miejscu — nie podąża za kursorem.
+    row.addEventListener('pointerenter', (event) => {
       const bounds = preview.getBoundingClientRect();
       const margin = 18;
       const x = Math.min(innerWidth - bounds.width / 2 - margin, Math.max(bounds.width / 2 + margin, event.clientX));
       const y = Math.min(innerHeight - bounds.height / 2 - margin, Math.max(bounds.height / 2 + margin, event.clientY));
-      xTo(x);
-      yTo(y);
-    };
-    row.addEventListener('pointerenter', (event) => {
+      gsap.set(preview, { x, y });
       preview.classList.add('is-visible');
-      movePreview(event);
       runScramble(row.querySelector('[data-scramble]'));
     });
-    row.addEventListener('pointermove', (event) => {
-      preview.classList.add('is-visible');
-      movePreview(event);
-    }, { passive: true });
     row.addEventListener('pointerleave', () => preview.classList.remove('is-visible'));
   });
   window.addEventListener('scroll', () => {
