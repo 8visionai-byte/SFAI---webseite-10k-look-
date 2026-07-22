@@ -8,6 +8,7 @@ import seoAiCitationsImage from '../assets/generated/v4/service-geo-citation-eco
 import aiAgentControlImage from '../assets/generated/v4/service-agent-human-control.png';
 import processAutomationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
 import storyValueDiagnosisImage from '../assets/generated/v4/story-02-value-diagnosis.png';
+import storySystemArchitectureImage from '../assets/generated/v4/story-04-system-architecture.png';
 import storyControlledActionImage from '../assets/generated/v4/story-06-controlled-action.png';
 import storyScaleCareImage from '../assets/generated/v4/story-08-scale-and-care.png';
 
@@ -21,6 +22,11 @@ const fogLayers = [
     src: storyControlledActionImage,
     alt: 'Agent AI porządkujący sygnały, decyzje i kontrolowane działania',
     layer: 'subject',
+  },
+  {
+    src: storySystemArchitectureImage,
+    alt: 'Architektura systemu AI złożona z połączonych warstw danych i decyzji',
+    layer: 'accent',
   },
   {
     src: storyScaleCareImage,
@@ -148,7 +154,7 @@ const exploreRows = [
                 />
               </div>
               <figcaption>
-                <strong>{item.label}</strong>
+                <strong data-scramble>{item.label}</strong>
                 <span>{item.detail}</span>
               </figcaption>
             </figure>
@@ -164,7 +170,7 @@ const exploreRows = [
         <span><span data-explore-line>Do pracy wykonanej</span></span>
         <span><span data-explore-line>pod pełną kontrolą.</span></span>
       </h2>
-      <p class="system-explore__note">
+      <p class="system-explore__note" data-scramble>
         Projektujemy warstwy, które rozmawiają, rozumieją, działają i stale uczą się realiów Twojej firmy.
       </p>
     </div>

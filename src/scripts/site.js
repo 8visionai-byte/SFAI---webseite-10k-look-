@@ -592,6 +592,21 @@ if (!reduced) {
     const fogLines = fogStatement.querySelectorAll('[data-fog-line]');
     const fogNote = fogStatement.querySelector('[data-fog-note]');
     const fogVeil = fogStatement.querySelector('[data-fog-veil]');
+    // Choreografia mgły (inaczej niż cinematic, gdzie zdjęcia tylko ostrzeją w miejscu):
+    // 1) najpierw wyostrza się NAPIS, 2) każde zdjęcie wychodzi z pełnego rozmycia
+    // i przez cały pobyt na ekranie DRYFUJE własnym wektorem, 3) gaśnie z powrotem w blur.
+    // Scrub + ease 'none' = w pełni odwracalne przy scrollu w górę.
+    const fogBlurMax = compactMotion ? 9 : 14;
+    const fogDriftScale = compactMotion ? 0.55 : 1;
+    const fogFoggy = `brightness(.55) contrast(.9) saturate(.4) blur(${fogBlurMax}px)`;
+    const fogSharp = 'brightness(.82) contrast(1.06) saturate(.56) blur(0px)';
+    const fogDrifts = [
+      { xPercent: 22, yPercent: -3, fromScale: 1, toScale: 1.045 },    // background: w prawo
+      { xPercent: -24, yPercent: 4, fromScale: 1.02, toScale: 0.975 }, // subject: w lewo
+      { xPercent: 30, yPercent: -26, fromScale: 0.97, toScale: 1.05 }, // accent: w górny prawy róg
+      { xPercent: -26, yPercent: 14, fromScale: 1.01, toScale: 1.06 }, // foreground: w dolny lewy róg
+    ];
+    const fogOpacities = [0.46, 0.8, 0.66, 0.55];
     const fogTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: fogStatement,
@@ -601,49 +616,6 @@ if (!reduced) {
       },
     });
 
-    fogImages.forEach((image, index) => {
-      const bitmap = image.querySelector('img');
-      const entry = 0.03 + index * 0.12;
-      const finalOpacity = [0.42, 0.78, 0.58][index] ?? 0.6;
-      const drift = [
-        { xPercent: 1.5, yPercent: -0.8, scale: 0.992 },
-        { xPercent: -1.2, yPercent: 0.6, scale: 0.995 },
-        { xPercent: 0, yPercent: -1.4, scale: 1.008 },
-      ][index];
-
-      fogTimeline.fromTo(image, {
-        opacity: 0,
-        scale: compactMotion ? 1.018 : 1.035,
-      }, {
-        opacity: finalOpacity,
-        scale: 1,
-        duration: 0.29,
-        ease: 'none',
-      }, entry);
-
-      if (bitmap) {
-        fogTimeline.fromTo(bitmap, {
-          scale: 1.045,
-          filter: `brightness(.5) contrast(.88) saturate(.38) blur(${compactMotion ? 7 : 11}px)`,
-        }, {
-          filter: 'brightness(.82) contrast(1.06) saturate(.56) blur(0px)',
-          scale: 1,
-          duration: 0.3,
-          ease: 'none',
-        }, entry);
-      }
-      fogTimeline.to(image, {
-        ...drift,
-        duration: 0.45,
-        ease: 'none',
-      }, 0.38 + index * 0.025);
-      fogTimeline.to(image, {
-        opacity: 0,
-        scale: index === 2 ? 1.018 : 0.988,
-        duration: 0.22,
-        ease: 'none',
-      }, 0.78 + index * 0.025);
-    });
     fogTimeline.fromTo(fogLines, {
       opacity: 0.02,
       scale: 1.016,
@@ -652,13 +624,47 @@ if (!reduced) {
       opacity: 1,
       scale: 1,
       filter: 'blur(0px)',
-      stagger: 0.065,
-      duration: 0.4,
+      stagger: 0.05,
+      duration: 0.2,
       ease: 'none',
-    }, 0.12);
-    fogTimeline.fromTo(fogNote, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'none' }, 0.38);
-    fogTimeline.fromTo(fogVeil, { opacity: 0.98 }, { opacity: 0.34, duration: 0.58, ease: 'none' }, 0.05);
-    fogTimeline.to(fogVeil, { opacity: 0.76, duration: 0.2, ease: 'none' }, 0.78);
+    }, 0.02);
+    fogTimeline.fromTo(fogNote, { opacity: 0 }, { opacity: 1, duration: 0.16, ease: 'none' }, 0.16);
+    fogTimeline.fromTo(fogVeil, { opacity: 0.98 }, { opacity: 0.3, duration: 0.5, ease: 'none' }, 0.04);
+    fogTimeline.to(fogVeil, { opacity: 0.78, duration: 0.18, ease: 'none' }, 0.82);
+
+    fogImages.forEach((image, index) => {
+      const bitmap = image.querySelector('img');
+      const drift = fogDrifts[index] ?? fogDrifts[0];
+      const entry = 0.26 + index * 0.08;
+      const exit = 0.8 + index * 0.02;
+      const finalOpacity = fogOpacities[index] ?? 0.6;
+
+      fogTimeline.fromTo(image, { opacity: 0 }, {
+        opacity: finalOpacity,
+        duration: 0.13,
+        ease: 'none',
+      }, entry);
+      fogTimeline.fromTo(image, {
+        xPercent: 0,
+        yPercent: 0,
+        scale: drift.fromScale,
+      }, {
+        xPercent: drift.xPercent * fogDriftScale,
+        yPercent: drift.yPercent * fogDriftScale,
+        scale: drift.toScale,
+        duration: exit + 0.14 - entry,
+        ease: 'none',
+      }, entry);
+      if (bitmap) {
+        fogTimeline.fromTo(bitmap, { filter: fogFoggy }, {
+          filter: fogSharp,
+          duration: 0.16,
+          ease: 'none',
+        }, entry);
+        fogTimeline.to(bitmap, { filter: fogFoggy, duration: 0.14, ease: 'none' }, exit);
+      }
+      fogTimeline.to(image, { opacity: 0, duration: 0.14, ease: 'none' }, exit);
+    });
   }
 
   const systemExplore = document.querySelector('[data-system-explore]');
