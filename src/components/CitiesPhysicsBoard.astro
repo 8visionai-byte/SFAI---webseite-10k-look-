@@ -420,12 +420,8 @@ const instructionId = `${id}-instruction`;
     border: 1px solid rgba(255, 255, 255, 0.34);
     border-radius: 999px;
     padding: 0.55rem 0.9rem;
-    background:
-      linear-gradient(150deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
-      rgba(8, 18, 75, 0.7);
-    box-shadow:
-      inset 0 1px rgba(255, 255, 255, 0.14),
-      0 0.5rem 1.4rem rgba(3, 8, 40, 0.18);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
     color: var(--cities-white);
     font-family: var(--font-mono, monospace);
     font-size: clamp(0.55rem, 0.72vw, 0.7rem);
@@ -443,11 +439,13 @@ const instructionId = `${id}-instruction`;
   .cities-physics__bubble[data-accent='true'] {
     border-color: var(--cities-lime);
     background: var(--cities-lime);
-    box-shadow: 0 0.8rem 2.4rem rgba(14, 25, 75, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
     color: #08113f;
   }
 
-  /* Bańka: tryb fizyki (crypto-bubble) — okrągła, rozmiar ustala JS inline */
+  /* Bańka: tryb fizyki — okrągła, rozmiar ustala JS inline.
+     Premium glass: płaska tafla kobaltu odrobinę jaśniejsza od tła,
+     cienki border, JEDEN delikatny inset u góry. Zero błysków. */
   .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__world {
     padding: 0;
   }
@@ -460,14 +458,10 @@ const instructionId = `${id}-instruction`;
     min-height: 0;
     padding: 0;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 50%;
-    background:
-      radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.07) 42%, rgba(9, 20, 84, 0.55) 78%, rgba(6, 14, 60, 0.72) 100%);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.34),
-      inset 0 -0.4rem 0.85rem rgba(4, 10, 52, 0.5),
-      0 0.6rem 1.8rem rgba(3, 8, 40, 0.32);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
     cursor: grab;
     touch-action: none;
     transform: translate3d(0, 0, 0);
@@ -488,25 +482,18 @@ const instructionId = `${id}-instruction`;
   }
 
   .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble[data-accent='true'] {
-    border-color: rgba(223, 255, 63, 0.9);
-    background:
-      radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.55), var(--cities-lime) 46%, #c7e838 82%, #b6d92f 100%);
-    box-shadow:
-      inset 0 1px 2px rgba(255, 255, 255, 0.7),
-      inset 0 -0.4rem 0.85rem rgba(120, 150, 10, 0.4),
-      0 0 0 1px rgba(223, 255, 63, 0.25),
-      0 0.7rem 2.2rem rgba(80, 110, 10, 0.35),
-      0 0 2.4rem rgba(223, 255, 63, 0.28);
+    border-color: var(--cities-lime);
+    background: var(--cities-lime);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
     color: #08113f;
   }
 
   .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__bubble.is-dragged {
     z-index: 3;
+    border-color: rgba(255, 255, 255, 0.6);
     box-shadow:
-      inset 0 1px 2px rgba(255, 255, 255, 0.4),
-      0 0 0 1px rgba(223, 255, 63, 0.35),
-      0 1.4rem 3.6rem rgba(2, 7, 37, 0.4),
-      0 0 2.6rem rgba(223, 255, 63, 0.25);
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 1.1rem 2.8rem rgba(3, 8, 40, 0.35);
     cursor: grabbing;
   }
 
@@ -607,18 +594,32 @@ const instructionId = `${id}-instruction`;
 
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    // --- Parametry symulacji (crypto-bubble: wieczny, subtelny ruch) ---
+    // --- Parametry symulacji (dwie fazy: DROP -> WATER) ---
+    // DROP: banieczki startują NAD planszą i spadają jak bąbelki wrzucone do
+    // wody — grawitacja + żywe odbicia od dna i od siebie.
+    // WATER: po opadnięciu wieczne pływanie — wyporność (sinus), dryf,
+    // nigdy pełny bezruch.
     const FIXED_STEP = 1 / 120;      // stały krok symulacji
     const MAX_FRAME = 1 / 24;
     const MAX_SUBSTEPS = 6;
-    const CENTER_K = 0.11;           // delikatne przyciąganie do środka (1/s^2 * dystans)
-    const WANDER_TURN = 2.4;         // dryf kierunku wędrówki (rad/s)
-    const WANDER_ACCEL = 22;         // siła wędrówki (px/s^2)
-    const DAMP = 1.25;               // liniowe tłumienie (1/s)
-    const MIN_SPEED = 5;             // dolny próg prędkości — nic nigdy nie zamiera (px/s)
-    const MAX_SPEED = 120;           // górny limit (pozwala na rzut po puszczeniu)
-    const RESTITUTION = 0.92;        // sprężystość kolizji bańka-bańka
-    const WALL_RESTITUTION = 0.85;   // odbicie od krawędzi
+    const GRAVITY = 920;             // grawitacja opadu (px/s^2)
+    const DROP_DRAG = 0.12;          // opór ośrodka w locie (1/s)
+    const DROP_MAX_SPEED = 1500;     // limit prędkości w opadaniu (px/s)
+    const DROP_RESTITUTION = 0.8;    // sprężystość bańka-bańka w opadaniu
+    const FLOOR_RESTITUTION = 0.68;  // wyraźne, żywe odbicie od dna
+    const DROP_MIN_TIME = 1.4;       // minimalny czas fazy opadania (s)
+    const DROP_MAX_TIME = 8;         // twardy limit fazy opadania (s)
+    const CALM_SPEED = 30;           // średnia prędkość uznana za "opadłe" (px/s)
+    const CALM_HOLD = 0.45;          // ile sekund spokoju zanim włączy się woda
+    const WANDER_TURN = 2.2;         // dryf kierunku wędrówki (rad/s)
+    const WANDER_ACCEL = 13;         // losowa siła wędrówki (px/s^2)
+    const BOB_ACCEL = 22;            // pionowa wyporność, sinus (px/s^2)
+    const SWAY_ACCEL = 9;            // poziome kołysanie, sinus (px/s^2)
+    const WATER_DAMP = 1.15;         // tłumienie w wodzie (1/s)
+    const WATER_RESTITUTION = 0.9;   // sprężystość bańka-bańka w wodzie
+    const WATER_WALL_RESTITUTION = 0.85; // odbicie od krawędzi w wodzie
+    const MIN_SPEED = 4;             // dolny próg prędkości — nic nigdy nie zamiera (px/s)
+    const WATER_MAX_SPEED = 140;     // górny limit w wodzie (pozwala na rzut po puszczeniu)
     const CORRECTION = 0.85;         // korekcja pozycji przy nakładaniu
     const TRANSFORM_DPR = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
 
@@ -639,6 +640,10 @@ const instructionId = `${id}-instruction`;
     let accumulator = 0;
     let observer = null;
     let resizeObserver = null;
+    let phase = 'drop';   // 'drop' (opadanie) -> 'water' (wieczne pływanie)
+    let phaseTime = 0;
+    let calmTime = 0;
+    let simTime = 0;
 
     const random = () => {
       seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -667,6 +672,10 @@ const instructionId = `${id}-instruction`;
         vx: 0,
         vy: 0,
         heading: 0,
+        bobFreq: 0.7,
+        bobPhase: 0,
+        swayFreq: 0.45,
+        swayPhase: 0,
         dragged: false,
         pointerId: null,
         dragOffsetX: 0,
@@ -750,24 +759,43 @@ const instructionId = `${id}-instruction`;
       });
 
       if (!initialized) {
+        // Spawn U GÓRY: banieczki startują nad planszą (niewidoczne, overflow
+        // hidden) i po wejściu sekcji w viewport spadają w dół jak do wody.
         seed = 0x5fa12026;
+        phase = 'drop';
+        phaseTime = 0;
+        calmTime = 0;
+        simTime = 0;
         bodies.forEach((body) => {
           const spanX = Math.max(0, width - 2 * body.r);
-          const spanY = Math.max(0, height - 2 * body.r);
           body.cx = body.r + random() * spanX;
-          body.cy = body.r + random() * spanY;
+          body.cy = -body.r - random() * height * 1.05;
+          body.vx = (random() - 0.5) * 30;
+          body.vy = random() * 40;
           body.heading = random() * Math.PI * 2;
-          const s0 = (MIN_SPEED + random() * 22) * body.speedScale;
-          body.vx = Math.cos(body.heading) * s0;
-          body.vy = Math.sin(body.heading) * s0;
+          body.bobFreq = 0.5 + random() * 0.4;
+          body.bobPhase = random() * Math.PI * 2;
+          body.swayFreq = 0.3 + random() * 0.3;
+          body.swayPhase = random() * Math.PI * 2;
         });
+        // Rozepchnij nakładki w strefie spawnu (tylko boki — góra otwarta)
+        for (let pass = 0; pass < 6; pass += 1) {
+          solveCollisions();
+          bodies.forEach((body) => {
+            body.cx = clamp(body.cx, body.r, Math.max(body.r, width - body.r));
+          });
+        }
         initialized = true;
       } else if (previousWidth > 1 && previousHeight > 1) {
         const rx = width / previousWidth;
         const ry = height / previousHeight;
         bodies.forEach((body) => {
           body.cx = clamp(body.cx * rx, body.r, Math.max(body.r, width - body.r));
-          body.cy = clamp(body.cy * ry, body.r, Math.max(body.r, height - body.r));
+          // W fazie opadania góra jest otwarta — nie przycinaj ujemnego cy.
+          const scaledY = body.cy * ry;
+          body.cy = phase === 'drop'
+            ? Math.min(scaledY, Math.max(body.r, height - body.r))
+            : clamp(scaledY, body.r, Math.max(body.r, height - body.r));
         });
       }
 
@@ -781,27 +809,30 @@ const instructionId = `${id}-instruction`;
     };
 
     const constrainWalls = (body) => {
+      const wallE = phase === 'drop' ? FLOOR_RESTITUTION : WATER_WALL_RESTITUTION;
       const minX = Math.min(body.r, width / 2);
       const maxX = Math.max(width - body.r, width / 2);
       const minY = Math.min(body.r, height / 2);
       const maxY = Math.max(height - body.r, height / 2);
       if (body.cx < minX) {
         body.cx = minX;
-        if (body.vx < 0) body.vx *= -WALL_RESTITUTION;
+        if (body.vx < 0) body.vx *= -wallE;
       } else if (body.cx > maxX) {
         body.cx = maxX;
-        if (body.vx > 0) body.vx *= -WALL_RESTITUTION;
+        if (body.vx > 0) body.vx *= -wallE;
       }
-      if (body.cy < minY) {
+      // Sufit działa dopiero w wodzie — w fazie opadania góra jest otwarta,
+      // bo banieczki wpadają spoza planszy.
+      if (phase === 'water' && body.cy < minY) {
         body.cy = minY;
-        if (body.vy < 0) body.vy *= -WALL_RESTITUTION;
+        if (body.vy < 0) body.vy *= -wallE;
       } else if (body.cy > maxY) {
         body.cy = maxY;
-        if (body.vy > 0) body.vy *= -WALL_RESTITUTION;
+        if (body.vy > 0) body.vy *= -wallE;
       }
     };
 
-    const integrate = (body, step, cx, cy) => {
+    const integrate = (body, step) => {
       if (body.dragged) {
         const nx = clamp(body.targetX, body.r, Math.max(body.r, width - body.r));
         const ny = clamp(body.targetY, body.r, Math.max(body.r, height - body.r));
@@ -812,18 +843,35 @@ const instructionId = `${id}-instruction`;
         return;
       }
 
-      // wędrówka (ciągły subtelny dryf)
+      if (phase === 'drop') {
+        // OPAD: grawitacja + lekki opór ośrodka, odbicia robi solver
+        body.vy += GRAVITY * step;
+        const drag = Math.max(0, 1 - DROP_DRAG * step);
+        body.vx *= drag;
+        body.vy *= drag;
+        const dropSpeed = Math.hypot(body.vx, body.vy);
+        if (dropSpeed > DROP_MAX_SPEED) {
+          const k = DROP_MAX_SPEED / dropSpeed;
+          body.vx *= k;
+          body.vy *= k;
+        }
+        body.cx += body.vx * step;
+        body.cy += body.vy * step;
+        constrainWalls(body);
+        return;
+      }
+
+      // WODA: wędrówka (małe losowe siły) + wyporność sinusowa —
+      // powolne unoszenie i opadanie, ciągły subtelny ruch
       body.heading += (random() - 0.5) * WANDER_TURN * step;
       const wander = WANDER_ACCEL * body.speedScale;
       body.vx += Math.cos(body.heading) * wander * step;
       body.vy += Math.sin(body.heading) * wander * step;
+      body.vx += Math.sin(simTime * body.swayFreq + body.swayPhase) * SWAY_ACCEL * step;
+      body.vy += Math.sin(simTime * body.bobFreq + body.bobPhase) * BOB_ACCEL * step;
 
-      // delikatne przyciąganie do środka planszy
-      body.vx += (cx - body.cx) * CENTER_K * step;
-      body.vy += (cy - body.cy) * CENTER_K * step;
-
-      // tłumienie
-      const damp = Math.max(0, 1 - DAMP * step);
+      // tłumienie (opór wody)
+      const damp = Math.max(0, 1 - WATER_DAMP * step);
       body.vx *= damp;
       body.vy *= damp;
 
@@ -833,8 +881,8 @@ const instructionId = `${id}-instruction`;
       // limity prędkości: nic nie zamiera i nic nie wybucha
       const speed = Math.hypot(body.vx, body.vy);
       const minSpeed = MIN_SPEED * body.speedScale;
-      if (speed > MAX_SPEED) {
-        const k = MAX_SPEED / speed;
+      if (speed > WATER_MAX_SPEED) {
+        const k = WATER_MAX_SPEED / speed;
         body.vx *= k;
         body.vy *= k;
       } else if (speed < minSpeed) {
@@ -884,10 +932,11 @@ const instructionId = `${id}-instruction`;
       b.cx += nx * corr * invB;
       b.cy += ny * corr * invB;
 
-      // impuls sprężysty wzdłuż normalnej
+      // impuls sprężysty wzdłuż normalnej (żywszy w opadaniu)
       const relN = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
       if (relN > 0) return; // już się rozdzielają
-      const j = (-(1 + RESTITUTION) * relN) / invTotal;
+      const restitution = phase === 'drop' ? DROP_RESTITUTION : WATER_RESTITUTION;
+      const j = (-(1 + restitution) * relN) / invTotal;
       a.vx -= j * nx * invA;
       a.vy -= j * ny * invA;
       b.vx += j * nx * invB;
@@ -928,12 +977,27 @@ const instructionId = `${id}-instruction`;
     };
 
     const simulate = (step) => {
-      const cx = width / 2;
-      const cy = height / 2;
-      bodies.forEach((body) => integrate(body, step, cx, cy));
+      simTime += step;
+      phaseTime += step;
+      bodies.forEach((body) => integrate(body, step));
       for (let iteration = 0; iteration < 2; iteration += 1) {
         solveCollisions();
         bodies.forEach(constrainWalls);
+      }
+      // Przejście DROP -> WATER: wszystko opadło i się uspokoiło
+      if (phase === 'drop') {
+        let sum = 0;
+        let count = 0;
+        bodies.forEach((body) => {
+          if (!body.dragged) {
+            sum += Math.hypot(body.vx, body.vy);
+            count += 1;
+          }
+        });
+        const avgSpeed = count ? sum / count : 0;
+        if (phaseTime > DROP_MIN_TIME && avgSpeed < CALM_SPEED) calmTime += step;
+        else calmTime = 0;
+        if (calmTime >= CALM_HOLD || phaseTime >= DROP_MAX_TIME) phase = 'water';
       }
     };
 
