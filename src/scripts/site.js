@@ -312,6 +312,28 @@ if (processRows.length && !reduced) {
   });
 }
 
+// Stacked cards procesu: karta przy scrollu „kładzie się w głąb" i odsłania następną.
+// Azurio F2 (mxdPerspectiveList) 1:1: rotateX 30, opacity .3, blur 4px, ease none, scrub .6.
+// Perspektywę (~1200 px) trzyma kontener .process-list w CSS.
+if (processRows.length && !reduced && !compactMotion) {
+  processRows.forEach((row) => {
+    const inner = row.querySelector('[data-process-inner]');
+    if (!inner) return;
+    gsap.to(inner, {
+      rotateX: 30,
+      opacity: 0.3,
+      filter: 'blur(4px)',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: row,
+        start: '5% top',
+        end: 'bottom 40%',
+        scrub: 0.6,
+      },
+    });
+  });
+}
+
 const storySteps = [...document.querySelectorAll('[data-story-step]')];
 if (storySteps.length) {
   const storyObserver = new IntersectionObserver((entries) => {
@@ -820,60 +842,66 @@ if (!reduced) {
   document.fonts?.ready.then(refreshMotion);
 }
 
-document.querySelectorAll('[data-image-sequence]').forEach((sequence) => {
-  const frames = [...sequence.querySelectorAll('[data-sequence-frame]')];
-  const ticks = [...sequence.querySelectorAll('.sequence-ticks i')];
-  const label = sequence.querySelector('[data-sequence-label]');
-  if (!frames.length) return;
-  let index = 0;
-  let timer = null;
-  const activate = (nextIndex) => {
-    index = nextIndex % frames.length;
-    frames.forEach((frame, frameIndex) => frame.classList.toggle('is-active', frameIndex === index));
-    ticks.forEach((tick, tickIndex) => tick.classList.toggle('is-active', tickIndex === index));
-    if (label) label.textContent = frames[index].dataset.label ?? `0${index + 1}`;
-  };
-  const stop = () => {
-    if (timer) window.clearInterval(timer);
-    timer = null;
-    sequence.classList.remove('is-running');
-    sequence.setAttribute('aria-pressed', 'false');
-  };
-  const start = () => {
-    if (timer || reduced) return;
-    sequence.classList.add('is-running');
-    sequence.setAttribute('aria-pressed', 'true');
-    activate(index + 1);
-    timer = window.setInterval(() => activate(index + 1), 230);
-  };
-  const finePointer = window.matchMedia('(pointer: fine)').matches;
-  if (finePointer) {
-    sequence.addEventListener('pointerenter', start);
-    sequence.addEventListener('pointerleave', stop);
-  } else {
-    sequence.addEventListener('click', () => {
-      if (reduced) activate(index + 1);
-      else if (timer) stop();
-      else start();
+// Sequence-lab: 3 karty-zdjęcia. Hover = mini pokaz slajdów (Azurio E1: setInterval 350 ms,
+// przełączanie opacity, miękkość robi CSS transition). Mobile: wolny automatyczny cykl w kadrze.
+const sequenceLabCards = [...document.querySelectorAll('[data-sequence-card]')];
+if (sequenceLabCards.length) {
+  const sequenceFinePointer = window.matchMedia('(pointer: fine)').matches;
+  sequenceLabCards.forEach((card) => {
+    const frames = [...card.querySelectorAll('[data-sequence-card-frame]')];
+    const tag = card.querySelector('[data-scramble]');
+    if (frames.length < 2) return;
+    let current = 0;
+    let interval = null;
+    const show = (next) => {
+      frames[current].classList.remove('is-active');
+      current = next % frames.length;
+      frames[current].classList.add('is-active');
+    };
+    const stop = () => {
+      if (interval) window.clearInterval(interval);
+      interval = null;
+      card.classList.remove('is-cycling');
+      show(0);
+    };
+    const start = (speed) => {
+      if (interval || reduced) return;
+      card.classList.add('is-cycling');
+      show(current + 1);
+      interval = window.setInterval(() => show(current + 1), speed);
+    };
+    if (sequenceFinePointer) {
+      card.addEventListener('pointerenter', () => {
+        start(350);
+        if (tag) runScramble(tag);
+      });
+      card.addEventListener('pointerleave', stop);
+    } else if (!reduced) {
+      const cycleObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => entry.isIntersecting ? start(1600) : stop());
+      }, { threshold: 0.45 });
+      cycleObserver.observe(card);
+    }
+  });
+
+  // Wjazd kart: blur-reveal batchem, spójny z resztą strony (power3.out + stagger).
+  if (!reduced) {
+    gsap.set(sequenceLabCards, { opacity: 0, y: compactMotion ? 26 : 44, filter: 'blur(8px)' });
+    ScrollTrigger.batch(sequenceLabCards, {
+      start: 'top 86%',
+      once: true,
+      onEnter: (batch) => gsap.to(batch, {
+        opacity: 1,
+        y: 0,
+        filter: 'blur(0px)',
+        duration: compactMotion ? 0.7 : 0.95,
+        ease: 'power3.out',
+        stagger: 0.12,
+        overwrite: true,
+      }),
     });
   }
-  sequence.addEventListener('focus', () => {
-    if (sequence.matches(':focus-visible')) start();
-  });
-  sequence.addEventListener('blur', stop);
-  sequence.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    if (reduced) activate(index + 1);
-    else if (timer) stop();
-    else start();
-  });
-  sequence.addEventListener('pointermove', (event) => {
-    const rect = sequence.getBoundingClientRect();
-    sequence.style.setProperty('--sequence-x', `${event.clientX - rect.left}px`);
-    sequence.style.setProperty('--sequence-y', `${event.clientY - rect.top}px`);
-  }, { passive: true });
-});
+}
 
 if (window.matchMedia('(pointer: fine)').matches && !reduced) {
   document.querySelectorAll('[data-insight-row]').forEach((row) => {

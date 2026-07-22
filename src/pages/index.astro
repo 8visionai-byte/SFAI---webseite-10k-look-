@@ -39,15 +39,34 @@ const cinematicFrames = [
   { src: storyControlledActionImage, alt: 'Działanie agenta przechodzące przez bramkę kontroli człowieka', label: 'Decyzja / akcja', side: 'right' },
   { src: storyObservableResultImage, alt: 'Zakończone zadanie z mierzalnym wynikiem i śladem kontroli', label: 'Wynik / kontrola', side: 'left' },
 ];
-const sequenceFrames = [
-  { src: storyFirstSignalImage, label: '01 / Sygnał' },
-  { src: storyValueDiagnosisImage, label: '02 / Wartość' },
-  { src: storyContextMemoryImage, label: '03 / Kontekst' },
-  { src: storySystemArchitectureImage, label: '04 / Architektura' },
-  { src: storyLivePilotImage, label: '05 / Pilot' },
-  { src: storyControlledActionImage, label: '06 / Działanie' },
-  { src: storyObservableResultImage, label: '07 / Wynik' },
-  { src: storyScaleCareImage, label: '08 / Skala' },
+const sequenceCards = [
+  {
+    variant: 'tall',
+    title: 'Zasilane przez AI',
+    tag: '01 / Sygnał · Kontekst · Architektura',
+    aria: 'Zasilane przez AI: klatki pokazują sygnał wejściowy, kontekst wiedzy firmy i architekturę systemu',
+    frames: [storyFirstSignalImage, storyContextMemoryImage, storySystemArchitectureImage],
+  },
+  {
+    variant: 'wide',
+    title: 'Kontrola człowieka',
+    tag: '02 / Pilot · Decyzja',
+    aria: 'Kontrola człowieka: klatki pokazują pilotaż na żywo i działanie przechodzące przez bramkę decyzji',
+    frames: [storyLivePilotImage, storyControlledActionImage],
+  },
+  {
+    variant: 'mid',
+    title: 'Mierzalny wynik',
+    tag: '03 / Wynik · Skala',
+    aria: 'Mierzalny wynik: klatki pokazują zmierzony rezultat, skalowanie systemu i wartość dla biznesu',
+    frames: [storyObservableResultImage, storyScaleCareImage, storyValueDiagnosisImage],
+  },
+];
+const processSteps = [
+  { index: '01', title: 'Diagnoza wartości', text: 'Wybieramy proces, w którym efekt będzie widoczny i mierzalny.', image: storyValueDiagnosisImage, alt: 'Diagnoza wartości: mapa procesu z zaznaczonym miejscem, w którym znika czas i sprzedaż' },
+  { index: '02', title: 'Pierwszy system', text: 'Budujemy najmniejszą wersję, która naprawdę wykonuje pracę.', image: storySystemArchitectureImage, alt: 'Pierwszy system: architektura najmniejszej działającej wersji systemu AI' },
+  { index: '03', title: 'Test na żywo', text: 'Sprawdzamy wyjątki, bezpieczeństwo i zachowanie w realnym procesie.', image: storyLivePilotImage, alt: 'Test na żywo: pilotaż systemu na realnych danych i realnym procesie' },
+  { index: '04', title: 'Opieka i skala', text: 'Monitorujemy wynik, poprawiamy i dodajemy następne zadania.', image: storyScaleCareImage, alt: 'Opieka i skala: monitoring wyniku i rozwój systemu o kolejne zadania' },
 ];
 const insightArticles = [
   { meta: 'Agenci AI / 08 min', title: 'Agent AI czy automatyzacja — od czego zacząć?', text: 'Prosty sposób na wybór pierwszego procesu bez przepalania budżetu.', image: aiAgentControlImage, alt: 'Modułowa architektura agenta AI z bramką kontroli' },
@@ -197,24 +216,26 @@ const schema = {
     <section class="sequence-lab">
       <div class="sequence-grid section-shell">
         <div class="sequence-copy">
-          <p class="mono-label">/ Jedno wdrożenie. Wiele perspektyw.</p>
+          <p class="mono-label">/ Jedno wdrożenie. Trzy filary.</p>
           <h2 data-reveal>Najedź. Zobacz, jak system dojrzewa.</h2>
-          <p>To nie film. Każda klatka pokazuje kolejny etap: od znalezienia wartości, przez rozmowę i decyzję, po kontrolowane działanie.</p>
+          <p>Każda karta pokazuje inny filar tego samego wdrożenia: silnik AI, kontrolę człowieka i wynik, który da się zmierzyć.</p>
         </div>
-        <div class="image-sequence" data-image-sequence tabindex="0" role="button" aria-pressed="false" aria-label="Uruchom interaktywną sekwencję ośmiu etapów systemu AI">
-          <div class="sequence-frames">
-            {sequenceFrames.map((frame, index) => (
-              <figure class:list={['sequence-frame', index === 0 && 'is-active']} data-sequence-frame={index} data-label={frame.label}>
-                <Image src={frame.src} alt="" widths={[720, 1080, 1440]} sizes="(max-width: 760px) 100vw, 58vw" format="webp" quality={82} />
-              </figure>
-            ))}
-          </div>
-          <div class="sequence-interface">
-            <span data-sequence-label>{sequenceFrames[0].label}</span>
-            <span>Hover / hold</span>
-            <div class="sequence-ticks">{sequenceFrames.map((_, index) => <i class:list={[index === 0 && 'is-active']}></i>)}</div>
-          </div>
-          <div class="sequence-cursor" aria-hidden="true"><span>Uruchom<br />sekwencję</span></div>
+        <div class="sequence-deck">
+          {sequenceCards.map((card) => (
+            <figure class:list={['sequence-card', `sequence-card--${card.variant}`]} data-sequence-card aria-label={card.aria}>
+              <div class="sequence-card-frames" aria-hidden="true">
+                {card.frames.map((frame, frameIndex) => (
+                  <div class:list={['sequence-card-frame', frameIndex === 0 && 'is-active']} data-sequence-card-frame>
+                    <Image src={frame} alt="" widths={[520, 780, 1080]} sizes="(max-width: 760px) 92vw, 32vw" format="webp" quality={82} loading="lazy" />
+                  </div>
+                ))}
+              </div>
+              <figcaption class="sequence-card-caption">
+                <strong class="sequence-card-title">{card.title}</strong>
+                <span class="sequence-card-tag"><span data-scramble>{card.tag}</span></span>
+              </figcaption>
+            </figure>
+          ))}
         </div>
       </div>
     </section>
@@ -316,10 +337,20 @@ const schema = {
           <h2 data-reveal>Mały krok. Szybki dowód. Stały rozwój.</h2>
         </div>
         <div class="process-list">
-          <article class="process-item" data-process-row><span>01</span><h3><span class="process-title-sr">Diagnoza wartości</span><span aria-hidden="true" data-process-scramble>Diagnoza wartości</span></h3><p>Wybieramy proces, w którym efekt będzie widoczny i mierzalny.</p></article>
-          <article class="process-item" data-process-row><span>02</span><h3><span class="process-title-sr">Pierwszy system</span><span aria-hidden="true" data-process-scramble>Pierwszy system</span></h3><p>Budujemy najmniejszą wersję, która naprawdę wykonuje pracę.</p></article>
-          <article class="process-item" data-process-row><span>03</span><h3><span class="process-title-sr">Test na żywo</span><span aria-hidden="true" data-process-scramble>Test na żywo</span></h3><p>Sprawdzamy wyjątki, bezpieczeństwo i zachowanie w realnym procesie.</p></article>
-          <article class="process-item" data-process-row><span>04</span><h3><span class="process-title-sr">Opieka i skala</span><span aria-hidden="true" data-process-scramble>Opieka i skala</span></h3><p>Monitorujemy wynik, poprawiamy i dodajemy następne zadania.</p></article>
+          {processSteps.map((step) => (
+            <article class="process-item" data-process-row>
+              <div class="process-item-inner" data-process-inner>
+                <div class="process-item-head">
+                  <span>{step.index}</span>
+                  <h3><span class="process-title-sr">{step.title}</span><span aria-hidden="true" data-process-scramble>{step.title}</span></h3>
+                </div>
+                <div class="process-item-media">
+                  <Image src={step.image} alt={step.alt} widths={[520, 780, 1080]} sizes="(max-width: 760px) 92vw, 34vw" format="webp" quality={82} loading="lazy" />
+                </div>
+                <p>{step.text}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
