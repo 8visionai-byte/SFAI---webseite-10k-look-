@@ -1,9 +1,13 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { CustomEase } from 'gsap/CustomEase';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, CustomEase);
+// Krzywe 1:1 z Azurio — cały „feeling" szablonu siedzi w tych dwóch easach.
+CustomEase.create('hop', '.87, 0, .13, 1');
+CustomEase.create('common', '.23, .65, .74, 1.09');
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const compactMotion = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
@@ -14,12 +18,8 @@ const menuToggle = document.querySelector('[data-menu-toggle]');
 const menuPanel = document.querySelector('[data-menu-panel]');
 
 if (!reduced && !compactMotion) {
+  // Konfiguracja 1:1 z Azurio: czyste defaulty Lenis (lerp 0.1, wheelMultiplier 1).
   const lenis = new Lenis({
-    duration: 0.82,
-    smoothWheel: true,
-    wheelMultiplier: 1.15,
-    touchMultiplier: 1.6,
-    syncTouch: false,
     anchors: true,
     prevent: (node) => node instanceof Element && Boolean(node.closest('[data-lenis-prevent]')),
   });
@@ -115,8 +115,8 @@ if (reduced) {
     onEnter: (batch) => gsap.to(batch, {
       opacity: 1,
       y: 0,
-      duration: compactMotion ? 0.7 : 0.92,
-      ease: 'power3.out',
+      duration: compactMotion ? 0.6 : 0.75,
+      ease: 'common',
       stagger: 0.08,
       overwrite: true,
       onComplete: () => batch.forEach((element) => element.classList.add('is-visible')),
@@ -403,18 +403,50 @@ if (!reduced) {
         onEnterBack: scrambleManifestoLabels,
       },
     });
-    manifestoTimeline.fromTo(lines, {
-      yPercent: 108,
-      opacity: 0,
-      filter: 'blur(10px)',
-    }, {
-      yPercent: 0,
-      opacity: 1,
-      filter: 'blur(0px)',
-      stagger: 0.055,
-      duration: 0.4,
-      ease: 'none',
-    }, 0);
+    // Azurio "reveal-type": nagłówek cięty na znaki, wyostrza się z mgły scrollem (scrub 2).
+    const manifestoChars = [];
+    const splitToChars = (node) => {
+      [...node.childNodes].forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const fragment = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach((chunk) => {
+            if (!chunk) return;
+            if (/^\s+$/.test(chunk)) {
+              fragment.append(chunk);
+              return;
+            }
+            const word = document.createElement('span');
+            word.className = 'mword';
+            [...chunk].forEach((character) => {
+              const glyph = document.createElement('span');
+              glyph.className = 'mchar';
+              glyph.textContent = character;
+              word.append(glyph);
+              manifestoChars.push(glyph);
+            });
+            fragment.append(word);
+          });
+          child.replaceWith(fragment);
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          splitToChars(child);
+        }
+      });
+    };
+    lines.forEach(splitToChars);
+    if (manifestoChars.length) {
+      gsap.from(manifestoChars, {
+        opacity: 0,
+        filter: 'blur(10px)',
+        stagger: 0.05,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: manifesto,
+          start: 'top 88%',
+          end: 'center 44%',
+          scrub: 2,
+        },
+      });
+    }
     manifestoTimeline.fromTo(signalRows, {
       opacity: 0,
       y: 15,
