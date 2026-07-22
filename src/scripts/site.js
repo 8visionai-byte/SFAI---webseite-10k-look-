@@ -320,14 +320,15 @@ if (processRows.length && !reduced && !compactMotion) {
     const inner = row.querySelector('[data-process-inner]');
     if (!inner) return;
     gsap.to(inner, {
-      rotateX: 30,
-      opacity: 0.3,
-      filter: 'blur(4px)',
+      rotateX: 48,
+      opacity: 0.22,
+      filter: 'blur(6px)',
+      transformOrigin: '50% 100%',
       ease: 'none',
       scrollTrigger: {
         trigger: row,
-        start: '5% top',
-        end: 'bottom 40%',
+        start: 'top 22%',
+        end: 'bottom 58%',
         scrub: 0.6,
       },
     });
@@ -612,13 +613,19 @@ if (!reduced) {
       gsap.set(frame, { '--sfai-curtain': 0, opacity: 1 });
       timeline.fromTo(frame, {
         y: '108vh',
+      }, {
+        y: '-16vh',
+        duration: 0.3,
+        ease: 'none',
+      }, at);
+      // Ostrość łapana WCZEŚNIE — zanim karta dojedzie do napisu, jest już wyraźna.
+      timeline.fromTo(frame, {
         clipPath: 'inset(0% 56% 0% 0%)',
         filter: 'blur(7px)',
       }, {
-        y: '-16vh',
         clipPath: 'inset(0% 0% 0% 0%)',
         filter: 'blur(0px)',
-        duration: 0.3,
+        duration: 0.09,
         ease: 'none',
       }, at);
       timeline.to(frame, {
@@ -907,9 +914,9 @@ if (!reduced) {
     gsap.set(imgs, { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 });
     imgs.forEach((img, index) => {
       const at = 0.12 + index * 0.155;
-      proofTl.fromTo(img,
-        { y: '112vh', filter: 'blur(9px)' },
-        { y: '-18vh', filter: 'blur(0px)', duration: 0.3, ease: 'none' }, at);
+      proofTl.fromTo(img, { y: '112vh' }, { y: '-18vh', duration: 0.3, ease: 'none' }, at);
+      // Ostrość od razu na dole — zdjęcie jest wyraźne ZANIM najedzie na napis.
+      proofTl.fromTo(img, { filter: 'blur(9px)' }, { filter: 'blur(0px)', duration: 0.08, ease: 'none' }, at);
       proofTl.to(img, { y: '-136vh', filter: 'blur(5px)', duration: 0.24, ease: 'none' }, at + 0.3);
     });
   }

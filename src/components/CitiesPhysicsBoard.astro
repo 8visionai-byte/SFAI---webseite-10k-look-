@@ -602,7 +602,7 @@ const instructionId = `${id}-instruction`;
     const FIXED_STEP = 1 / 120;      // stały krok symulacji
     const MAX_FRAME = 1 / 24;
     const MAX_SUBSTEPS = 6;
-    const GRAVITY = 920;             // grawitacja opadu (px/s^2)
+    const GRAVITY = 560;             // grawitacja opadu (px/s^2) — wolniejszy, miękki opad
     const DROP_DRAG = 0.12;          // opór ośrodka w locie (1/s)
     const DROP_MAX_SPEED = 1500;     // limit prędkości w opadaniu (px/s)
     const DROP_RESTITUTION = 0.8;    // sprężystość bańka-bańka w opadaniu
@@ -613,13 +613,14 @@ const instructionId = `${id}-instruction`;
     const CALM_HOLD = 0.45;          // ile sekund spokoju zanim włączy się woda
     const WANDER_TURN = 2.2;         // dryf kierunku wędrówki (rad/s)
     const WANDER_ACCEL = 13;         // losowa siła wędrówki (px/s^2)
-    const BOB_ACCEL = 22;            // pionowa wyporność, sinus (px/s^2)
+    const BOB_ACCEL = 42;            // pionowa wyporność, sinus (px/s^2) — wyraźne unoszenie
+    const BUOY_UP = 24;              // stały bias KU GÓRZE (px/s^2) — żywy obieg góra-dół
     const SWAY_ACCEL = 9;            // poziome kołysanie, sinus (px/s^2)
-    const WATER_DAMP = 1.15;         // tłumienie w wodzie (1/s)
+    const WATER_DAMP = 1.1;          // tłumienie w wodzie (1/s) — płynnie, nie nerwowo
     const WATER_RESTITUTION = 0.9;   // sprężystość bańka-bańka w wodzie
-    const WATER_WALL_RESTITUTION = 0.85; // odbicie od krawędzi w wodzie
+    const WATER_WALL_RESTITUTION = 0.85; // odbicie od krawędzi w wodzie (sufit domknięty)
     const MIN_SPEED = 4;             // dolny próg prędkości — nic nigdy nie zamiera (px/s)
-    const WATER_MAX_SPEED = 140;     // górny limit w wodzie (pozwala na rzut po puszczeniu)
+    const WATER_MAX_SPEED = 170;     // górny limit w wodzie (pozwala na rzut po puszczeniu)
     const CORRECTION = 0.85;         // korekcja pozycji przy nakładaniu
     const TRANSFORM_DPR = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
 
@@ -869,6 +870,9 @@ const instructionId = `${id}-instruction`;
       body.vy += Math.sin(body.heading) * wander * step;
       body.vx += Math.sin(simTime * body.swayFreq + body.swayPhase) * SWAY_ACCEL * step;
       body.vy += Math.sin(simTime * body.bobFreq + body.bobPhase) * BOB_ACCEL * step;
+      // bias ku górze: bąbelki dryfują w górę (małe szybciej), odbijają się
+      // od domkniętego sufitu, a faza sinusa sprowadza je z powrotem w dół
+      body.vy -= BUOY_UP * body.speedScale * step;
 
       // tłumienie (opór wody)
       const damp = Math.max(0, 1 - WATER_DAMP * step);
