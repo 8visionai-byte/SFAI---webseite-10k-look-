@@ -507,6 +507,33 @@ if (!reduced) {
         }),
       });
     }
+
+    // Hover na nagłówku -> zdjęcia wyskakują jedno po drugim i chowają się (Azurio E1:
+    // setInterval ~420 ms, miękkość robi CSS transition na opacity+scale). Desktop-only,
+    // a cały blok manifesto siedzi w if (!reduced), więc reduced-motion = wyłączone.
+    const manifestoPops = [...manifesto.querySelectorAll('[data-manifesto-pop]')];
+    const manifestoHeading = manifesto.querySelector('h2');
+    if (manifestoPops.length && manifestoHeading && window.matchMedia('(pointer: fine)').matches) {
+      let popTimer = null;
+      let popIndex = -1;
+      const cycleManifestoPop = () => {
+        if (popIndex >= 0) manifestoPops[popIndex % manifestoPops.length].classList.remove('is-on');
+        popIndex += 1;
+        manifestoPops[popIndex % manifestoPops.length].classList.add('is-on');
+      };
+      manifestoHeading.addEventListener('pointerenter', () => {
+        if (popTimer) return;
+        popIndex = -1;
+        cycleManifestoPop();
+        popTimer = window.setInterval(cycleManifestoPop, 420);
+      });
+      manifestoHeading.addEventListener('pointerleave', () => {
+        if (popTimer) window.clearInterval(popTimer);
+        popTimer = null;
+        popIndex = -1;
+        manifestoPops.forEach((pop) => pop.classList.remove('is-on'));
+      });
+    }
   }
 
   const humanBridge = document.querySelector('[data-human-bridge]');
@@ -763,26 +790,78 @@ if (!reduced) {
     });
   }
 
-  const reelHeading = document.querySelector('[data-reel-heading]');
-  if (reelHeading) {
-    const lines = reelHeading.querySelectorAll('[data-reel-heading-line]');
-    gsap.fromTo(lines, {
-      yPercent: 108,
-      opacity: 0,
-      filter: 'blur(8px)',
-    }, {
-      yPercent: 0,
-      opacity: 1,
-      filter: 'blur(0px)',
-      stagger: 0.09,
-      duration: 0.95,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: reelHeading,
-        start: 'top 82%',
-        toggleActions: 'play none none none',
-      },
-    });
+  // Pinowany blok „Jeden partner. Cały ekosystem AI." (Azurio A1 uproszczone).
+  // Zamiast Flip.fit: jeden fromTo scale z celem liczonym funkcyjnie — stabilniejsze
+  // w Astro (bez placeholderów w px, globalny invalidateOnRefresh przelicza cel przy
+  // resize), a scrub .55 + ease 'none' daje ten sam liniowy hero-scale co w Azurio.
+  const reelBig = document.querySelector('[data-reel-big]');
+  if (reelBig && !window.matchMedia('(max-width: 760px)').matches) {
+    const reelMedia = reelBig.querySelector('[data-reel-big-media]');
+    const reelRows = [...reelBig.querySelectorAll('[data-reel-big-row]')];
+    const reelTitleLines = [...reelBig.querySelectorAll('[data-reel-big-line]')];
+
+    if (reelMedia) {
+      const reelTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: reelBig,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.55,
+        },
+      });
+      // 1 scroll = duży przyrost: wzrost kończy się po ~2/3 pinu (ok. 1.3 ekranu scrolla),
+      // cel = pokrycie prawie całej zakładki niezależnie od proporcji viewportu.
+      reelTimeline.fromTo(reelMedia, { scale: 1 }, {
+        scale: () => Math.max(
+          (window.innerWidth * 0.96) / Math.max(1, reelMedia.offsetWidth),
+          (window.innerHeight * 0.96) / Math.max(1, reelMedia.offsetHeight),
+        ),
+        duration: 0.62,
+        ease: 'none',
+      }, 0.04);
+      // Minimalny parallax gigantycznych rzędów tła (statyczne w pionie, dryf w poziomie).
+      reelRows.forEach((row, index) => {
+        const drift = index % 2 === 0 ? -3 : 3;
+        reelTimeline.fromTo(row, { xPercent: -drift }, { xPercent: drift, duration: 0.96, ease: 'none' }, 0.02);
+      });
+    }
+
+    // Tytuł wychodzi ze środkowej linii do góry NA zdjęciu (maska + yPercent 100->0,
+    // ease 'common') po urośnięciu zdjęcia; scroll w górę chowa go z powrotem.
+    if (reelTitleLines.length) {
+      gsap.set(reelTitleLines, { yPercent: 108 });
+      ScrollTrigger.create({
+        trigger: reelBig,
+        start: '48% top',
+        onEnter: () => gsap.to(reelTitleLines, { yPercent: 0, duration: 0.85, ease: 'common', stagger: 0.09, overwrite: true }),
+        onLeaveBack: () => gsap.to(reelTitleLines, { yPercent: 108, duration: 0.5, ease: 'power2.in', stagger: 0.05, overwrite: true }),
+      });
+    }
+
+    // Kursor-badge „DOWIEDZ SIĘ WIĘCEJ" (Azurio B uproszczone): pozycja = GSAP
+    // (duration .4, power1.out), skala = klasa CSS + transition. Desktop-only.
+    const reelBadge = reelBig.querySelector('[data-reel-big-badge]');
+    const reelHover = reelBig.querySelector('[data-reel-big-hover]');
+    const reelStickyArea = reelBig.querySelector('.reel-big__sticky');
+    if (reelBadge && reelHover && reelStickyArea && window.matchMedia('(pointer: fine)').matches) {
+      const badgeX = gsap.quickTo(reelBadge, 'x', { duration: 0.4, ease: 'power1.out' });
+      const badgeY = gsap.quickTo(reelBadge, 'y', { duration: 0.4, ease: 'power1.out' });
+      const badgePoint = (event) => {
+        const bounds = reelStickyArea.getBoundingClientRect();
+        return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+      };
+      reelHover.addEventListener('pointerenter', (event) => {
+        const point = badgePoint(event);
+        gsap.set(reelBadge, { x: point.x, y: point.y });
+        reelBadge.classList.add('is-active');
+      });
+      reelHover.addEventListener('pointermove', (event) => {
+        const point = badgePoint(event);
+        badgeX(point.x);
+        badgeY(point.y);
+      });
+      reelHover.addEventListener('pointerleave', () => reelBadge.classList.remove('is-active'));
+    }
   }
 
   document.querySelectorAll('.service-card').forEach((card) => {

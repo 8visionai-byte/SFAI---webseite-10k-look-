@@ -139,6 +139,13 @@ const schema = {
     </div>
 
     <section class="manifesto" id="manifest" data-manifesto>
+      <div class="manifesto-pops" aria-hidden="true">
+        <figure class="manifesto-pop manifesto-pop--1" data-manifesto-pop><Image src={storyFirstSignalImage} alt="" widths={[420, 640]} sizes="20vw" format="webp" quality={78} loading="lazy" /></figure>
+        <figure class="manifesto-pop manifesto-pop--2" data-manifesto-pop><Image src={storyContextMemoryImage} alt="" widths={[420, 640]} sizes="20vw" format="webp" quality={78} loading="lazy" /></figure>
+        <figure class="manifesto-pop manifesto-pop--3" data-manifesto-pop><Image src={storyLivePilotImage} alt="" widths={[420, 640]} sizes="20vw" format="webp" quality={78} loading="lazy" /></figure>
+        <figure class="manifesto-pop manifesto-pop--4" data-manifesto-pop><Image src={storyControlledActionImage} alt="" widths={[420, 640]} sizes="20vw" format="webp" quality={78} loading="lazy" /></figure>
+        <figure class="manifesto-pop manifesto-pop--5" data-manifesto-pop><Image src={storyObservableResultImage} alt="" widths={[420, 640]} sizes="20vw" format="webp" quality={78} loading="lazy" /></figure>
+      </div>
       <div class="manifesto-grid section-shell">
         <p class="mono-label">/ <span data-scramble>Nasze podejście</span></p>
         <h2 aria-label="Nie wdrażamy AI dla efektu wow. Wdrażamy efekt, który widać w pracy.">
@@ -355,14 +362,39 @@ const schema = {
       </div>
     </section>
 
-    <section class="services-reel-section" data-reel-heading>
-      <div class="reel-heading section-shell">
-        <p class="mono-label">/ Porozmawiajmy o usługach</p>
-        <h2 aria-label="Jeden partner. Cały ekosystem AI.">
-          <span class="reel-heading-line"><span data-reel-heading-line>Jeden partner.</span></span>
-          <span class="reel-heading-line"><span data-reel-heading-line>Cały ekosystem <em>AI.</em></span></span>
-        </h2>
-        <p>Najedź na wybraną usługę albo przesuń karuzelę na telefonie. Każda ma własną podstronę, zakres i architekturę treści pod dalsze pozycjonowanie.</p>
+    <section class="services-reel-section">
+      <div class="reel-big" data-reel-big>
+        <div class="reel-big__sticky">
+          <div class="reel-big__bg" aria-hidden="true">
+            <span class="reel-big__row" data-reel-big-row>Agenci AI · Voiceboty</span>
+            <span class="reel-big__row" data-reel-big-row>Automatyzacje · SEO + GEO</span>
+            <span class="reel-big__row" data-reel-big-row>Chatboty · Strony WWW</span>
+          </div>
+          <a class="reel-big__stage" href="/uslugi/" data-reel-big-hover>
+            <span class="reel-big__media" data-reel-big-media>
+              <Image
+                src={aiAgentControlImage}
+                alt="Agent AI prowadzący zadanie od sygnału do kontrolowanego działania"
+                widths={[640, 960, 1440, 1920]}
+                sizes="(max-width: 760px) 100vw, 96vw"
+                format="webp"
+                quality={84}
+                loading="lazy"
+              />
+            </span>
+            <h2 class="reel-big__title" aria-label="Jeden partner. Cały ekosystem AI.">
+              <span class="reel-big__line"><span data-reel-big-line>Jeden partner.</span></span>
+              <span class="reel-big__line"><span data-reel-big-line>Cały ekosystem <em>AI.</em></span></span>
+            </h2>
+          </a>
+          <span class="reel-big__badge" data-reel-big-badge aria-hidden="true">Dowiedz się<br />więcej</span>
+          <p class="reel-big__label reel-big__label--left mono-label">/ <span data-scramble>Ekosystem usług</span></p>
+          <p class="reel-big__label reel-big__label--right mono-label"><span data-scramble>Przewiń / zbliżenie</span></p>
+        </div>
+      </div>
+      <div class="reel-intro section-shell">
+        <p class="mono-label">/ <span data-scramble>Porozmawiajmy o usługach</span></p>
+        <p data-reveal>Najedź na wybraną usługę albo przesuń karuzelę na telefonie. Każda ma własną podstronę, zakres i architekturę treści pod dalsze pozycjonowanie.</p>
       </div>
       <div class="services-reel" data-services-reel>
         <div class="services-reel-track">
