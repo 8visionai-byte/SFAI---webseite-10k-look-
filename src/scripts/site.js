@@ -122,6 +122,22 @@ if (reduced) {
       onComplete: () => batch.forEach((element) => element.classList.add('is-visible')),
     }),
   });
+
+  // Mgła u dołu ekranu: NIE zasłania hero (CTA musi być ostre) — włącza się po zjechaniu z pierwszej karty.
+  const mistVeil = document.querySelector('.mist-veil');
+  if (mistVeil) {
+    const heroSection = document.querySelector('.home-hero');
+    if (heroSection) {
+      ScrollTrigger.create({
+        trigger: heroSection,
+        start: 'bottom 82%',
+        onEnter: () => mistVeil.classList.add('is-on'),
+        onLeaveBack: () => mistVeil.classList.remove('is-on'),
+      });
+    } else {
+      mistVeil.classList.add('is-on');
+    }
+  }
 }
 
 const scrambleGlyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+-<>[]';
@@ -137,8 +153,10 @@ const runScramble = (element) => {
   const currentTimer = scrambleTimers.get(element);
   if (currentTimer) window.clearInterval(currentTimer);
   let frame = 0;
+  // Dłuższe teksty składają się szybciej na znak, żeby całość trwała podobnie (~2,5 s max).
+  const rate = Math.max(1, original.length / 60);
   const timer = window.setInterval(() => {
-    const resolved = Math.floor(frame / 2);
+    const resolved = Math.floor((frame * rate) / 2);
     element.textContent = [...original].map((character, index) => {
       if (/\s/.test(character) || index < resolved) return character;
       return scrambleGlyphs[Math.floor(Math.random() * scrambleGlyphs.length)];
@@ -455,6 +473,18 @@ if (!reduced) {
       duration: 0.28,
       ease: 'none',
     }, 0.42);
+
+    // Akapity rozsypują się i składają jak etykiety (spójna iluminacja całej sekcji).
+    if (copy.length) {
+      ScrollTrigger.create({
+        trigger: copy[0],
+        start: 'top 82%',
+        once: true,
+        onEnter: () => copy.forEach((paragraph, index) => {
+          window.setTimeout(() => runScramble(paragraph), 380 * index);
+        }),
+      });
+    }
   }
 
   const humanBridge = document.querySelector('[data-human-bridge]');
@@ -524,44 +554,32 @@ if (!reduced) {
       }),
     });
 
+    // Styl „Few words" z Azurio: napis stoi na środku, karty PŁYNĄ z dołu do góry,
+    // odsłaniają się od lewej (clip-path) i wyostrzają wychodząc znad dolnej mgły.
     frames.forEach((frame, index) => {
       const bitmap = frame.querySelector('img');
-      const entry = 0.36 + index * 0.15;
+      const at = 0.04 + index * 0.22;
 
-      gsap.set(frame, { '--sfai-curtain': 0 });
+      gsap.set(frame, { '--sfai-curtain': 0, opacity: 1 });
       timeline.fromTo(frame, {
-        opacity: 0,
-        scale: 1.07,
-        yPercent: index % 2 === 0 ? 3.5 : -3.5,
-        filter: 'blur(18px)',
+        y: '108vh',
+        clipPath: 'inset(0% 56% 0% 0%)',
+        filter: 'blur(7px)',
       }, {
-        opacity: 0.97,
-        scale: 1,
-        yPercent: 0,
+        y: '-16vh',
+        clipPath: 'inset(0% 0% 0% 0%)',
         filter: 'blur(0px)',
-        duration: 0.2,
-        ease: 'power2.out',
-      }, entry);
-
-      if (bitmap) {
-        timeline.fromTo(bitmap, {
-          scale: 1.08,
-          filter: 'grayscale(.5) sepia(.1) contrast(.98) brightness(.82)',
-        }, {
-          scale: 1,
-          filter: 'grayscale(.28) sepia(.06) contrast(1.08) brightness(1)',
-          duration: 0.24,
-          ease: 'power2.out',
-        }, entry);
-      }
-
+        duration: 0.3,
+        ease: 'none',
+      }, at);
       timeline.to(frame, {
-        opacity: 0,
-        scale: 0.99,
-        filter: 'blur(12px)',
-        duration: 0.16,
-        ease: 'power1.in',
-      }, entry + 0.32);
+        y: '-134vh',
+        duration: 0.26,
+        ease: 'none',
+      }, at + 0.3);
+      if (bitmap) {
+        timeline.fromTo(bitmap, { scale: 1.06 }, { scale: 1, duration: 0.42, ease: 'none' }, at);
+      }
     });
     timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1.02, ease: 'none' }, 0);
   }
@@ -783,13 +801,15 @@ if (!reduced) {
     proofTl.to(title, { yPercent: -12, duration: 0.2, ease: 'none' }, 0.24);
     proofTl.to(title, { yPercent: 0, duration: 0.2, ease: 'none' }, 0.72);
 
+    // Zdjęcia wjeżdżają z dołu i przechodzą PRZEZ ŚRODEK za napisem (kontrast difference),
+    // wyostrzając się znad dolnej mgły — ciągły przepływ, nie pojawianie się znikąd.
+    gsap.set(imgs, { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 });
     imgs.forEach((img, index) => {
-      const at = 0.16 + index * 0.135;
+      const at = 0.12 + index * 0.155;
       proofTl.fromTo(img,
-        { clipPath: 'inset(50% 0% 50% 0%)', opacity: 0, yPercent: 10, filter: 'blur(10px)' },
-        { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, yPercent: 0, filter: 'blur(0px)', duration: 0.12, ease: 'none' }, at);
-      proofTl.to(img, { yPercent: -10, duration: 0.14, ease: 'none' }, at + 0.12);
-      proofTl.to(img, { opacity: 0, filter: 'blur(8px)', duration: 0.1, ease: 'none' }, at + 0.22);
+        { y: '112vh', filter: 'blur(9px)' },
+        { y: '-18vh', filter: 'blur(0px)', duration: 0.3, ease: 'none' }, at);
+      proofTl.to(img, { y: '-136vh', filter: 'blur(5px)', duration: 0.24, ease: 'none' }, at + 0.3);
     });
   }
 }
