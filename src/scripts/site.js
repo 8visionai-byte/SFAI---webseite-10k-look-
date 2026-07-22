@@ -294,28 +294,6 @@ if (processRows.length && !reduced) {
   });
 }
 
-document.querySelectorAll('[data-voice-trigger]').forEach((trigger) => {
-  if (!(trigger instanceof HTMLButtonElement) || trigger.dataset.voiceBound) return;
-  const core = trigger.closest('[data-flow-core]');
-  const panelId = trigger.getAttribute('aria-controls');
-  const panel = panelId ? document.getElementById(panelId) : null;
-  if (!(core instanceof HTMLElement) || !(panel instanceof HTMLElement)) return;
-  trigger.dataset.voiceBound = 'true';
-
-  const setOpen = (open) => {
-    trigger.setAttribute('aria-expanded', String(open));
-    panel.hidden = !open;
-    core.classList.toggle('is-voice-open', open);
-  };
-
-  trigger.addEventListener('click', () => setOpen(trigger.getAttribute('aria-expanded') !== 'true'));
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || trigger.getAttribute('aria-expanded') !== 'true') return;
-    setOpen(false);
-    trigger.focus();
-  });
-});
-
 const storySteps = [...document.querySelectorAll('[data-story-step]')];
 if (storySteps.length) {
   const storyObserver = new IntersectionObserver((entries) => {
@@ -433,6 +411,8 @@ if (!reduced) {
       });
     };
     lines.forEach(splitToChars);
+    // h2 ma pełny aria-label — pocięte znaki chowamy przed czytnikami ekranu.
+    lines.forEach((line) => line.setAttribute('aria-hidden', 'true'));
     if (manifestoChars.length) {
       gsap.from(manifestoChars, {
         opacity: 0,

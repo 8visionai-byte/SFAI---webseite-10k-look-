@@ -339,26 +339,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 @keyframes sweep { to { transform: rotate(360deg); } }
 
 /* Work / proof */
-.proof-section { padding: clamp(100px, 13vw, 200px) 0; background: var(--paper); color: var(--ink); }
-.proof-head { display: grid; grid-template-columns: repeat(12,1fr); gap: 20px; margin-bottom: 86px; }
-.proof-head .mono-label { grid-column: 1 / 3; color: #5c615e; padding-top: 11px; }
-.proof-head h2 { grid-column: 3 / 11; font-size: clamp(3.5rem, 7vw, 7.8rem); font-weight: 560; line-height: .9; letter-spacing: -.065em; }
-.proof-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 24px; }
-.proof-card { --proof-curtain: 0; position: relative; min-height: 650px; overflow: hidden; border-radius: 18px; background: var(--ink); color: var(--white); }
-.proof-card:nth-child(2) { min-height: 520px; align-self: end; background: #1c2031; }
-.proof-card-media { position: absolute; inset: 0; opacity: .72; }
-.proof-card-media img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.76) contrast(1.12); transition: transform .9s var(--ease-out); }
-.proof-card:hover img { transform: scale(1.04); }
-.proof-card::before,.proof-card::after { position: absolute; inset: 0; content: ''; pointer-events: none; }
-.proof-card::before { z-index: 3; background: linear-gradient(90deg,#0a0b0b,#121414); transform: scaleX(var(--proof-curtain)); transform-origin: right center; will-change: transform; }
-.proof-card::after { z-index: 1; background: linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.78)); }
-.proof-card-copy { position: absolute; z-index: 2; right: 30px; bottom: 30px; left: 30px; }
-.proof-card-copy h3 { max-width: 680px; margin-top: 20px; font-size: clamp(2.3rem, 4.2vw, 5.5rem); font-weight: 560; line-height: .91; letter-spacing: -.055em; }
-.proof-metrics { display: grid; grid-template-columns: repeat(3,1fr); margin-top: 28px; border-top: 1px solid rgba(255,255,255,.32); padding-top: 16px; }
-.proof-metrics strong { display: block; font-size: clamp(1.35rem,2.2vw,2.5rem); font-weight: 520; letter-spacing: -.04em; }
-.proof-metrics span { color: #b6bab6; font-family: var(--font-mono); font-size: .56rem; text-transform: uppercase; }
-.proof-note { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; border-top: 1px solid var(--line-dark); margin-top: 70px; padding-top: 18px; }
-.proof-note p { grid-column: 2; max-width: 650px; font-size: 1.1rem; }
+/* (stara sekcja proof-card usunięta — zastąpiona przez .proof-explore) */
 
 /* Process */
 .process-section { padding: clamp(110px, 15vw, 220px) 0; background: var(--ink); }
@@ -705,12 +686,11 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .sequence-copy { grid-column: 1 / 5; }.image-sequence { grid-column: 5 / -1; min-height: 470px; }
   .reel-heading h2 { grid-column: 3 / 10; }.reel-heading > p:last-child { grid-column: 10 / -1; }
   .insight-row { grid-template-columns: 1.2fr 3.4fr 2.2fr 28px; gap: 18px; }
-  .manifesto .mono-label, .section-heading .mono-label, .proof-head .mono-label, .process-title .mono-label, .content-grid > .mono-label { grid-column: 1 / 3; }
-  .manifesto h2, .section-heading h2, .proof-head h2, .process-title h2, .content-grid > h2 { grid-column: 3 / -1; }
+  .manifesto .mono-label, .section-heading .mono-label, .process-title .mono-label, .content-grid > .mono-label { grid-column: 1 / 3; }
+  .manifesto h2, .section-heading h2, .process-title h2, .content-grid > h2 { grid-column: 3 / -1; }
   .section-heading > p:not(.mono-label) { grid-column: 3 / 9; margin-top: 24px; }
   .service-card { min-height: 650px; }
   .service-card h3 { font-size: clamp(2.8rem,5vw,5rem); }
-  .proof-grid { grid-template-columns: 1fr 1fr; }
   .insights-grid { grid-template-columns: 1fr 1fr; }.insight-card:nth-child(3) { margin-top: 0; }
   .footer-grid { grid-template-columns: 1.5fr 1fr 1fr; }.footer-grid > div:last-child { grid-column: 2; }
   .feature-grid { grid-column: 3 / -1; }
@@ -747,8 +727,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .hero-scroll { display: none; }
   .marquee-track span::after { margin-inline: 24px; }
   .manifesto { padding-block: 100px; }
-  .manifesto-grid, .section-heading, .proof-head, .process-title, .content-grid { display: block; }
-  .manifesto h2, .section-heading h2, .proof-head h2, .process-title h2, .content-grid > h2 { margin-top: 30px; font-size: clamp(3rem,14vw,5rem); }
+  .manifesto-grid, .section-heading, .process-title, .content-grid { display: block; }
+  .manifesto h2, .section-heading h2, .process-title h2, .content-grid > h2 { margin-top: 30px; font-size: clamp(3rem,14vw,5rem); }
   .manifesto h2 { line-height: .93; }
   .manifesto-signals { margin-top: 42px; }
   .manifesto-signals li { grid-template-columns: minmax(150px,1fr) auto; gap: 14px; padding-block: 14px; font-size: .5rem; }
@@ -815,11 +795,6 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .service-card-copy { min-height: 500px; padding: 22px; }
   .service-card h3 { font-size: clamp(2.8rem,13vw,4.6rem); }
   .service-card-outcome { grid-template-columns: 72px 1fr; }
-  .proof-grid { display: block; }
-  .proof-card, .proof-card:nth-child(2) { min-height: 70svh; margin-bottom: 16px; }
-  .proof-card-copy { right: 20px; bottom: 20px; left: 20px; }
-  .proof-metrics { gap: 8px; }
-  .proof-metrics strong { font-size: 1.5rem; }
   .proof-note { display: block; margin-top: 40px; }
   .process-item { grid-template-columns: 38px 1fr; min-height: 145px; gap: 14px; }
   .process-item p { grid-column: 2; }
@@ -1015,13 +990,13 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 /* --- Progresywna mgła przy dole ekranu (Azurio .blur-container, 7 warstw x2 blur) --- */
 .mist-veil { position: fixed; right: 0; bottom: 0; left: 0; z-index: 40; height: clamp(130px, 21vh, 270px); pointer-events: none; }
 .mist-veil i { position: absolute; inset: 0; }
-.mist-veil i:nth-child(1) { backdrop-filter: blur(0.078125px); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 24%); mask-image: linear-gradient(to bottom, transparent 0%, #000 24%); }
-.mist-veil i:nth-child(2) { backdrop-filter: blur(0.15625px); -webkit-mask-image: linear-gradient(to bottom, transparent 12%, #000 36%); mask-image: linear-gradient(to bottom, transparent 12%, #000 36%); }
-.mist-veil i:nth-child(3) { backdrop-filter: blur(0.3125px); -webkit-mask-image: linear-gradient(to bottom, transparent 24%, #000 48%); mask-image: linear-gradient(to bottom, transparent 24%, #000 48%); }
-.mist-veil i:nth-child(4) { backdrop-filter: blur(0.625px); -webkit-mask-image: linear-gradient(to bottom, transparent 36%, #000 60%); mask-image: linear-gradient(to bottom, transparent 36%, #000 60%); }
-.mist-veil i:nth-child(5) { backdrop-filter: blur(1.25px); -webkit-mask-image: linear-gradient(to bottom, transparent 48%, #000 72%); mask-image: linear-gradient(to bottom, transparent 48%, #000 72%); }
-.mist-veil i:nth-child(6) { backdrop-filter: blur(2.5px); -webkit-mask-image: linear-gradient(to bottom, transparent 60%, #000 84%); mask-image: linear-gradient(to bottom, transparent 60%, #000 84%); }
-.mist-veil i:nth-child(7) { backdrop-filter: blur(5px); -webkit-mask-image: linear-gradient(to bottom, transparent 72%, #000 96%); mask-image: linear-gradient(to bottom, transparent 72%, #000 96%); }
+.mist-veil i:nth-child(1) { -webkit-backdrop-filter: blur(0.078125px); backdrop-filter: blur(0.078125px); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 24%); mask-image: linear-gradient(to bottom, transparent 0%, #000 24%); }
+.mist-veil i:nth-child(2) { -webkit-backdrop-filter: blur(0.15625px); backdrop-filter: blur(0.15625px); -webkit-mask-image: linear-gradient(to bottom, transparent 12%, #000 36%); mask-image: linear-gradient(to bottom, transparent 12%, #000 36%); }
+.mist-veil i:nth-child(3) { -webkit-backdrop-filter: blur(0.3125px); backdrop-filter: blur(0.3125px); -webkit-mask-image: linear-gradient(to bottom, transparent 24%, #000 48%); mask-image: linear-gradient(to bottom, transparent 24%, #000 48%); }
+.mist-veil i:nth-child(4) { -webkit-backdrop-filter: blur(0.625px); backdrop-filter: blur(0.625px); -webkit-mask-image: linear-gradient(to bottom, transparent 36%, #000 60%); mask-image: linear-gradient(to bottom, transparent 36%, #000 60%); }
+.mist-veil i:nth-child(5) { -webkit-backdrop-filter: blur(1.25px); backdrop-filter: blur(1.25px); -webkit-mask-image: linear-gradient(to bottom, transparent 48%, #000 72%); mask-image: linear-gradient(to bottom, transparent 48%, #000 72%); }
+.mist-veil i:nth-child(6) { -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); -webkit-mask-image: linear-gradient(to bottom, transparent 60%, #000 84%); mask-image: linear-gradient(to bottom, transparent 60%, #000 84%); }
+.mist-veil i:nth-child(7) { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); -webkit-mask-image: linear-gradient(to bottom, transparent 72%, #000 96%); mask-image: linear-gradient(to bottom, transparent 72%, #000 96%); }
 @media (max-width: 760px) { .mist-veil { height: 104px; } }
 
 /* Manifesto: znaki „pisane z mgły" (reveal-type) */
