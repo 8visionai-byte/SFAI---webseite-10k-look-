@@ -325,13 +325,14 @@ if (processRows.length && !reduced && !compactMotion) {
     foldTargets.forEach(({ row, inner }) => {
       const rect = row.getBoundingClientRect();
       if (rect.bottom < -140 || rect.top > window.innerHeight + 140) return;
-      // Odwzorowanie '5% top' -> 'bottom 40%': a=0 to start składania, b=0 to koniec.
-      const a = rect.top + rect.height * 0.05;
-      const b = rect.bottom - window.innerHeight * 0.4;
+      // Składanie zaczyna się WCZEŚNIEJ (góra karty przy ~22% ekranu) i jest MOCNIEJSZE (48st)
+      // — wyraźny efekt kładzenia na plecy z perspektywą (góra węższa, dół szerszy).
+      const a = rect.top - window.innerHeight * 0.22;
+      const b = rect.bottom - window.innerHeight * 0.52;
       const span = Math.max(1, b - a);
       const p = Math.min(1, Math.max(0, -a / span));
       gsap.set(inner, {
-        rotateX: 30 * p,
+        rotateX: 48 * p,
         opacity: 1 - 0.7 * p,
         filter: p > 0.005 ? `blur(${(4 * p).toFixed(2)}px)` : 'none',
       });
@@ -1079,12 +1080,14 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
   insightsListEl?.addEventListener('pointermove', (event) => {
     const row = event.target instanceof Element ? event.target.closest('[data-insight-row]') : null;
     const preview = row ? previewByRow.get(row) : null;
-    if (preview !== activeInsightPreview) {
+    // Szybkie machnięcia: kursor łapie przerwy MIĘDZY wierszami (row=null) — wtedy NIE chowamy,
+    // aktywny podgląd dalej płynie za kursorem. Zmiana tylko przy realnym wjeździe na inny wiersz.
+    if (row && preview !== activeInsightPreview) {
       if (activeInsightPreview) {
         gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.16, ease: 'power2.in', overwrite: true });
       }
       activeInsightPreview = preview ?? null;
-      if (activeInsightPreview && row) {
+      if (activeInsightPreview) {
         gsap.set(activeInsightPreview, { x: event.clientX, y: event.clientY });
         gsap.fromTo(activeInsightPreview, { scale: 0.6, opacity: 0 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'common', overwrite: true });
         runScramble(row.querySelector('[data-scramble]'));
