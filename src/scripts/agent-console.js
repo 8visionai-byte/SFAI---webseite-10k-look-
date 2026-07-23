@@ -147,10 +147,23 @@ if (consoleRoot instanceof HTMLElement) {
     if (voicePanel instanceof HTMLElement) voicePanel.hidden = currentMode !== 'voice';
   };
 
-  const openConsole = (mode = 'chat') => {
+  // Tryb docked: panel przypięty do prawej krawędzi, strona widoczna i przewijalna,
+  // rozmowa głosowa trwa dalej. Body dostaje 'agent-console-docked' zamiast
+  // 'agent-console-open', bo site.js zatrzymuje Lenisa na 'agent-console-open'
+  // (MutationObserver) — w docku scroll strony MUSI działać.
+  let isDocked = false;
+  const setDocked = (docked) => {
+    isDocked = Boolean(docked) && !consoleRoot.hidden;
+    consoleRoot.classList.toggle('is-docked', isDocked);
+    if (panel instanceof HTMLElement) panel.setAttribute('aria-modal', String(!isDocked));
+    document.body.classList.toggle('agent-console-docked', isDocked);
+    document.body.classList.toggle('agent-console-open', !consoleRoot.hidden && !isDocked);
+  };
+
+  const openConsole = (mode = 'chat', docked = false) => {
     previousFocus = document.activeElement;
     consoleRoot.hidden = false;
-    document.body.classList.add('agent-console-open');
+    setDocked(docked);
     if (fab instanceof HTMLElement) {
       fab.setAttribute('aria-hidden', 'true');
       fab.setAttribute('tabindex', '-1');
@@ -194,8 +207,8 @@ if (consoleRoot instanceof HTMLElement) {
   const closeConsole = () => {
     stopVoice();
     consoleRoot.hidden = true;
+    setDocked(false); // czyści 'agent-console-open' i 'agent-console-docked' na body
     flowCores.forEach((core) => core.classList.remove('is-voice-open'));
-    document.body.classList.remove('agent-console-open');
     if (fab instanceof HTMLElement) {
       fab.removeAttribute('aria-hidden');
       fab.removeAttribute('tabindex');
@@ -209,6 +222,9 @@ if (consoleRoot instanceof HTMLElement) {
     button.addEventListener('click', () => openConsole(button.getAttribute('data-agent-open') || 'chat'));
   });
   closeButtons.forEach((button) => button.addEventListener('click', closeConsole));
+  consoleRoot.querySelectorAll('[data-agent-undock]').forEach((button) => {
+    button.addEventListener('click', () => setDocked(false));
+  });
   modeButtons.forEach((button) => button.addEventListener('click', () => switchMode(button.getAttribute('data-agent-mode'))));
 
   consoleRoot.addEventListener('keydown', (event) => {
@@ -387,40 +403,89 @@ if (consoleRoot instanceof HTMLElement) {
     'o-nas': '/o-nas/',
     'kontakt': '/kontakt/',
   };
-  const NAV_DELAY_MS = 2_800;
+  // Ludzkie etykiety sekcji: temat wznowienia rozmowy po przejściu na podstronę.
+  const NAV_LABELS = {
+    'start': 'strona główna',
+    'uslugi': 'lista usług',
+    'architekci-wartosci-ai': 'usługa Architekci Wartości AI',
+    'chatboty-ai': 'usługa Chatboty AI',
+    'strony-www-seo-ai': 'usługa Strony WWW pod SEO i AI',
+    'voiceboty-ai': 'usługa Voiceboty AI',
+    'agenci-ai': 'usługa Agenci AI',
+    'automatyzacja-procesow': 'usługa Automatyzacja procesów',
+    'opieka-ai': 'usługa Opieka AI',
+    'jak-pracujemy': 'sposób pracy SimpleFast.ai',
+    'realizacje': 'realizacje',
+    'wiedza': 'baza wiedzy',
+    'o-nas': 'zespół SimpleFast.ai',
+    'kontakt': 'kontakt i diagnoza',
+  };
+  const RESUME_KEY = 'sfai-voice-resume';
+  const CROSS_PAGE_DELAY_MS = 1_400; // krótkie okno na dokończenie zdania przed przeładowaniem
   let navTimer = 0;
+  let resumeContext = null; // ustawiane przy automatycznym wznowieniu po przejściu na podstronę
 
-  const performNavigation = (sectionRaw) => {
+  // Znajdź cel scrolla na BIEŻĄCEJ stronie: sekcja po id (np. #uslugi na stronie
+  // głównej) albo karta usługi po linku wewnątrz #main. Lookup po linku działa
+  // TYLKO na stronie głównej (karty usług z opisami); na podstronach link do celu
+  // to zwykle przycisk CTA, a nie treść — wtedy lepsze jest przejście na podstronę.
+  const findLocalTarget = (section, path) => {
+    const byId = document.getElementById(section);
+    if (byId) return { element: byId, block: 'start' };
+    const onHomepage = (window.location.pathname.replace(/\/+$/, '') || '/') === '/';
+    if (onHomepage && path && path !== '/') {
+      const anchor = document.querySelector(`#main a[href="${path}"]`);
+      if (anchor) return { element: anchor.closest('article, li') || anchor, block: 'center' };
+    }
+    return null;
+  };
+
+  const performNavigation = (sectionRaw, modeRaw) => {
     const section = String(sectionRaw || '').trim();
+    const mode = modeRaw === 'open' ? 'open' : 'show';
     const path = NAV_TARGETS[section];
     if (!path) {
       return { ok: false, error: 'unknown_section', known_sections: Object.keys(NAV_TARGETS) };
     }
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
     const targetPath = path.replace(/\/+$/, '') || '/';
-    // Jeśli sekcja istnieje jako kotwica na bieżącej stronie (np. #uslugi na stronie
-    // głównej), przewijamy zamiast przeładowywać — rozmowa może trwać dalej po zamknięciu panelu.
-    const anchor = document.getElementById(section);
-    const willScroll = currentPath === targetPath || Boolean(anchor);
+    const samePage = currentPath === targetPath;
+    const local = section === 'start' && samePage ? null : findLocalTarget(section, path);
 
-    // Konsola zasłania stronę (modal + blokada scrolla), więc najpierw dajemy botowi
-    // chwilę na głosowe potwierdzenie, potem zamykamy panel i przenosimy użytkownika.
-    window.clearTimeout(navTimer);
-    navTimer = window.setTimeout(() => {
-      if (willScroll) {
-        closeConsole();
-        if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Priorytet: pokazać na bieżącej stronie. Panel dokuje się po prawej,
+    // strona przewija się obok, rozmowa trwa BEZ przerwy i bez przeładowania.
+    if (samePage || (mode !== 'open' && local)) {
+      setDocked(true);
+      window.clearTimeout(navTimer);
+      navTimer = window.setTimeout(() => {
+        if (local?.element) local.element.scrollIntoView({ behavior: 'smooth', block: local.block });
         else window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.location.href = path;
-      }
-    }, NAV_DELAY_MS);
+      }, 350); // chwila na przełożenie layoutu w tryb docked
+      return {
+        ok: true,
+        action: 'shown_on_current_page',
+        target: path,
+        note: 'Sekcja jest teraz widoczna obok panelu rozmowy. Rozmowa trwa, opowiadaj dalej.',
+      };
+    }
 
+    // Przejście na podstronę = pełne przeładowanie (strona statyczna), sesji audio
+    // nie da się utrzymać. Zapisujemy kontekst i wznawiamy rozmowę automatycznie.
+    try {
+      sessionStorage.setItem(RESUME_KEY, JSON.stringify({
+        docked: true,
+        topic: NAV_LABELS[section] || section,
+        target: path,
+        at: Date.now(),
+      }));
+    } catch {}
+    window.clearTimeout(navTimer);
+    navTimer = window.setTimeout(() => { window.location.href = path; }, CROSS_PAGE_DELAY_MS);
     return {
       ok: true,
-      action: willScroll ? 'scroll' : 'open_page',
+      action: 'open_page',
       target: path,
-      note: 'Użytkownik zostanie przeniesiony za około trzy sekundy. Potwierdź jednym krótkim, dokończonym zdaniem.',
+      note: 'Strona zaraz się otworzy, a rozmowa zostanie automatycznie wznowiona po przejściu. Dokończ tylko bieżące zdanie, nie żegnaj się.',
     };
   };
 
@@ -431,7 +496,7 @@ if (consoleRoot instanceof HTMLElement) {
       if (item?.type !== 'function_call' || item.name !== 'navigate_to' || !item.call_id) continue;
       let args = {};
       try { args = JSON.parse(item.arguments || '{}'); } catch {}
-      const result = performNavigation(args.section);
+      const result = performNavigation(args.section, args.mode);
       voiceChannel.send(JSON.stringify({
         type: 'conversation.item.create',
         item: {
@@ -440,7 +505,11 @@ if (consoleRoot instanceof HTMLElement) {
           output: JSON.stringify(result),
         },
       }));
-      voiceChannel.send(JSON.stringify({ type: 'response.create' }));
+      // Przy przejściu na podstronę nie prosimy o nową wypowiedź: strona zaraz się
+      // przeładuje, a kontynuację zapewnia automatyczne wznowienie z kontekstem.
+      if (result.action !== 'open_page') {
+        voiceChannel.send(JSON.stringify({ type: 'response.create' }));
+      }
     }
   };
 
@@ -533,11 +602,17 @@ if (consoleRoot instanceof HTMLElement) {
         const label = voiceStart.querySelector('span');
         if (label) label.textContent = 'Zakończ rozmowę';
         voiceStage?.classList.add('is-live');
+        // Po przejściu na podstronę w trakcie rozmowy: kontynuacja tematu zamiast
+        // powitania od zera (kontekst z sessionStorage, patrz performNavigation).
+        const greeting = resumeContext
+          ? `Użytkownik w trakcie rozmowy głosowej przeszedł właśnie na podstronę ${resumeContext.target} serwisu (temat rozmowy: ${resumeContext.topic}). Nawiąż jednym krótkim, w pełni dokończonym zdaniem do tematu i płynnie kontynuuj rozmowę naturalną, rodzimą polszczyzną. Nie przedstawiaj się od nowa, nie witaj się od zera i pod żadnym pozorem nie mów, że rozmowa została przerwana lub zakończona.`
+          : 'Przywitaj użytkownika naturalną, rodzimą polszczyzną z neutralnym, ogólnopolskim akcentem, jednym krótkim i w pełni dokończonym zdaniem, a potem zapytaj, w czym możesz pomóc jego firmie.';
+        resumeContext = null;
         voiceChannel?.send(JSON.stringify({
           type: 'response.create',
           response: {
             output_modalities: ['audio'],
-            instructions: 'Przywitaj użytkownika naturalną, rodzimą polszczyzną z neutralnym, ogólnopolskim akcentem, jednym krótkim i w pełni dokończonym zdaniem, a potem zapytaj, w czym możesz pomóc jego firmie.',
+            instructions: greeting,
           },
         }));
       });
@@ -611,4 +686,20 @@ if (consoleRoot instanceof HTMLElement) {
 
   voiceStart?.addEventListener('click', startVoice);
   window.addEventListener('pagehide', stopVoice);
+
+  // Automatyczne wznowienie rozmowy po przejściu na podstronę przez navigate_to:
+  // konsola otwiera się od razu w trybie docked i startuje nowa sesja głosowa
+  // z kontekstem tematu (flaga ważna 30 s, jednorazowa).
+  try {
+    const rawResume = sessionStorage.getItem(RESUME_KEY);
+    if (rawResume) {
+      sessionStorage.removeItem(RESUME_KEY);
+      const data = JSON.parse(rawResume);
+      if (data?.docked && Date.now() - (data.at || 0) < 30_000) {
+        resumeContext = data;
+        openConsole('voice', true);
+        startVoice();
+      }
+    }
+  } catch {}
 }

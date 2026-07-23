@@ -93,7 +93,7 @@ export default async function handler(request, response) {
         {
           type: 'function',
           name: 'navigate_to',
-          description: 'Przenieś użytkownika do wskazanej sekcji lub podstrony serwisu SimpleFast.ai. Używaj zawsze, gdy rozmówca prosi, aby coś pokazać, gdzieś go przenieść albo pyta, gdzie coś znaleźć.',
+          description: 'Pokaż użytkownikowi sekcję serwisu SimpleFast.ai na bieżącej stronie (mode "show", rozmowa trwa dalej) albo otwórz podstronę (mode "open"). Używaj zawsze, gdy rozmówca prosi, aby coś pokazać, gdzieś go przenieść albo pyta, gdzie coś znaleźć.',
           parameters: {
             type: 'object',
             properties: {
@@ -101,6 +101,11 @@ export default async function handler(request, response) {
                 type: 'string',
                 enum: NAV_SECTIONS,
                 description: 'Docelowa sekcja serwisu. „start” to strona główna, „uslugi” to lista usług, pozostałe to konkretne podstrony.',
+              },
+              mode: {
+                type: 'string',
+                enum: ['show', 'open'],
+                description: '„show” (domyślne) pokazuje sekcję na bieżącej stronie bez przerywania rozmowy; „open” przechodzi na osobną podstronę (tylko na wyraźną prośbę użytkownika).',
               },
             },
             required: ['section'],

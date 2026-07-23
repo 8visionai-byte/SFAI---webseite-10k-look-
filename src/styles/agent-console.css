@@ -633,3 +633,55 @@ body.agent-console-open { overflow: hidden; }
   .voice-agent-stage__states span,
   .voice-agent-stage__button { transition: none !important; }
 }
+
+/* ===== Tryb docked: rozmowa trwa, strona widoczna i przewijalna obok =====
+   Aktywowany przez navigate_to (agent-console.js). Body dostaje klasę
+   'agent-console-docked' (NIE 'agent-console-open'), więc site.js nie
+   zatrzymuje Lenisa i strona normalnie się przewija. */
+.agent-console.is-docked {
+  inset: 0 0 0 auto;
+  width: min(400px, calc(100vw - 12px));
+  padding: 10px;
+  place-items: stretch;
+  pointer-events: none;
+}
+
+.agent-console.is-docked .agent-console__panel {
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  box-shadow: -18px 0 60px rgba(4, 5, 5, .55);
+}
+
+.agent-console.is-docked .agent-console__backdrop { display: none; }
+.agent-console.is-docked .agent-console__workspace { grid-template-columns: 1fr; }
+.agent-console.is-docked .agent-console__rail { display: none; }
+.agent-console.is-docked .agent-console__status { display: none; }
+
+.agent-console.is-docked .agent-console__header {
+  min-height: 64px;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+}
+
+.agent-console__undock {
+  display: none;
+  align-items: center;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--white);
+  font-family: inherit;
+  font-size: .55rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.agent-console__undock:hover {
+  border-color: rgba(223, 255, 63, .68);
+  color: var(--lime);
+}
+
+.agent-console.is-docked .agent-console__undock { display: inline-flex; }
