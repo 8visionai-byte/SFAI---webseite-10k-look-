@@ -526,7 +526,7 @@ if (!reduced) {
         if (popTimer) return;
         popIndex = -1;
         cycleManifestoPop();
-        popTimer = window.setInterval(cycleManifestoPop, 420);
+        popTimer = window.setInterval(cycleManifestoPop, 1150);
       });
       manifestoHeading.addEventListener('pointerleave', () => {
         if (popTimer) window.clearInterval(popTimer);
@@ -778,11 +778,13 @@ if (!reduced) {
         yPercent: index % 2 === 0 ? -2 : 2.5,
         rotate: 0.8,
         opacity: 0,
+        filter: 'blur(10px)',
       }, {
         xPercent: compactMotion ? 5 : 7,
         yPercent: 0,
         rotate: 0.15,
         opacity: 0.94,
+        filter: 'blur(0px)',
         duration: 0.15,
         ease: 'none',
       }, entry);
@@ -1030,13 +1032,16 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     preview.setAttribute('aria-hidden', 'true');
     document.body.append(preview);
     // Podgląd rośnie od punktu najechania („od kropeczki") i ZOSTAJE w miejscu — nie podąża za kursorem.
+    // UWAGA: rozmiar mierzymy offsetWidth/Height (layout), NIE getBoundingClientRect —
+    // rect przy scale .05 zwracał ~35px i clamp spychał podgląd malutki w róg ekranu.
     row.addEventListener('pointerenter', (event) => {
-      const bounds = preview.getBoundingClientRect();
       const margin = 18;
-      const x = Math.min(innerWidth - bounds.width / 2 - margin, Math.max(bounds.width / 2 + margin, event.clientX));
-      const y = Math.min(innerHeight - bounds.height / 2 - margin, Math.max(bounds.height / 2 + margin, event.clientY));
+      const halfWidth = preview.offsetWidth / 2;
+      const halfHeight = preview.offsetHeight / 2;
+      const x = Math.min(innerWidth - halfWidth - margin, Math.max(halfWidth + margin, event.clientX));
+      const y = Math.min(innerHeight - halfHeight - margin, Math.max(halfHeight + margin, event.clientY));
       gsap.set(preview, { x, y });
-      preview.classList.add('is-visible');
+      requestAnimationFrame(() => preview.classList.add('is-visible'));
       runScramble(row.querySelector('[data-scramble]'));
     });
     row.addEventListener('pointerleave', () => preview.classList.remove('is-visible'));
