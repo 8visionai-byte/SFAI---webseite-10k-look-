@@ -843,8 +843,10 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .cinematic-outro { width: calc(100% - 24px); font-size: clamp(2.1rem,9vw,3.4rem); }
   .cinematic-outro > span { opacity: 1; }
   .cinematic-progress { display: none; }
-  .fog-statement { height: 350svh; }
+  /* Mobile light: krótszy przebieg + dryfują tylko 2 zdjęcia (subject + accent, patrz site.js). */
+  .fog-statement { height: 280svh; }
   .fog-statement__stage { min-height: min(560px,100svh); }
+  .fog-statement__image--background, .fog-statement__image--foreground { display: none; }
   .fog-statement__image--background { top: 8%; left: -18%; width: 88vw; height: 58%; }
   .fog-statement__image--subject { top: 18%; right: -20%; width: 92vw; height: 62%; }
   .fog-statement__image--foreground { right: auto; bottom: -5%; left: 50%; width: 62vw; height: 38%; }
@@ -891,8 +893,12 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .service-card h3 { font-size: clamp(2.8rem,13vw,4.6rem); }
   .service-card-outcome { grid-template-columns: 72px 1fr; }
   .proof-note { display: block; margin-top: 40px; }
-  .process-list { gap: 14px; perspective: none; }
+  /* Fold light na mobile: łagodniejsza perspektywa (JS kładzie karty pod kątem 28st). */
+  .process-list { gap: 14px; perspective: 900px; }
   .process-item-inner { grid-template-columns: 1fr; gap: 22px; min-height: 0; border-radius: 14px; padding: 18px; }
+  /* Mgłę góry karty robi półprzezroczysty gradient zamiast backdrop-filter (wydajność na dotyku);
+     maska z reguły bazowej dalej wygasza go ku dołowi karty. */
+  .process-item-inner::after { background: rgba(16,18,17,.88); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .process-item p { max-width: none; }
   .services-reel-section { padding-block: 0 70px; }
   /* Mobile: bez pinu — statyczna wersja (2 rzędy wielkiego tekstu, zdjęcie 100%, tytuł na zdjęciu). */
@@ -906,7 +912,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .reel-big__stage { position: relative; inset: auto; display: block; }
   .reel-big__media { width: 100%; aspect-ratio: .92; box-shadow: none; transform: none !important; }
   .reel-big__title { width: calc(100% - 28px); font-size: clamp(2.7rem,11.5vw,4.4rem); }
-  .reel-big__line > span { transform: none !important; }
+  /* Freeze tylko bez JS-owej gałęzi mobile (.reel-mobile-motion wyprowadza tytuł z maski). */
+  .reel-big:not(.reel-mobile-motion) .reel-big__line > span { transform: none !important; }
   .reel-big__badge, .reel-big__label { display: none; }
   .reel-intro { display: block; padding: 60px 0 45px; }
   .reel-intro > p:last-child { max-width: 420px; margin-top: 24px; }
@@ -917,7 +924,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .reel-card[aria-hidden='true'] { display: none; }
   .care-callout { height: auto; }
   .care-callout-sticky { position: static; height: auto; overflow: visible; }
-  .care-callout-visual img { filter: saturate(.72) contrast(1.08) !important; opacity: 1 !important; transform: none !important; }
+  /* Freeze tylko bez JS-owej gałęzi mobile (.care-mobile-motion daje zdjęciu miękkie wejście). */
+  .care-callout:not(.care-mobile-motion) .care-callout-visual img { filter: saturate(.72) contrast(1.08) !important; opacity: 1 !important; transform: none !important; }
   .care-callout-inner { display: block; min-height: auto; padding: 100px 0; }
   .care-callout h2 { margin-top: 34px; font-size: clamp(4.2rem,19vw,7rem); }
   .care-callout-copy { margin-top: 60px; }
@@ -930,6 +938,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .insight-row h3 { font-size: clamp(2.2rem,10.5vw,4rem); }
   .insight-row-arrow { position: absolute; right: 0; bottom: 14px; }
   .insight-preview { position: relative; top: auto; right: auto; left: auto; order: -1; width: 100%; aspect-ratio: 1.14; margin-bottom: 8px; opacity: 1; translate: none; transform: none !important; scale: 1; filter: none; }
+  /* W podglądzie w flow krążek CTA nie wisi na środku zdjęcia — mniejszy, w dolnym rogu. */
+  .insight-preview-cta { top: auto; left: auto; right: 12px; bottom: 12px; width: 76px; font-size: .5rem; transform: none; }
   .listing-card[data-insight-row] { display: flex; height: auto; min-height: 0; flex-direction: column; padding: 16px; }
   .listing-card[data-insight-row] .listing-card-copy { min-height: 360px; padding: 8px; }
   .listing-card[data-insight-row] .insight-preview { order: -1; }
@@ -1111,8 +1121,10 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .proof-explore__title span { display: block; }
 .proof-explore__kicker { position: absolute; z-index: 2; top: clamp(28px, 8vh, 88px); left: 50%; transform: translateX(-50%); color: #fff; mix-blend-mode: difference; letter-spacing: .14em; }
 @media (max-width: 760px) {
-  .proof-explore { height: 260svh; }
+  /* Mobile light: 3 zdjęcia przez środek zamiast 5 (JS animuje tylko pierwsze trzy). */
+  .proof-explore { height: 220svh; }
   .proof-explore__img { width: 66vw !important; height: 34% !important; left: 17vw !important; right: auto !important; }
+  .proof-explore__img--4, .proof-explore__img--5 { display: none; }
   .proof-explore__title { font-size: clamp(2.6rem, 12vw, 4.4rem); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1133,7 +1145,12 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .mist-veil i:nth-child(5) { -webkit-backdrop-filter: blur(1.25px); backdrop-filter: blur(1.25px); -webkit-mask-image: linear-gradient(to bottom, transparent 48%, #000 72%); mask-image: linear-gradient(to bottom, transparent 48%, #000 72%); }
 .mist-veil i:nth-child(6) { -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); -webkit-mask-image: linear-gradient(to bottom, transparent 60%, #000 84%); mask-image: linear-gradient(to bottom, transparent 60%, #000 84%); }
 .mist-veil i:nth-child(7) { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); -webkit-mask-image: linear-gradient(to bottom, transparent 72%, #000 96%); mask-image: linear-gradient(to bottom, transparent 72%, #000 96%); }
-@media (max-width: 760px) { .mist-veil { height: 104px; } }
+/* Mobile: zostają 3 najmocniejsze warstwy (blur 1.25/2.5/5px) — pierwsze cztery mają blur < 1px,
+   wizualnie niewidoczny na małym ekranie, a każda warstwa backdrop-filter kosztuje na dotyku. */
+@media (max-width: 760px) {
+  .mist-veil { height: 104px; }
+  .mist-veil i:nth-child(-n+4) { display: none; }
+}
 
 /* Manifesto: znaki „pisane z mgły" (reveal-type) */
 .manifesto h2 .mword { display: inline-block; white-space: nowrap; }

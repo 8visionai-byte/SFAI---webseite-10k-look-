@@ -322,7 +322,12 @@ if (processRows.length && !reduced) {
 // (getBoundingClientRect przy scrollu), NIE z pozycji ScrollTriggera: przypięte sekcje
 // wyżej zmieniają wysokość dokumentu i rozjeżdżały pozycje → karty gasły w złych miejscach.
 // Ta wersja matematycznie nie może się rozjechać: p=0 dopóki karta nie doszła do góry ekranu.
-if (processRows.length && !reduced && !compactMotion) {
+// Mobile/dotyk: ten sam fold w wersji light — kąt 28st zamiast 48st i mniejsze przygaszenie;
+// mgłę góry karty robi na mobile gradient w CSS (backdrop-filter bywa za ciężki na telefonach).
+// Desktop: wartości identyczne jak dotąd (48st / 0.55).
+if (processRows.length && !reduced) {
+  const foldAngle = compactMotion ? 28 : 48;
+  const foldFade = compactMotion ? 0.42 : 0.55;
   const foldTargets = processRows
     .map((row) => ({ row, inner: row.querySelector('[data-process-inner]') }))
     .filter((entry) => entry.inner);
@@ -338,7 +343,7 @@ if (processRows.length && !reduced && !compactMotion) {
       const p = Math.min(1, Math.max(0, -a / span));
       // Rozmycie GRADIENTEM (góra we mgle, dół ostry) robi ::after z backdrop-filter + maską;
       // tu sterujemy tylko jego siłą przez --fold. Jednolity blur zabijał efekt kładzenia.
-      gsap.set(inner, { rotateX: 48 * p, opacity: 1 - 0.55 * p });
+      gsap.set(inner, { rotateX: foldAngle * p, opacity: 1 - foldFade * p });
       inner.style.setProperty('--fold', p.toFixed(3));
     });
   };
@@ -585,6 +590,21 @@ if (!reduced) {
       careTl.to(careImg, { filter: 'blur(0px) saturate(.72) contrast(1.08)', duration: 0.17, ease: 'none' }, 0.45);
       careTl.to(careImg, { filter: 'blur(14px) saturate(.72) contrast(1.08)', opacity: 0.5, duration: 0.38, ease: 'none' }, 0.62);
     }
+  } else if (careCallout) {
+    // Mobile: sekcja zostaje statyczna (CSS), ale tło dostaje miękkie wejście (fade + dojazd
+    // skali) zamiast suchego bloku. Klasa .care-mobile-motion zdejmuje CSS-owy freeze
+    // (opacity/transform !important) TYLKO w gałęzi mobile — desktop nietknięty.
+    const careImg = careCallout.querySelector('.care-callout-visual img');
+    if (careImg) {
+      careCallout.classList.add('care-mobile-motion');
+      gsap.fromTo(careImg, { opacity: 0, scale: 1.08 }, {
+        opacity: 1,
+        scale: 1,
+        duration: 1.15,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: careCallout, start: 'top 72%', once: true },
+      });
+    }
   }
 
   // Wejście „Jeden przepływ": sekcja jak kartka 2D obrócona na sztorc, prostuje się przy scrollu.
@@ -601,25 +621,39 @@ if (!reduced) {
       ease: 'none',
       scrollTrigger: { trigger: '.system-story', start: 'top 94%', end: 'top 16%', scrub: narrativeScrub },
     });
+  } else if (storyGrid) {
+    // Mobile: ten sam gest w wersji light (mniejszy kąt, krótszy przebieg) — nie męczy na dotyku.
+    gsap.fromTo(storyGrid, {
+      rotateX: -18,
+      y: 36,
+      opacity: 0.3,
+      transformPerspective: 900,
+      transformOrigin: '50% 0%',
+    }, {
+      rotateX: 0,
+      y: 0,
+      opacity: 1,
+      ease: 'none',
+      scrollTrigger: { trigger: '.system-story', start: 'top 96%', end: 'top 42%', scrub: narrativeScrub },
+    });
   }
 
   // Przejścia MIĘDZY sekcjami: wejście jak obracana kartka 2D (subtelny flip), dla sekcji bez pinu.
-  if (!compactMotion) {
+  // Mobile: lżejszy wariant (rotateX -18, y 40) — desktop dostaje DOKŁADNIE dotychczasowe wartości.
+  {
+    const flipFrom = compactMotion
+      ? { rotateX: -18, y: 40, opacity: 0.28, transformPerspective: 900, transformOrigin: '50% 0%' }
+      : { rotateX: -44, y: 120, opacity: 0.1, transformPerspective: 1050, transformOrigin: '50% 0%' };
+    const flipEnd = compactMotion ? 'top 55%' : 'top 44%';
     ['.services-section > .section-shell', '.insights-section > .section-shell', '.reel-intro'].forEach((selector) => {
       const block = document.querySelector(selector);
       if (!block) return;
-      gsap.fromTo(block, {
-        rotateX: -44,
-        y: 120,
-        opacity: 0.1,
-        transformPerspective: 1050,
-        transformOrigin: '50% 0%',
-      }, {
+      gsap.fromTo(block, { ...flipFrom }, {
         rotateX: 0,
         y: 0,
         opacity: 1,
         ease: 'none',
-        scrollTrigger: { trigger: block, start: 'top 99%', end: 'top 44%', scrub: narrativeScrub },
+        scrollTrigger: { trigger: block, start: 'top 99%', end: flipEnd, scrub: narrativeScrub },
       });
     });
   }
@@ -628,8 +662,48 @@ if (!reduced) {
   // we wszystkich kierunkach. NIE timeline — ręczna interpolacja po self.progress w onUpdate.
   const cinematic = document.querySelector('[data-cinematic]');
   if (cinematic && compactMotion) {
-    // Dotyk/mobile: bez pinu — statyczny tytuł + okładka jako zwykły obraz (layout w CSS).
+    // Dotyk/mobile: bez pinu (8 ekranów pinu męczy na telefonie) — statyczny layout z CSS,
+    // ale z ładnym WEJŚCIEM: tytuł wyostrza się z mgły, okładka odsłania się clip-pathem
+    // z dojazdem skali (clip-path omija CSS-owy freeze `transform: none !important` na okładce),
+    // napis outro dochodzi na końcu. Wszystko once — zero scrubu, zero pinów.
     cinematic.classList.add('cinematic-static');
+    const staticIntroLines = [...cinematic.querySelectorAll('[data-cinematic-intro-line]')];
+    const staticOutroLines = [...cinematic.querySelectorAll('[data-cinematic-outro-line]')];
+    const staticCover = cinematic.querySelector('[data-cinematic-cover]');
+    const staticCoverImg = staticCover?.querySelector('img');
+    if (staticIntroLines.length) {
+      gsap.fromTo(staticIntroLines, { opacity: 0, y: 30, filter: 'blur(8px)' }, {
+        opacity: 1,
+        y: 0,
+        filter: 'blur(0px)',
+        duration: 0.85,
+        ease: 'power3.out',
+        stagger: 0.14,
+        scrollTrigger: { trigger: cinematic, start: 'top 74%', once: true },
+      });
+    }
+    if (staticCover) {
+      const staticCoverTl = gsap.timeline({
+        scrollTrigger: { trigger: staticCover, start: 'top 82%', once: true },
+      });
+      staticCoverTl.fromTo(staticCover, { clipPath: 'inset(12% 8% 12% 8%)' }, {
+        clipPath: 'inset(0% 0% 0% 0%)',
+        duration: 1,
+        ease: 'power3.out',
+      }, 0);
+      if (staticCoverImg) {
+        staticCoverTl.fromTo(staticCoverImg, { scale: 1.14 }, { scale: 1, duration: 1.25, ease: 'power3.out' }, 0);
+      }
+      if (staticOutroLines.length) {
+        staticCoverTl.fromTo(staticOutroLines, { opacity: 0, y: 16 }, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: 'power2.out',
+          stagger: 0.12,
+        }, 0.3);
+      }
+    }
   } else if (cinematic) {
     const shots = [...cinematic.querySelectorAll('[data-cinematic-shot]')];
     const introLines = [...cinematic.querySelectorAll('[data-cinematic-intro-line]')];
@@ -755,11 +829,19 @@ if (!reduced) {
     fogTimeline.fromTo(fogVeil, { opacity: 0.98 }, { opacity: 0.3, duration: 0.5, ease: 'none' }, 0.04);
     fogTimeline.to(fogVeil, { opacity: 0.78, duration: 0.18, ease: 'none' }, 0.82);
 
+    // Mobile: dryfują tylko 2 zdjęcia (subject + accent, indeksy 1 i 2) — mniej warstw
+    // z animowanym blurem naraz; pozostałe dwa chowa CSS w gałęzi mobile.
+    // Desktop: pełna czwórka z DOKŁADNIE dotychczasowymi oknami czasowymi.
+    const fogActive = compactMotion ? [1, 2] : null;
+    let fogOrder = 0;
     fogImages.forEach((image, index) => {
+      if (fogActive && !fogActive.includes(index)) return;
+      const order = fogOrder;
+      fogOrder += 1;
       const bitmap = image.querySelector('img');
       const drift = fogDrifts[index] ?? fogDrifts[0];
-      const entry = 0.26 + index * 0.08;
-      const exit = 0.8 + index * 0.02;
+      const entry = compactMotion ? 0.3 + order * 0.14 : 0.26 + index * 0.08;
+      const exit = compactMotion ? 0.74 + order * 0.05 : 0.8 + index * 0.02;
       const finalOpacity = fogOpacities[index] ?? 0.6;
 
       fogTimeline.fromTo(image, { opacity: 0 }, {
@@ -946,6 +1028,30 @@ if (!reduced) {
       });
       reelHover.addEventListener('pointerleave', () => reelBadge.classList.remove('is-active'));
     }
+  } else if (reelBig) {
+    // Mobile: layout statyczny zostaje (CSS), ale tytuł wyjeżdża z maski jak na desktopie,
+    // a zdjęcie dostaje miękki dojazd skali. Klasa .reel-mobile-motion zdejmuje CSS-owy
+    // freeze `transform: none !important` na liniach tytułu TYLKO w tej gałęzi.
+    const reelTitleLines = [...reelBig.querySelectorAll('[data-reel-big-line]')];
+    if (reelTitleLines.length) {
+      reelBig.classList.add('reel-mobile-motion');
+      gsap.set(reelTitleLines, { yPercent: 108 });
+      ScrollTrigger.create({
+        trigger: reelBig.querySelector('.reel-big__stage') ?? reelBig,
+        start: 'top 72%',
+        once: true,
+        onEnter: () => gsap.to(reelTitleLines, { yPercent: 0, duration: 0.85, ease: 'common', stagger: 0.09, overwrite: true }),
+      });
+    }
+    const reelImg = reelBig.querySelector('[data-reel-big-media] img');
+    if (reelImg) {
+      gsap.fromTo(reelImg, { scale: 1.12 }, {
+        scale: 1,
+        duration: 1.2,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: reelBig.querySelector('[data-reel-big-media]') ?? reelBig, start: 'top 82%', once: true },
+      });
+    }
   }
 
   document.querySelectorAll('.service-card').forEach((card) => {
@@ -1002,9 +1108,12 @@ if (!reduced) {
 
     // Zdjęcia wjeżdżają z dołu i przechodzą PRZEZ ŚRODEK za napisem (kontrast difference),
     // wyostrzając się znad dolnej mgły — ciągły przepływ, nie pojawianie się znikąd.
-    gsap.set(imgs, { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 });
-    imgs.forEach((img, index) => {
-      const at = 0.12 + index * 0.155;
+    // Mobile: 3 zdjęcia zamiast 5 (spokojniejszy rytm, mniej warstw naraz) — pozostałe dwa
+    // chowa CSS i NIE dostają gsap.set (na tabletach coarse >760px zostają na opacity 0 z CSS).
+    const proofImgs = compactMotion ? imgs.slice(0, 3) : imgs;
+    gsap.set(proofImgs, { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 });
+    proofImgs.forEach((img, index) => {
+      const at = compactMotion ? 0.16 + index * 0.21 : 0.12 + index * 0.155;
       proofTl.fromTo(img, { y: '112vh' }, { y: '-18vh', duration: 0.3, ease: 'none' }, at);
       // Ostrość od razu na dole — zdjęcie jest wyraźne ZANIM najedzie na napis.
       proofTl.fromTo(img, { filter: 'blur(9px)' }, { filter: 'blur(0px)', duration: 0.08, ease: 'none' }, at);
