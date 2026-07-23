@@ -1016,6 +1016,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .flow-core .flow-metal-fallback { opacity: 1; }
   .voice-core-trigger::before { animation: none; }
   .human-ai-bridge,.fog-statement,.system-explore { height: auto; }
+  .sequence-lab { height: auto; padding-block: 100px; }
+  .sequence-grid { position: static; height: auto; }
   .manifesto { height: auto; }
   .manifesto-sticky { position: static; display: block; height: auto; padding-block: 100px; }
   .care-callout { height: auto; }
@@ -1150,6 +1152,14 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 @media (max-width: 760px) {
   .mist-veil { height: 104px; }
   .mist-veil i:nth-child(-n+4) { display: none; }
+}
+
+/* Tablet dotykowy >760px: JS pomija animację care (compactMotion), więc pin 220svh
+   byłby martwym scrollem — sekcja wraca do statycznej wysokości (FIND-3 audytu). */
+@media (pointer: coarse) and (min-width: 761px) {
+  .care-callout { height: auto; }
+  .care-callout-sticky { position: static; height: auto; overflow: visible; }
+  .care-callout-visual img { filter: saturate(.72) contrast(1.08) !important; opacity: 1 !important; transform: none !important; }
 }
 
 /* Manifesto: znaki „pisane z mgły" (reveal-type) */

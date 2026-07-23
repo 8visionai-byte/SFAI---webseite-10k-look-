@@ -1077,9 +1077,10 @@ if (!reduced) {
     }
   });
 
-  const storyImage = document.querySelector('.story-media img');
-  if (storyImage) {
-    gsap.to(storyImage, {
+  // Parallax na WSZYSTKICH trzech klatkach story (nie tylko pierwszej) — bez skoku skali przy crossfade.
+  const storyImages = document.querySelectorAll('.story-media-frames img');
+  if (storyImages.length) {
+    gsap.to(storyImages, {
       scale: 1,
       yPercent: 4,
       ease: 'none',
@@ -1205,7 +1206,9 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
   });
   let activeInsightPreview = null;
   let pointerInsideInsights = false;
-  const insightsListEl = document.querySelector('.insights-list');
+  // .insights-list = strona główna; .listing-grid = /wiedza/ — bez tego podgląd na wiedzy
+  // był wyrywany do body i zawisał bez follow/hide (FIND-1 audytu).
+  const insightsListEl = document.querySelector('.insights-list, .listing-grid');
   insightsListEl?.addEventListener('pointermove', (event) => {
     pointerInsideInsights = true;
     const row = event.target instanceof Element ? event.target.closest('[data-insight-row]') : null;
@@ -1238,6 +1241,9 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
   // wcelował najpierw w przerwę i kontener nie zdążył złapać ruchu).
   previewByRow.forEach((preview, row) => {
     row.addEventListener('pointerenter', (event) => {
+      // Wiersz podjechał pod nieruchomy kursor przy scrollu — flaga musi stanąć TUTAJ,
+      // inaczej scroll-hide gasił świeżo pokazany podgląd (FIND-2 audytu).
+      pointerInsideInsights = true;
       if (activeInsightPreview === preview) return;
       if (activeInsightPreview) {
         gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.14, ease: 'power2.in', overwrite: true });
@@ -1266,16 +1272,17 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     });
   };
   window.addEventListener('scroll', hideAllInsightPreviews, { passive: true });
-  // Twarde bezpieczniki: zejście z listy lub wyjazd sekcji z ekranu ZAWSZE chowa podgląd
-  // (naprawia „zawieszony" podgląd wjeżdżający na sekcję bąbelków).
-  document.querySelector('.insights-list')?.addEventListener('pointerleave', hideAllInsightPreviews);
-  ScrollTrigger.create({
-    trigger: '.insights-section',
-    start: 'top bottom',
-    end: 'bottom top',
-    onLeave: hideAllInsightPreviews,
-    onLeaveBack: hideAllInsightPreviews,
-  });
+  // Bezpiecznik: wyjazd sekcji z ekranu ZAWSZE chowa podgląd. Trigger tworzony tylko tam,
+  // gdzie sekcja istnieje (na podstronach GSAP logował warning i tworzył martwy trigger).
+  if (document.querySelector('.insights-section')) {
+    ScrollTrigger.create({
+      trigger: '.insights-section',
+      start: 'top bottom',
+      end: 'bottom top',
+      onLeave: hideAllInsightPreviews,
+      onLeaveBack: hideAllInsightPreviews,
+    });
+  }
 }
 
 if (window.matchMedia('(pointer: fine)').matches && !reduced) {
