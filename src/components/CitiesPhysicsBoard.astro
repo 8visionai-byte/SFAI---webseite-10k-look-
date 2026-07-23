@@ -153,46 +153,33 @@ const instructionId = `${id}-instruction`;
       </div>
     </header>
 
-    <div
-      class="cities-physics__stage"
-      data-city-stage
-      data-testid="cities-physics-stage"
-    >
-      <div class="cities-physics__hud cities-physics__hud--top" aria-hidden="true">
-        <span>[ ZŁAP / PRZESUŃ / PUŚĆ ]</span>
-        <span>OBSZAR DZIAŁANIA / PL</span>
-      </div>
-
-      <p class="cities-physics__instruction" id={instructionId}>
-        Przeciągnij dowolne miasto. Banieczki żyją, odbijają się od siebie i od krawędzi.
-      </p>
-
-      <ul
-        class="cities-physics__world"
-        data-city-world
-        aria-label="Duże polskie miasta objęte zdalną współpracą SimpleFast.ai"
-        aria-describedby={instructionId}
-      >
-        {cities.map((city, index) => (
-          <li
-            class="cities-physics__bubble"
-            data-city-tile
-            data-city-index={index}
-            data-city={city}
-            data-pop={populationOf(city)}
-            data-accent={populationOf(city) >= ACCENT_THRESHOLD ? 'true' : 'false'}
-          >
-            <span>{city}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div class="cities-physics__hud cities-physics__hud--bottom" aria-hidden="true">
-        <span><i></i> SYSTEM ONLINE</span>
-        <span>CAŁA POLSKA / JEDEN STANDARD</span>
-      </div>
-    </div>
+    <div class="cities-physics__space" aria-hidden="true"></div>
   </div>
+
+  <p class="cities-physics__instruction" id={instructionId}>
+    Przeciągnij dowolne miasto. Banieczki żyją, odbijają się od siebie i od krawędzi.
+  </p>
+
+  <ul
+    class="cities-physics__world"
+    data-city-world
+    data-testid="cities-physics-stage"
+    aria-label="Duże polskie miasta objęte zdalną współpracą SimpleFast.ai"
+    aria-describedby={instructionId}
+  >
+    {cities.map((city, index) => (
+      <li
+        class="cities-physics__bubble"
+        data-city-tile
+        data-city-index={index}
+        data-city={city}
+        data-pop={populationOf(city)}
+        data-accent={populationOf(city) >= ACCENT_THRESHOLD ? 'true' : 'false'}
+      >
+        <span>{city}</span>
+      </li>
+    ))}
+  </ul>
 </section>
 
 <style>
@@ -242,11 +229,14 @@ const instructionId = `${id}-instruction`;
     transform: translateX(-50%);
   }
 
+  /* Tekst NAD banieczkami: wyższy z-index, a pointer-events: none
+     przepuszcza drag do warstwy fizyki (w nagłówku nie ma nic klikalnego). */
   .cities-physics__shell {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: min(calc(100% - 40px), 1540px);
     margin-inline: auto;
+    pointer-events: none;
   }
 
   .cities-physics__header {
@@ -275,6 +265,8 @@ const instructionId = `${id}-instruction`;
     font-weight: 520;
     letter-spacing: -0.075em;
     line-height: 0.82;
+    /* miękki granatowy cień oddziela tekst od baniek przelatujących pod spodem */
+    text-shadow: 0 0.35rem 1.6rem rgba(7, 16, 64, 0.45);
   }
 
   .cities-physics__header h2 em {
@@ -300,6 +292,7 @@ const instructionId = `${id}-instruction`;
     color: rgba(246, 247, 241, 0.76);
     font-size: clamp(1rem, 1.28vw, 1.2rem);
     line-height: 1.48;
+    text-shadow: 0 0.25rem 1.1rem rgba(7, 16, 64, 0.5);
   }
 
   .cities-physics__intro span {
@@ -309,104 +302,47 @@ const instructionId = `${id}-instruction`;
     letter-spacing: 0.11em;
   }
 
-  .cities-physics__stage {
-    position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.27);
-    background:
-      radial-gradient(circle at 50% 112%, rgba(223, 255, 63, 0.15), transparent 35%),
-      linear-gradient(180deg, rgba(8, 17, 73, 0.13), rgba(7, 16, 64, 0.42));
-    box-shadow:
-      inset 0 1px rgba(255, 255, 255, 0.12),
-      0 2.5rem 7rem rgba(5, 11, 50, 0.24);
-  }
-
-  .cities-physics__stage::before,
-  .cities-physics__stage::after {
-    position: absolute;
-    z-index: 4;
-    width: 1.15rem;
-    height: 1.15rem;
-    border-color: var(--cities-lime);
-    content: '';
+  /* Spacer trzyma wysokość sekcji pod nagłówkiem, gdy warstwa fizyki
+     jest absolute (full-bleed). W trybie flow (SSR / reduced) znika. */
+  .cities-physics__space {
+    display: none;
     pointer-events: none;
   }
 
-  .cities-physics__stage::before {
-    top: -1px;
-    left: -1px;
-    border-top: 1px solid;
-    border-left: 1px solid;
+  .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__space {
+    display: block;
+    height: clamp(43rem, 63vw, 53rem);
   }
 
-  .cities-physics__stage::after {
-    right: -1px;
-    bottom: -1px;
-    border-right: 1px solid;
-    border-bottom: 1px solid;
-  }
-
+  /* Instrukcja: dyskretny mono-label w lewym dolnym rogu sekcji, bez ramki */
   .cities-physics__instruction {
     position: absolute;
-    z-index: 5;
-    top: 1.35rem;
-    left: 50%;
-    max-width: min(30rem, 62%);
-    margin: 0;
-    color: rgba(246, 247, 241, 0.64);
-    font-family: var(--font-mono, monospace);
-    font-size: 0.58rem;
-    letter-spacing: 0.06em;
-    line-height: 1.5;
-    text-align: center;
-    text-transform: uppercase;
-    transform: translateX(-50%);
-  }
-
-  .cities-physics__hud {
-    position: absolute;
-    z-index: 5;
-    right: 1.25rem;
+    z-index: 3;
+    bottom: 1.1rem;
     left: 1.25rem;
-    display: flex;
-    justify-content: space-between;
-    color: rgba(246, 247, 241, 0.48);
+    max-width: 24rem;
+    margin: 0;
+    color: rgba(246, 247, 241, 0.55);
     font-family: var(--font-mono, monospace);
     font-size: 0.55rem;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
     pointer-events: none;
     text-transform: uppercase;
   }
 
-  .cities-physics__hud--top { top: 1.35rem; }
-  .cities-physics__hud--bottom { bottom: 1.25rem; }
-
-  .cities-physics__hud--bottom span:first-child {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    color: var(--cities-lime);
-  }
-
-  .cities-physics__hud--bottom i {
-    width: 0.4rem;
-    height: 0.4rem;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 1rem currentColor;
-  }
-
+  /* World bazowo (SSR / brak JS / reduced): statyczna chmura chipów w flow */
   .cities-physics__world {
     position: relative;
     display: flex;
-    height: clamp(43rem, 63vw, 53rem);
     align-content: center;
     align-items: center;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
-    overflow: hidden;
-    margin: 0;
-    padding: 4.6rem 1.25rem 4rem;
+    width: min(calc(100% - 40px), 1540px);
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3.5rem;
     list-style: none;
     touch-action: pan-y;
   }
@@ -446,7 +382,16 @@ const instructionId = `${id}-instruction`;
   /* Bańka: tryb fizyki — okrągła, rozmiar ustala JS inline.
      Premium glass: płaska tafla kobaltu odrobinę jaśniejsza od tła,
      cienki border, JEDEN delikatny inset u góry. Zero błysków. */
+  /* Tryb fizyki: world = pełna warstwa sekcji (full-bleed, bez akwarium).
+     Banieczki spadają z samej góry sekcji i krążą po całej jej wysokości,
+     przelatując POD tekstem nagłówka. Clipping robi overflow sekcji. */
   .cities-physics[data-physics-ready='true'][data-reduced='false'] .cities-physics__world {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: block;
+    width: auto;
+    margin: 0;
     padding: 0;
   }
 
@@ -498,10 +443,11 @@ const instructionId = `${id}-instruction`;
   }
 
   .cities-physics[data-reduced='true'] .cities-physics__world {
-    height: auto;
-    min-height: 0;
-    justify-content: center;
-    padding-block: 5rem;
+    padding-block: 3rem 4rem;
+  }
+
+  .cities-physics[data-reduced='true'] .cities-physics__instruction {
+    display: none;
   }
 
   .cities-physics[data-reduced='true'] .cities-physics__bubble {
@@ -520,7 +466,7 @@ const instructionId = `${id}-instruction`;
 
     .cities-physics__eyebrow { grid-column: auto; }
     .cities-physics__intro { min-height: 0; }
-    .cities-physics__world { height: 52rem; }
+    .cities-physics__space { height: 52rem; }
   }
 
   @media (max-width: 700px) {
@@ -536,25 +482,19 @@ const instructionId = `${id}-instruction`;
       font-size: clamp(3.7rem, 18vw, 6rem);
     }
 
+    .cities-physics__space { height: 46rem; }
+
     .cities-physics__world {
-      height: 46rem;
-      padding: 4.25rem 0.55rem 3.8rem;
+      width: calc(100% - 1.25rem);
+      padding: 1.5rem 0.55rem 3.2rem;
     }
 
     .cities-physics__instruction {
-      top: 2.15rem;
-      max-width: calc(100% - 2rem);
+      bottom: 0.9rem;
+      left: 0.65rem;
+      max-width: calc(100% - 1.3rem);
       font-size: 0.48rem;
     }
-
-    .cities-physics__hud {
-      right: 0.65rem;
-      left: 0.65rem;
-      font-size: 0.45rem;
-    }
-
-    .cities-physics__hud--top span:first-child { display: none; }
-    .cities-physics__hud--top { justify-content: flex-end; }
 
     .cities-physics__bubble {
       min-height: 1.7rem;
@@ -565,10 +505,11 @@ const instructionId = `${id}-instruction`;
 
   @media (prefers-reduced-motion: reduce) {
     .cities-physics__world {
-      height: auto;
-      min-height: 0;
-      justify-content: center;
-      padding-block: 5rem;
+      padding-block: 3rem 4rem;
+    }
+
+    .cities-physics__instruction {
+      display: none;
     }
 
     .cities-physics__bubble {
@@ -720,7 +661,9 @@ const instructionId = `${id}-instruction`;
 
       const area = width * height;
       const isMobile = width < 620;
-      const targetFill = isMobile ? 0.5 : 0.56;
+      // Full-bleed: plansza = cała sekcja (większa niż dawne akwarium),
+      // więc niższy współczynnik wypełnienia trzyma przewiewną kompozycję.
+      const targetFill = isMobile ? 0.46 : 0.5;
       const scale = (targetFill * area) / Math.max(1, totalPop);
       const minR = clamp(Math.min(width, height) * 0.05, isMobile ? 17 : 22, 46);
       const maxR = clamp(Math.min(width, height) * 0.17, minR + 8, isMobile ? 72 : 122);
