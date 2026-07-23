@@ -14,6 +14,13 @@ import seoAiCitationsImage from '../assets/generated/v4/service-geo-citation-eco
 import aiAgentControlImage from '../assets/generated/v4/service-agent-human-control.png';
 import processAutomationImage from '../assets/generated/v4/service-workflow-business-artifacts.png';
 import humanAiTouchImage from '../assets/generated/v3/human-ai-touch.png';
+import aiAgentControlV3Image from '../assets/generated/v3/ai-agent-control.png';
+import aiCareObservatoryV3Image from '../assets/generated/v3/ai-care-observatory.png';
+import chatbotKnowledgeV3Image from '../assets/generated/v3/chatbot-knowledge.png';
+import processAutomationV3Image from '../assets/generated/v3/process-automation.png';
+import seoAiCitationsV3Image from '../assets/generated/v3/seo-ai-citations.png';
+import valueArchitectureV3Image from '../assets/generated/v3/value-architecture.png';
+import voicebotRobotV3Image from '../assets/generated/v3/voicebot-robot.png';
 import storyFirstSignalImage from '../assets/generated/v4/story-01-first-signal.png';
 import storyValueDiagnosisImage from '../assets/generated/v4/story-02-value-diagnosis.png';
 import storyContextMemoryImage from '../assets/generated/v4/story-03-context-memory.png';
@@ -33,12 +40,33 @@ const serviceVisuals = {
   automation: { src: processAutomationImage, alt: 'Silnik automatyzacji przesyłający dane przez kolejne etapy procesu' },
   care: { src: careObservatoryImage, alt: 'Centrum monitorowania agentów AI z wykrytym wyjątkiem systemowym' },
 };
-const cinematicFrames = [
-  { src: storyFirstSignalImage, alt: 'Pierwszy sygnał z rozmowy, wiadomości, dokumentu i systemu firmy', label: 'Sygnał / wejście', side: 'right' },
-  { src: storyContextMemoryImage, alt: 'Kontekst firmy pobierany z uporządkowanej i kontrolowanej wiedzy', label: 'Kontekst / wiedza', side: 'left' },
-  { src: storyControlledActionImage, alt: 'Działanie agenta przechodzące przez bramkę kontroli człowieka', label: 'Decyzja / akcja', side: 'right' },
-  { src: storyObservableResultImage, alt: 'Zakończone zadanie z mierzalnym wynikiem i śladem kontroli', label: 'Wynik / kontrola', side: 'left' },
-];
+// Technika D (Azurio mxdHero3dImages): 22 zdjęcia rozlatujące się ze środka + okładka (story-06).
+// Kształty p=portret, l=landscape, s=kwadrat; przypisywane cyklicznie dla wizualnej różnorodności.
+const scatterShapes = ['p1', 'l1', 's1', 'p2', 'l2', 's2'];
+const cinematicScatter = [
+  storyFirstSignalImage,
+  valueArchitectureV3Image,
+  storyValueDiagnosisImage,
+  chatbotKnowledgeImage,
+  storyContextMemoryImage,
+  voicebotRobotV3Image,
+  storySystemArchitectureImage,
+  careObservatoryImage,
+  aiAgentControlV3Image,
+  storyLivePilotImage,
+  seoAiCitationsImage,
+  humanAiTouchImage,
+  storyObservableResultImage,
+  processAutomationV3Image,
+  valueArchitectureImage,
+  storyScaleCareImage,
+  chatbotKnowledgeV3Image,
+  aiAgentControlImage,
+  seoAiCitationsV3Image,
+  voicebotRobotImage,
+  aiCareObservatoryV3Image,
+  processAutomationImage,
+].map((src, index) => ({ src, shape: scatterShapes[index % scatterShapes.length] }));
 const sequenceCards = [
   {
     variant: 'tall',
@@ -192,30 +220,36 @@ const schema = {
     </section>
 
     <section class="cinematic-system" data-cinematic aria-label="System AI w ruchu">
-      <div class="cinematic-sticky">
-        <div class="cinematic-chapter"><span>[ System / 01—04 ]</span><span>Scroll to orchestrate</span></div>
-        <div class="cinematic-frames">
-          {cinematicFrames.map((frame, index) => (
-            <figure class:list={['cinematic-frame', `cinematic-frame-${index + 1}`, `is-${frame.side}`]} data-cinematic-frame={index}>
-              <Image
-                src={frame.src}
-                alt={frame.alt}
-                widths={[540, 820, 1100]}
-                sizes="(max-width: 760px) 82vw, 38vw"
-                format="webp"
-                quality={84}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchpriority={index === 0 ? 'high' : 'auto'}
-              />
-              <figcaption>{frame.label}</figcaption>
+      <div class="cinematic-stage">
+        <div class="cinematic-chapter"><span>[ System / w ruchu ]</span><span>Scroll to orchestrate</span></div>
+        <h2 class="cinematic-title" aria-label="Od pierwszego sygnału do działania pod kontrolą.">
+          <span aria-hidden="true" data-cinematic-intro-line>Od pierwszego</span>
+          <span aria-hidden="true" data-cinematic-intro-line><em>sygnału</em></span>
+        </h2>
+        <div class="cinematic-scatter" aria-hidden="true">
+          {cinematicScatter.map((shot) => (
+            <figure class:list={['cinematic-shot', `cinematic-shot--${shot.shape}`]} data-cinematic-shot>
+              <Image src={shot.src} alt="" widths={[480, 760, 1080]} sizes="30vw" format="webp" quality={78} loading="lazy" />
             </figure>
           ))}
         </div>
-        <h2 class="cinematic-title" aria-label="Od pierwszego sygnału do działania pod kontrolą">
-          <span><span data-cinematic-line>Od pierwszego <em>sygnału</em></span></span>
-          <span><span data-cinematic-line>do działania</span></span>
-          <span><span data-cinematic-line>pod kontrolą.</span></span>
-        </h2>
+        <div class="cinematic-cover-layer">
+          <figure class="cinematic-cover" data-cinematic-cover>
+            <Image
+              src={storyControlledActionImage}
+              alt="Działanie agenta przechodzące przez bramkę kontroli człowieka"
+              widths={[960, 1440, 1920]}
+              sizes="100vw"
+              format="webp"
+              quality={85}
+              loading="lazy"
+            />
+            <p class="cinematic-outro" aria-hidden="true">
+              <span data-cinematic-outro-line>do działania</span>
+              <span data-cinematic-outro-line><em>pod kontrolą.</em></span>
+            </p>
+          </figure>
+        </div>
         <div class="cinematic-progress" aria-hidden="true"><i data-cinematic-progress></i></div>
       </div>
     </section>

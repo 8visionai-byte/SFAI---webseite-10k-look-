@@ -600,68 +600,90 @@ if (!reduced) {
     });
   }
 
+  // Technika D z Azurio (mxdHero3dImages): sekcja pinowana, zdjęcia wylatują ZE ŚRODKA
+  // we wszystkich kierunkach. NIE timeline — ręczna interpolacja po self.progress w onUpdate.
   const cinematic = document.querySelector('[data-cinematic]');
-  if (cinematic) {
-    const frames = [...cinematic.querySelectorAll('[data-cinematic-frame]')];
-    const titleLines = cinematic.querySelectorAll('[data-cinematic-line]');
+  if (cinematic && compactMotion) {
+    // Dotyk/mobile: bez pinu — statyczny tytuł + okładka jako zwykły obraz (layout w CSS).
+    cinematic.classList.add('cinematic-static');
+  } else if (cinematic) {
+    const shots = [...cinematic.querySelectorAll('[data-cinematic-shot]')];
+    const introLines = [...cinematic.querySelectorAll('[data-cinematic-intro-line]')];
+    const outroLines = [...cinematic.querySelectorAll('[data-cinematic-outro-line]')];
+    const cover = cinematic.querySelector('[data-cinematic-cover]');
     const progressLine = cinematic.querySelector('[data-cinematic-progress]');
-    const timeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: cinematic,
-        start: 'clamp(top top)',
-        end: 'clamp(bottom bottom)',
-        scrub: galleryScrub,
-      },
-    });
-    gsap.set(titleLines, { yPercent: 120, opacity: 0, filter: 'blur(8px)' });
+    const clamp01 = gsap.utils.clamp(0, 1);
+
+    // ~20+ wektorów kierunków (boki, rogi, góra-dół) — jeden na zdjęcie.
+    const scatterDirections = [
+      { x: 1.3, y: 0.7 }, { x: -1.5, y: 1.0 }, { x: 1.1, y: -1.3 }, { x: -0.9, y: -1.5 },
+      { x: 1.7, y: 0.2 }, { x: -1.8, y: -0.3 }, { x: 0.4, y: 1.6 }, { x: -0.5, y: -1.7 },
+      { x: 1.5, y: 1.2 }, { x: -1.3, y: 1.4 }, { x: 1.6, y: -0.8 }, { x: -1.6, y: 0.6 },
+      { x: 0.8, y: 1.4 }, { x: -0.7, y: 1.6 }, { x: 0.9, y: -1.6 }, { x: -1.1, y: -1.2 },
+      { x: 1.9, y: -0.4 }, { x: -2.0, y: 0.3 }, { x: 0.2, y: -1.8 }, { x: -0.2, y: 1.8 },
+      { x: 1.4, y: 1.5 }, { x: -1.4, y: -1.4 },
+    ];
+    const scatterStart = { x: 0, y: 0, z: -1000, scale: 0 };
+    const scatterMultiplier = 0.5;
+    let scatterEnds = [];
+    const computeScatter = () => {
+      scatterEnds = shots.map((_, index) => {
+        const dir = scatterDirections[index % scatterDirections.length];
+        return {
+          x: dir.x * window.innerWidth * scatterMultiplier,
+          y: dir.y * window.innerHeight * scatterMultiplier,
+          z: 2000,
+          scale: 1,
+        };
+      });
+    };
+    computeScatter();
+
+    // Start: punkt w centrum, głęboko „w ekranie". xPercent/yPercent centrują niezależnie od x/y.
+    gsap.set(shots, { xPercent: -50, yPercent: -50, x: 0, y: 0, z: scatterStart.z, scale: 0, opacity: 1, force3D: true });
+    gsap.set(cover, { z: -1000, scale: 0, opacity: 1, force3D: true });
+    gsap.set(progressLine, { scaleX: 0, transformOrigin: 'left center' });
+
+    const renderCinematic = (progress) => {
+      shots.forEach((shot, index) => {
+        const p = Math.max(0, (progress - index * 0.03) * 4);
+        const end = scatterEnds[index];
+        gsap.set(shot, {
+          x: gsap.utils.interpolate(scatterStart.x, end.x, p),
+          y: gsap.utils.interpolate(scatterStart.y, end.y, p),
+          z: gsap.utils.interpolate(scatterStart.z, end.z, p),
+          scale: gsap.utils.interpolate(scatterStart.scale, end.scale, p * 2),
+        });
+      });
+      // Tytuł intro gaśnie w oknie 0.60–0.75 (per linia, z lekkim przesunięciem).
+      introLines.forEach((line, index) => {
+        gsap.set(line, { opacity: 1 - clamp01((progress - (0.6 + index * 0.04)) / 0.11) });
+      });
+      // Okładka wyłania się od 0.70: z -1000 → 0, scale 0 → 1 (pełny kadr ok. 0.95).
+      const coverP = Math.max(0, (progress - 0.7) * 4);
+      gsap.set(cover, { z: -1000 + 1000 * Math.min(1, coverP), scale: Math.min(1, coverP * 2) });
+      // Napis outro na okładce w oknie 0.80–0.95 (per linia).
+      outroLines.forEach((line, index) => {
+        gsap.set(line, { opacity: clamp01((progress - (0.8 + index * 0.05)) / 0.1) });
+      });
+      if (progressLine) gsap.set(progressLine, { scaleX: progress });
+    };
+
     ScrollTrigger.create({
       trigger: cinematic,
-      start: 'top 62%',
-      once: true,
-      onEnter: () => gsap.to(titleLines, {
-        yPercent: 0,
-        opacity: 1,
-        filter: 'blur(0px)',
-        duration: 0.7,
-        ease: 'power3.out',
-        stagger: 0.16,
-      }),
+      start: 'top top',
+      end: () => '+=' + window.innerHeight * 8,
+      pin: true,
+      pinSpacing: true,
+      anticipatePin: 1,
+      scrub: 1,
+      invalidateOnRefresh: true,
+      onRefresh: (self) => {
+        computeScatter();
+        renderCinematic(self.progress);
+      },
+      onUpdate: (self) => renderCinematic(self.progress),
     });
-
-    // Styl „Few words" z Azurio: napis stoi na środku, karty PŁYNĄ z dołu do góry,
-    // odsłaniają się od lewej (clip-path) i wyostrzają wychodząc znad dolnej mgły.
-    frames.forEach((frame, index) => {
-      const bitmap = frame.querySelector('img');
-      const at = 0.04 + index * 0.22;
-
-      gsap.set(frame, { '--sfai-curtain': 0, opacity: 1 });
-      timeline.fromTo(frame, {
-        y: '108vh',
-      }, {
-        y: '-16vh',
-        duration: 0.3,
-        ease: 'none',
-      }, at);
-      // Ostrość łapana WCZEŚNIE — zanim karta dojedzie do napisu, jest już wyraźna.
-      timeline.fromTo(frame, {
-        clipPath: 'inset(0% 56% 0% 0%)',
-        filter: 'blur(7px)',
-      }, {
-        clipPath: 'inset(0% 0% 0% 0%)',
-        filter: 'blur(0px)',
-        duration: 0.09,
-        ease: 'none',
-      }, at);
-      timeline.to(frame, {
-        y: '-134vh',
-        duration: 0.26,
-        ease: 'none',
-      }, at + 0.3);
-      if (bitmap) {
-        timeline.fromTo(bitmap, { scale: 1.06 }, { scale: 1, duration: 0.42, ease: 'none' }, at);
-      }
-    });
-    timeline.fromTo(progressLine, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 1.02, ease: 'none' }, 0);
   }
 
   const fogStatement = document.querySelector('[data-fog-statement]');
