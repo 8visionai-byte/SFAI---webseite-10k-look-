@@ -217,7 +217,17 @@ if (consoleRoot instanceof HTMLElement) {
     if (previousFocus instanceof HTMLElement) previousFocus.focus();
   };
 
-  fab?.addEventListener('click', () => openConsole('chat'));
+  // FAB: od razu agent głosowy w trybie docked (panel z prawej, strona widoczna),
+  // sesja startuje automatycznie (przeglądarka zapyta o mikrofon). Czat pozostaje
+  // dostępny jako druga zakładka. Ewentualny klik przy otwartym docku = pełne okno.
+  fab?.addEventListener('click', () => {
+    if (!consoleRoot.hidden) {
+      setDocked(false);
+      return;
+    }
+    openConsole('voice', true);
+    startVoice();
+  });
   document.querySelectorAll('[data-agent-open]').forEach((button) => {
     button.addEventListener('click', () => openConsole(button.getAttribute('data-agent-open') || 'chat'));
   });

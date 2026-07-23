@@ -72,11 +72,10 @@ export default async function handler(request, response) {
     });
   }
 
-  // Defensywnie: na hostingu może wisieć stara ręczna wartość OPENAI_VOICE=marin
-  // (brzmiała nie-polsko). Traktujemy ją jak przestarzałą i wymuszamy 'cedar',
-  // dopóki ktoś świadomie nie ustawi innego głosu.
-  let voice = (process.env.OPENAI_VOICE || '').trim();
-  if (!voice || voice === 'marin') voice = 'cedar';
+  // Głos domyślny: marin — kobiecy wariant z pary najwyższej jakości rekomendowanej
+  // w docs OpenAI (marin/cedar). Charakter (młoda, zdecydowana ekspertka) dostrajają
+  // instrukcje w _knowledge.mjs. Env OPENAI_VOICE jest respektowane bez przepisywania.
+  const voice = (process.env.OPENAI_VOICE || '').trim() || 'marin';
 
   const sessionConfig = {
     session: {

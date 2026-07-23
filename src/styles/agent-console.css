@@ -656,13 +656,16 @@ body.agent-console-open { overflow: hidden; }
 .agent-console.is-docked .agent-console__backdrop { display: none; }
 .agent-console.is-docked .agent-console__workspace { grid-template-columns: 1fr; }
 .agent-console.is-docked .agent-console__rail { display: none; }
-.agent-console.is-docked .agent-console__status { display: none; }
 
+/* Pigułka statusu zostaje widoczna w docku: to jedyny czytelny sygnał stanów
+   „oczekuje na klucz” / „brak mikrofonu” / „limit rozmów” przy auto-starcie z FAB. */
 .agent-console.is-docked .agent-console__header {
   min-height: 64px;
-  grid-template-columns: 1fr auto auto;
-  gap: 10px;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 8px;
 }
+
+.agent-console.is-docked .agent-console__kicker { display: none; }
 
 .agent-console__undock {
   display: none;
