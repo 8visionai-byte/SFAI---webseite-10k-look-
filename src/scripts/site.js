@@ -300,19 +300,20 @@ if (processRows.length && !reduced) {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
       const row = entry.target;
-      const title = row.querySelector('[data-process-scramble]');
+      // Kodowanie na PRAWYM opisie (decyzja Pawła) — tytuły po lewej zostają statyczne.
+      const description = row.querySelector('.process-item-inner > p');
       const rowIndex = Math.max(0, processRows.indexOf(row));
-      window.setTimeout(() => runProcessScramble(row, title), rowIndex * 80);
+      window.setTimeout(() => runProcessScramble(row, description), rowIndex * 80);
       processObserver.unobserve(row);
     });
   }, { threshold: 0.52, rootMargin: '0px 0px -8% 0px' });
 
   processRows.forEach((row) => {
-    const title = row.querySelector('[data-process-scramble]');
-    if (!(title instanceof HTMLElement)) return;
+    const description = row.querySelector('.process-item-inner > p');
+    if (!(description instanceof HTMLElement)) return;
     processObserver.observe(row);
-    row.addEventListener('pointerenter', () => runProcessScramble(row, title));
-    row.addEventListener('focusin', () => runProcessScramble(row, title));
+    row.addEventListener('pointerenter', () => runProcessScramble(row, description));
+    row.addEventListener('focusin', () => runProcessScramble(row, description));
   });
 }
 
@@ -604,7 +605,7 @@ if (!reduced) {
 
   // Przejścia MIĘDZY sekcjami: wejście jak obracana kartka 2D (subtelny flip), dla sekcji bez pinu.
   if (!compactMotion) {
-    ['.services-section > .section-shell', '.insights-section > .section-shell', '.video-triptych', '.reel-intro'].forEach((selector) => {
+    ['.services-section > .section-shell', '.insights-section > .section-shell', '.reel-intro'].forEach((selector) => {
       const block = document.querySelector(selector);
       if (!block) return;
       gsap.fromTo(block, {
@@ -1094,8 +1095,10 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     previewByRow.set(row, preview);
   });
   let activeInsightPreview = null;
+  let pointerInsideInsights = false;
   const insightsListEl = document.querySelector('.insights-list');
   insightsListEl?.addEventListener('pointermove', (event) => {
+    pointerInsideInsights = true;
     const row = event.target instanceof Element ? event.target.closest('[data-insight-row]') : null;
     const preview = row ? previewByRow.get(row) : null;
     // Szybkie machnięcia: kursor łapie przerwy MIĘDZY wierszami (row=null) — wtedy NIE chowamy,
@@ -1137,12 +1140,16 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     });
   });
   insightsListEl?.addEventListener('pointerleave', () => {
+    pointerInsideInsights = false;
     if (activeInsightPreview) {
       gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
       activeInsightPreview = null;
     }
   });
   const hideAllInsightPreviews = () => {
+    // Kursor nad listą = NIE chowaj (scroll-hide walczył z hoverem podczas dojeżdżania
+    // płynnego scrolla i podgląd znikał zaraz po pojawieniu — stąd "za którymś razem").
+    if (pointerInsideInsights) return;
     document.querySelectorAll('.insight-preview').forEach((preview) => {
       if (Number(gsap.getProperty(preview, 'opacity')) > 0.05) {
         gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
