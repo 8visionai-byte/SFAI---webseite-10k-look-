@@ -639,9 +639,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .reel-big__bg { position: absolute; z-index: 1; inset: 0; display: grid; align-content: center; gap: 1.2vw; pointer-events: none; user-select: none; }
 .reel-big__row { color: var(--paper-2); font-size: clamp(96px,17.5vw,310px); font-weight: 600; line-height: .82; letter-spacing: -.055em; text-transform: uppercase; white-space: nowrap; }
 .reel-big__row { will-change: transform; }
-.reel-big__row:nth-child(1) { margin-left: -7vw; animation: reel-drift-r 22s linear infinite alternate; }
-.reel-big__row:nth-child(2) { margin-left: 3vw; animation: reel-drift-l 26s linear infinite alternate; }
-.reel-big__row:nth-child(3) { margin-left: -13vw; animation: reel-drift-r 30s linear infinite alternate; }
+.reel-big__row:nth-child(1) { margin-left: -7vw; animation: reel-drift-r 11s linear infinite alternate; }
+.reel-big__row:nth-child(2) { margin-left: 3vw; animation: reel-drift-l 13s linear infinite alternate; }
+.reel-big__row:nth-child(3) { margin-left: -13vw; animation: reel-drift-r 15s linear infinite alternate; }
 @keyframes reel-drift-r { from { transform: translateX(-4vw); } to { transform: translateX(7vw); } }
 @keyframes reel-drift-l { from { transform: translateX(4vw); } to { transform: translateX(-7vw); } }
 @media (prefers-reduced-motion: reduce) { .reel-big__row { animation: none; } }
@@ -1017,7 +1017,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   isolation: isolate;
 }
 .video-divider--sm { height: 42vh; min-height: 300px; }
-.video-divider--xs { height: 30vh; min-height: 210px; }
+.video-divider--xs { height: 38vh; min-height: 260px; }
 .fog-statement__copy .fog-ai { color: var(--lime); font-style: normal; }
 .video-triptych { display: grid; gap: 4px; background: var(--ink); }
 .video-divider--lg { height: 78vh; min-height: 460px; }

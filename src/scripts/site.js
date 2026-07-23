@@ -153,8 +153,8 @@ const runScramble = (element) => {
   const currentTimer = scrambleTimers.get(element);
   if (currentTimer) window.clearInterval(currentTimer);
   let frame = 0;
-  // Dłuższe teksty składają się szybciej na znak, żeby całość trwała podobnie (~2,5 s max).
-  const rate = Math.max(1, original.length / 60);
+  // Dłuższe teksty składają się szybciej na znak, żeby całość trwała podobnie (~3,5 s max).
+  const rate = Math.max(1, original.length / 95);
   const timer = window.setInterval(() => {
     const resolved = Math.floor((frame * rate) / 2);
     element.textContent = [...original].map((character, index) => {
@@ -167,7 +167,7 @@ const runScramble = (element) => {
       element.textContent = original;
       scrambleTimers.delete(element);
     }
-  }, 44);
+  }, 56);
   scrambleTimers.set(element, timer);
 };
 
@@ -366,37 +366,7 @@ if (hero) {
       onRefresh: (self) => applyHeroProgress(self.progress),
     });
 
-    const heroCopy = hero.querySelector('.hero-copy');
-    const heroVisual = hero.querySelector('.flow-core');
-    const heroBottom = hero.querySelector('.hero-bottom');
-    const heroSide = hero.querySelector('.hero-side-list');
-    const exitTargets = [heroCopy, heroBottom, heroSide].filter(Boolean);
-    const heroExit = gsap.timeline({
-      scrollTrigger: {
-        trigger: hero,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: narrativeScrub,
-      },
-    });
-    heroExit.to(exitTargets, {
-      y: -24,
-      opacity: 0.08,
-      filter: 'blur(5px)',
-      stagger: 0.025,
-      duration: 0.34,
-      ease: 'none',
-    }, 0.56);
-    if (heroVisual) {
-      heroExit.to(heroVisual, {
-        yPercent: -3,
-        scale: 0.96,
-        opacity: 0.2,
-        filter: 'blur(3px)',
-        duration: 0.4,
-        ease: 'none',
-      }, 0.5);
-    }
+    // Hero zostaje w PEŁNYM kontraście do końca (decyzja Pawła) — bez przygaszania/rozmycia przy scrollu.
     applyHeroProgress(0);
   }
 }
@@ -606,6 +576,27 @@ if (!reduced) {
       opacity: 1,
       ease: 'none',
       scrollTrigger: { trigger: '.system-story', start: 'top 94%', end: 'top 16%', scrub: narrativeScrub },
+    });
+  }
+
+  // Przejścia MIĘDZY sekcjami: wejście jak obracana kartka 2D (subtelny flip), dla sekcji bez pinu.
+  if (!compactMotion) {
+    ['.services-section > .section-shell', '.process-section > .section-shell', '.insights-section > .section-shell', '.video-triptych', '.reel-intro'].forEach((selector) => {
+      const block = document.querySelector(selector);
+      if (!block) return;
+      gsap.fromTo(block, {
+        rotateX: -26,
+        y: 72,
+        opacity: 0.22,
+        transformPerspective: 1200,
+        transformOrigin: '50% 0%',
+      }, {
+        rotateX: 0,
+        y: 0,
+        opacity: 1,
+        ease: 'none',
+        scrollTrigger: { trigger: block, start: 'top 97%', end: 'top 52%', scrub: narrativeScrub },
+      });
     });
   }
 
@@ -1049,19 +1040,15 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     document.body.append(preview);
     // Podgląd W punkcie kursora (Azurio): pojawia się od razu tam, gdzie myszka, i płynnie za nią podąża.
     // Rozmiar mierzony offsetWidth/Height (layout), NIE getBoundingClientRect (scale fałszował wymiar).
-    const xTo = gsap.quickTo(preview, 'x', { duration: 0.35, ease: 'power3' });
-    const yTo = gsap.quickTo(preview, 'y', { duration: 0.35, ease: 'power3' });
+    const xTo = gsap.quickTo(preview, 'x', { duration: 0.28, ease: 'power3' });
+    const yTo = gsap.quickTo(preview, 'y', { duration: 0.28, ease: 'power3' });
+    // DOKŁADNIE w centrum kursora — bez clampowania do krawędzi (spychało podgląd pod/nad myszkę).
     const placePreview = (event, immediate) => {
-      const margin = 14;
-      const halfWidth = preview.offsetWidth / 2;
-      const halfHeight = preview.offsetHeight / 2;
-      const x = Math.min(innerWidth - halfWidth - margin, Math.max(halfWidth + margin, event.clientX));
-      const y = Math.min(innerHeight - halfHeight - margin, Math.max(halfHeight + margin, event.clientY));
       if (immediate) {
-        gsap.set(preview, { x, y });
+        gsap.set(preview, { x: event.clientX, y: event.clientY });
       } else {
-        xTo(x);
-        yTo(y);
+        xTo(event.clientX);
+        yTo(event.clientY);
       }
     };
     row.addEventListener('pointerenter', (event) => {

@@ -448,7 +448,7 @@ const schema = {
               <p>{article.text}</p>
               <span class="insight-row-arrow">↗</span>
               <div class="insight-preview" data-insight-preview={index + 1}>
-                <Image src={article.image} alt={article.alt} widths={[420, 640, 840]} sizes="(max-width:760px) 100vw, 30rem" format="webp" quality={82} />
+                <Image src={article.image} alt={article.alt} widths={[420, 640, 840]} sizes="(max-width:760px) 100vw, 30rem" format="webp" quality={82} loading="eager" />
                 <span class="insight-preview-cta" aria-hidden="true">Czytaj<br />post</span>
               </div>
             </a>
