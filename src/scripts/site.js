@@ -327,8 +327,11 @@ if (processRows.length && !reduced && !compactMotion) {
       ease: 'none',
       scrollTrigger: {
         trigger: row,
-        start: 'top 22%',
-        end: 'bottom 58%',
+        // Zakres MUSI być monotoniczny (start przed end) — karta kładzie się dopiero,
+        // gdy jej góra przechodzi przez górną strefę ekranu. Poprzedni zakres
+        // (top 22% -> bottom 58%) odwracał się dla wysokich kart i składał je od razu.
+        start: 'top 24%',
+        end: 'top -42%',
         scrub: 0.6,
       },
     });
@@ -585,17 +588,17 @@ if (!reduced) {
       const block = document.querySelector(selector);
       if (!block) return;
       gsap.fromTo(block, {
-        rotateX: -26,
-        y: 72,
-        opacity: 0.22,
-        transformPerspective: 1200,
+        rotateX: -44,
+        y: 120,
+        opacity: 0.1,
+        transformPerspective: 1050,
         transformOrigin: '50% 0%',
       }, {
         rotateX: 0,
         y: 0,
         opacity: 1,
         ease: 'none',
-        scrollTrigger: { trigger: block, start: 'top 97%', end: 'top 52%', scrub: narrativeScrub },
+        scrollTrigger: { trigger: block, start: 'top 99%', end: 'top 44%', scrub: narrativeScrub },
       });
     });
   }
@@ -1062,27 +1065,29 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     document.body.append(preview);
     // Podgląd W punkcie kursora (Azurio): pojawia się od razu tam, gdzie myszka, i płynnie za nią podąża.
     // Rozmiar mierzony offsetWidth/Height (layout), NIE getBoundingClientRect (scale fałszował wymiar).
-    const xTo = gsap.quickTo(preview, 'x', { duration: 0.28, ease: 'power3' });
-    const yTo = gsap.quickTo(preview, 'y', { duration: 0.28, ease: 'power3' });
-    // DOKŁADNIE w centrum kursora — bez clampowania do krawędzi (spychało podgląd pod/nad myszkę).
-    const placePreview = (event, immediate) => {
-      if (immediate) {
-        gsap.set(preview, { x: event.clientX, y: event.clientY });
-      } else {
-        xTo(event.clientX);
-        yTo(event.clientY);
-      }
-    };
+    // Wszystko przez GSAP: xPercent/yPercent centrują na kursorze, scale+opacity animowane tweenem.
+    gsap.set(preview, { xPercent: -50, yPercent: -50, opacity: 0, scale: 0.6 });
+    const xTo = gsap.quickTo(preview, 'x', { duration: 0.25, ease: 'power3' });
+    const yTo = gsap.quickTo(preview, 'y', { duration: 0.25, ease: 'power3' });
     row.addEventListener('pointerenter', (event) => {
-      placePreview(event, true);
-      requestAnimationFrame(() => preview.classList.add('is-visible'));
+      gsap.set(preview, { x: event.clientX, y: event.clientY });
+      gsap.to(preview, { opacity: 1, scale: 1, duration: 0.38, ease: 'common', overwrite: true });
       runScramble(row.querySelector('[data-scramble]'));
     });
-    row.addEventListener('pointermove', (event) => placePreview(event, false), { passive: true });
-    row.addEventListener('pointerleave', () => preview.classList.remove('is-visible'));
+    row.addEventListener('pointermove', (event) => {
+      xTo(event.clientX);
+      yTo(event.clientY);
+    }, { passive: true });
+    row.addEventListener('pointerleave', () => {
+      gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.22, ease: 'power2.in', overwrite: true });
+    });
   });
   window.addEventListener('scroll', () => {
-    document.querySelectorAll('.insight-preview.is-visible').forEach((preview) => preview.classList.remove('is-visible'));
+    document.querySelectorAll('.insight-preview').forEach((preview) => {
+      if (Number(gsap.getProperty(preview, 'opacity')) > 0.05) {
+        gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.2, ease: 'power2.in', overwrite: true });
+      }
+    });
   }, { passive: true });
 }
 
