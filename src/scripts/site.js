@@ -319,19 +319,16 @@ if (processRows.length && !reduced && !compactMotion) {
   processRows.forEach((row) => {
     const inner = row.querySelector('[data-process-inner]');
     if (!inner) return;
+    // PRZYWRÓCONE 1:1 do wersji, która działała (Azurio F2) — bez późniejszych modyfikacji.
     gsap.to(inner, {
-      rotateX: 64,
-      opacity: 0.16,
-      filter: 'blur(8px)',
-      transformOrigin: '50% 100%',
+      rotateX: 30,
+      opacity: 0.3,
+      filter: 'blur(4px)',
       ease: 'none',
       scrollTrigger: {
         trigger: row,
-        // Zakres MUSI być monotoniczny (start przed end) — karta kładzie się dopiero,
-        // gdy jej góra przechodzi przez górną strefę ekranu. Poprzedni zakres
-        // (top 22% -> bottom 58%) odwracał się dla wysokich kart i składał je od razu.
-        start: 'top -2%',
-        end: 'top -68%',
+        start: '5% top',
+        end: 'bottom 40%',
         scrub: 0.6,
       },
     });
@@ -584,7 +581,7 @@ if (!reduced) {
 
   // Przejścia MIĘDZY sekcjami: wejście jak obracana kartka 2D (subtelny flip), dla sekcji bez pinu.
   if (!compactMotion) {
-    ['.services-section > .section-shell', '.process-section > .section-shell', '.insights-section > .section-shell', '.video-triptych', '.reel-intro'].forEach((selector) => {
+    ['.services-section > .section-shell', '.insights-section > .section-shell', '.video-triptych', '.reel-intro'].forEach((selector) => {
       const block = document.querySelector(selector);
       if (!block) return;
       gsap.fromTo(block, {
@@ -626,8 +623,9 @@ if (!reduced) {
       { x: 1.9, y: -0.4 }, { x: -2.0, y: 0.3 }, { x: 0.2, y: -1.8 }, { x: -0.2, y: 1.8 },
       { x: 1.4, y: 1.5 }, { x: -1.4, y: -1.4 },
     ];
-    const scatterStart = { x: 0, y: 0, z: -1000, scale: 0 };
-    const scatterMultiplier = 0.5;
+    // CZYSTE 2D (x/y/scale, bez translateZ/preserve-3d): kontekst 3D odcinał zdjęcia od
+    // blendu `difference` tytułu — w 2D litery odbijają strukturę zdjęcia jak w proof.
+    const scatterMultiplier = 0.55;
     let scatterEnds = [];
     const computeScatter = () => {
       scatterEnds = shots.map((_, index) => {
@@ -635,16 +633,14 @@ if (!reduced) {
         return {
           x: dir.x * window.innerWidth * scatterMultiplier,
           y: dir.y * window.innerHeight * scatterMultiplier,
-          z: 2000,
-          scale: 1,
         };
       });
     };
     computeScatter();
 
-    // Start: punkt w centrum, głęboko „w ekranie". xPercent/yPercent centrują niezależnie od x/y.
-    gsap.set(shots, { xPercent: -50, yPercent: -50, x: 0, y: 0, z: scatterStart.z, scale: 0, opacity: 1, force3D: true });
-    gsap.set(cover, { z: -1000, scale: 0, opacity: 1, force3D: true });
+    // Start: punkt w centrum. xPercent/yPercent centrują niezależnie od x/y; skala udaje głębię.
+    gsap.set(shots, { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 0, opacity: 1, force3D: true });
+    gsap.set(cover, { scale: 0, opacity: 1, force3D: true });
     gsap.set(progressLine, { scaleX: 0, transformOrigin: 'left center' });
 
     const renderCinematic = (progress) => {
@@ -652,10 +648,9 @@ if (!reduced) {
         const p = Math.max(0, (progress - index * 0.03) * 4);
         const end = scatterEnds[index];
         gsap.set(shot, {
-          x: gsap.utils.interpolate(scatterStart.x, end.x, p),
-          y: gsap.utils.interpolate(scatterStart.y, end.y, p),
-          z: gsap.utils.interpolate(scatterStart.z, end.z, p),
-          scale: gsap.utils.interpolate(scatterStart.scale, end.scale, p * 2),
+          x: gsap.utils.interpolate(0, end.x, p),
+          y: gsap.utils.interpolate(0, end.y, p),
+          scale: 2.3 * Math.min(1, p),
         });
       });
       // Tytuł intro gaśnie w oknie 0.60–0.75 (per linia, z lekkim przesunięciem).
@@ -664,7 +659,7 @@ if (!reduced) {
       });
       // Okładka wyłania się od 0.70: z -1000 → 0, scale 0 → 1 (pełny kadr ok. 0.95).
       const coverP = Math.max(0, (progress - 0.7) * 4);
-      gsap.set(cover, { z: -1000 + 1000 * Math.min(1, coverP), scale: Math.min(1, coverP * 2) });
+      gsap.set(cover, { scale: Math.min(1, coverP * 1.5) });
       // Napis outro na okładce w oknie 0.80–0.95 (per linia).
       outroLines.forEach((line, index) => {
         gsap.set(line, { opacity: clamp01((progress - (0.8 + index * 0.05)) / 0.1) });
