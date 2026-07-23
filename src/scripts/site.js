@@ -130,7 +130,7 @@ if (reduced) {
     if (heroSection) {
       ScrollTrigger.create({
         trigger: heroSection,
-        start: 'bottom 82%',
+        start: 'bottom 18%',
         onEnter: () => mistVeil.classList.add('is-on'),
         onLeaveBack: () => mistVeil.classList.remove('is-on'),
       });
@@ -320,9 +320,9 @@ if (processRows.length && !reduced && !compactMotion) {
     const inner = row.querySelector('[data-process-inner]');
     if (!inner) return;
     gsap.to(inner, {
-      rotateX: 48,
-      opacity: 0.22,
-      filter: 'blur(6px)',
+      rotateX: 64,
+      opacity: 0.16,
+      filter: 'blur(8px)',
       transformOrigin: '50% 100%',
       ease: 'none',
       scrollTrigger: {
@@ -650,6 +650,9 @@ if (!reduced) {
         duration: 0.26,
         ease: 'none',
       }, at + 0.3);
+      // Kontrast: napis (spoczynkowo szary) rozjaśnia się do bieli, gdy karta przechodzi pod nim.
+      timeline.to('.cinematic-title', { color: '#f7f7f2', duration: 0.05, ease: 'none' }, at + 0.15);
+      timeline.to('.cinematic-title', { color: '#55584a', duration: 0.08, ease: 'none' }, at + 0.4);
       if (bitmap) {
         timeline.fromTo(bitmap, { scale: 1.06 }, { scale: 1, duration: 0.42, ease: 'none' }, at);
       }
@@ -1031,17 +1034,9 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     if (!(preview instanceof HTMLElement)) return;
     preview.setAttribute('aria-hidden', 'true');
     document.body.append(preview);
-    // Podgląd rośnie od punktu najechania („od kropeczki") i ZOSTAJE w miejscu — nie podąża za kursorem.
-    // UWAGA: rozmiar mierzymy offsetWidth/Height (layout), NIE getBoundingClientRect —
-    // rect przy scale .05 zwracał ~35px i clamp spychał podgląd malutki w róg ekranu.
-    row.addEventListener('pointerenter', (event) => {
-      const margin = 18;
-      const halfWidth = preview.offsetWidth / 2;
-      const halfHeight = preview.offsetHeight / 2;
-      const x = Math.min(innerWidth - halfWidth - margin, Math.max(halfWidth + margin, event.clientX));
-      const y = Math.min(innerHeight - halfHeight - margin, Math.max(halfHeight + margin, event.clientY));
-      gsap.set(preview, { x, y });
-      requestAnimationFrame(() => preview.classList.add('is-visible'));
+    // Duży podgląd w stałym miejscu po prawej (wzorzec Azurio) — natychmiast na hover wiersza.
+    row.addEventListener('pointerenter', () => {
+      preview.classList.add('is-visible');
       runScramble(row.querySelector('[data-scramble]'));
     });
     row.addEventListener('pointerleave', () => preview.classList.remove('is-visible'));
