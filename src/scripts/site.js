@@ -576,6 +576,23 @@ if (!reduced) {
     }
   }
 
+  // Care „Twój dział AI": sekcja pinuje się, zdjęcie oddycha ostrością scrollem
+  // (mgła -> ostre -> trzyma -> znów mgła). Mobile/reduced = statyczne (CSS).
+  const careCallout = document.querySelector('.care-callout');
+  if (careCallout && !compactMotion) {
+    const careImg = careCallout.querySelector('.care-callout-visual img');
+    if (careImg) {
+      const careTl = gsap.timeline({
+        scrollTrigger: { trigger: careCallout, start: 'top top', end: 'bottom bottom', scrub: narrativeScrub },
+      });
+      careTl.fromTo(careImg,
+        { filter: 'blur(18px) saturate(.72) contrast(1.08)', scale: 1.06 },
+        { filter: 'blur(0px) saturate(.72) contrast(1.08)', scale: 1, duration: 0.45, ease: 'none' }, 0);
+      careTl.to(careImg, { filter: 'blur(0px) saturate(.72) contrast(1.08)', duration: 0.17, ease: 'none' }, 0.45);
+      careTl.to(careImg, { filter: 'blur(14px) saturate(.72) contrast(1.08)', opacity: 0.5, duration: 0.38, ease: 'none' }, 0.62);
+    }
+  }
+
   const cinematic = document.querySelector('[data-cinematic]');
   if (cinematic) {
     const frames = [...cinematic.querySelectorAll('[data-cinematic-frame]')];
@@ -726,6 +743,10 @@ if (!reduced) {
     const items = [...systemExplore.querySelectorAll('[data-explore-item]')];
     const lines = systemExplore.querySelectorAll('[data-explore-line]');
     const note = systemExplore.querySelector('.system-explore__note');
+    // Twardy stan startowy PRZED timeline'em — bez tego ostatnia linia nagłówka
+    // („do pracy wykonanej...") potrafiła błysnąć przy wejściu w sekcję.
+    gsap.set(lines, { xPercent: -64, opacity: 0 });
+    if (note) gsap.set(note, { opacity: 0, x: -10 });
     const exploreTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: systemExplore,
@@ -879,6 +900,19 @@ if (!reduced) {
       ease: 'power3.out',
       scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' },
     });
+
+    // „Zobacz usługę" (prawy górny róg karty) wjeżdża strzałką od lewej przy wejściu karty.
+    const cardLink = card.querySelector('.service-card-link');
+    if (cardLink) {
+      gsap.fromTo(cardLink, { x: -28, opacity: 0 }, {
+        x: 0,
+        opacity: 1,
+        duration: 0.7,
+        ease: 'common',
+        delay: 0.3,
+        scrollTrigger: { trigger: card, start: 'top 82%', once: true },
+      });
+    }
   });
 
   const storyImage = document.querySelector('.story-media img');

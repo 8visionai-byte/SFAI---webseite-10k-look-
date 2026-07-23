@@ -1,5 +1,23 @@
 import { createHash } from 'node:crypto';
-import { VOICE_INSTRUCTIONS } from './_knowledge.mjs';
+import { getVoiceInstructions } from './_knowledge.mjs';
+
+// Sekcje serwisu dostępne dla narzędzia navigate_to. Slugi usług 1:1 z src/data/services.js.
+export const NAV_SECTIONS = [
+  'start',
+  'uslugi',
+  'architekci-wartosci-ai',
+  'chatboty-ai',
+  'strony-www-seo-ai',
+  'voiceboty-ai',
+  'agenci-ai',
+  'automatyzacja-procesow',
+  'opieka-ai',
+  'jak-pracujemy',
+  'realizacje',
+  'wiedza',
+  'o-nas',
+  'kontakt',
+];
 
 const RATE_WINDOW_MS = 10 * 60 * 1_000;
 const MAX_SESSIONS_PER_WINDOW = 6;
@@ -54,17 +72,42 @@ export default async function handler(request, response) {
     });
   }
 
+  // Defensywnie: na hostingu może wisieć stara ręczna wartość OPENAI_VOICE=marin
+  // (brzmiała nie-polsko). Traktujemy ją jak przestarzałą i wymuszamy 'cedar',
+  // dopóki ktoś świadomie nie ustawi innego głosu.
+  let voice = (process.env.OPENAI_VOICE || '').trim();
+  if (!voice || voice === 'marin') voice = 'cedar';
+
   const sessionConfig = {
     session: {
       type: 'realtime',
       model: process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-2.1',
-      instructions: VOICE_INSTRUCTIONS,
+      instructions: await getVoiceInstructions(),
       output_modalities: ['audio'],
       audio: {
         output: {
-          voice: process.env.OPENAI_VOICE || 'cedar',
+          voice,
         },
       },
+      tools: [
+        {
+          type: 'function',
+          name: 'navigate_to',
+          description: 'Przenieś użytkownika do wskazanej sekcji lub podstrony serwisu SimpleFast.ai. Używaj zawsze, gdy rozmówca prosi, aby coś pokazać, gdzieś go przenieść albo pyta, gdzie coś znaleźć.',
+          parameters: {
+            type: 'object',
+            properties: {
+              section: {
+                type: 'string',
+                enum: NAV_SECTIONS,
+                description: 'Docelowa sekcja serwisu. „start” to strona główna, „uslugi” to lista usług, pozostałe to konkretne podstrony.',
+              },
+            },
+            required: ['section'],
+          },
+        },
+      ],
+      tool_choice: 'auto',
     },
   };
 

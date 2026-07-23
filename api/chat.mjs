@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { COMPANY_KNOWLEDGE } from './_knowledge.mjs';
+import { getChatInstructions } from './_knowledge.mjs';
 
 const MAX_MESSAGES = 14;
 const MAX_MESSAGE_LENGTH = 4_000;
@@ -77,7 +77,7 @@ export default async function handler(request, response) {
   const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID?.trim();
   const payload = {
     model: process.env.OPENAI_CHAT_MODEL || 'gpt-5.6-sol',
-    instructions: COMPANY_KNOWLEDGE,
+    instructions: await getChatInstructions(),
     input: messages,
     max_output_tokens: 900,
     store: false,

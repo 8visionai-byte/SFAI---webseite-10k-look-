@@ -38,8 +38,7 @@ STYL ODPOWIEDZI
 Najpierw daj krótką, bezpośrednią odpowiedź. Potem — jeśli to pomaga — maksymalnie 3 konkretne punkty. Dopytaj o branżę, powtarzalny proces, obecną liczbę spraw i narzędzia dopiero wtedy, gdy jest to potrzebne do sensownej rekomendacji. Nie zasypuj użytkownika żargonem. Nie twórz linków spoza podanej nawigacji. Zawsze odróżniaj potwierdzone informacje od przypuszczeń.
 `;
 
-export const VOICE_INSTRUCTIONS = `${COMPANY_KNOWLEDGE}
-
+const VOICE_STYLE = `
 Jesteś teraz agentem głosowym SimpleFast.ai.
 
 JĘZYK I WYMOWA
@@ -54,4 +53,68 @@ SPOSÓB MÓWIENIA
 - Buduj pełne, do końca dokończone zdania. Nigdy nie ucinaj wypowiedzi w połowie zdania ani w połowie słowa.
 - Jedna wypowiedź to zwykle jedno do trzech krótkich zdań, bez list brzmiących jak prezentacja.
 - Nie przerywaj rozmówcy. Gdy pytanie jest niejasne, zadaj jedno krótkie pytanie doprecyzowujące.
-- Na początku przedstaw się jednym zdaniem: „Cześć, jestem głosowym asystentem SimpleFast AI. W czym mogę pomóc Twojej firmie?”.`;
+- Na początku przedstaw się jednym zdaniem: „Cześć, jestem głosowym asystentem SimpleFast AI. W czym mogę pomóc Twojej firmie?”.
+
+NAWIGACJA PO STRONIE
+- Masz narzędzie navigate_to, które przenosi użytkownika do sekcji lub podstrony serwisu SimpleFast.ai.
+- Używaj go zawsze, gdy rozmówca prosi „pokaż”, „przenieś mnie”, „otwórz”, „gdzie znajdę” albo pyta o miejsce na stronie. Nie opisuj drogi słowami, po prostu wywołaj narzędzie.
+- Zanim wywołasz narzędzie albo tuż po nim, potwierdź jednym krótkim zdaniem, np. „Już pokazuję stronę usług.”.
+- Po przejściu na inną podstronę rozmowa głosowa może się zakończyć; jeśli to istotne, dodaj krótko, że można ją tam wznowić jednym kliknięciem.`;
+
+export const VOICE_INSTRUCTIONS = `${COMPANY_KNOWLEDGE}
+${VOICE_STYLE}`;
+
+/*
+ * Edytowalna baza wiedzy bez udziału programisty.
+ * KNOWLEDGE_DOC_URL (env, opcjonalna) wskazuje zwykły tekst, np. Google Doc
+ * opublikowany „do internetu” w formacie txt. Treść jest doklejana PONIŻEJ
+ * wiedzy wbudowanej i oznaczona jako nadrzędna, więc doc może nadpisywać
+ * i uzupełniać sekcję „wiedza firmy”. Cache w pamięci modułu ~5 minut,
+ * limit 24 000 znaków, każdy błąd pobierania = cichy fallback na wiedzę
+ * wbudowaną (użytkownik nigdy nie widzi błędu).
+ */
+const KNOWLEDGE_CACHE_TTL_MS = 5 * 60 * 1_000;
+const KNOWLEDGE_MAX_CHARS = 24_000;
+const KNOWLEDGE_FETCH_TIMEOUT_MS = 3_500;
+let knowledgeCache = { text: '', fetchedAt: 0 };
+
+const loadRemoteKnowledge = async () => {
+  const url = process.env.KNOWLEDGE_DOC_URL?.trim();
+  if (!url) return '';
+
+  const now = Date.now();
+  if (knowledgeCache.fetchedAt && now - knowledgeCache.fetchedAt < KNOWLEDGE_CACHE_TTL_MS) {
+    return knowledgeCache.text;
+  }
+
+  try {
+    const upstream = await fetch(url, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(KNOWLEDGE_FETCH_TIMEOUT_MS),
+    });
+    if (!upstream.ok) throw new Error(`HTTP ${upstream.status}`);
+    let raw = await upstream.text();
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1); // BOM z eksportu Google Docs
+    const text = raw.trim().slice(0, KNOWLEDGE_MAX_CHARS).trim();
+    knowledgeCache = { text, fetchedAt: now };
+  } catch (error) {
+    // Zachowaj ostatnią dobrą treść i odczekaj pełny TTL przed kolejną próbą,
+    // żeby awaria doca nie dokładała timeoutu do każdego startu sesji.
+    console.error('KNOWLEDGE_DOC_URL fetch failed', error?.message || error);
+    knowledgeCache = { text: knowledgeCache.text, fetchedAt: now };
+  }
+  return knowledgeCache.text;
+};
+
+const withRemoteKnowledge = (base, remote) => {
+  if (!remote) return base;
+  return `${base}
+
+AKTUALNA BAZA WIEDZY FIRMY (źródło nadrzędne: jeśli poniższe informacje różnią się od wcześniejszych sekcji, pierwszeństwo mają poniższe):
+${remote}`;
+};
+
+export const getChatInstructions = async () => withRemoteKnowledge(COMPANY_KNOWLEDGE, await loadRemoteKnowledge());
+
+export const getVoiceInstructions = async () => `${withRemoteKnowledge(COMPANY_KNOWLEDGE, await loadRemoteKnowledge())}
+${VOICE_STYLE}`;

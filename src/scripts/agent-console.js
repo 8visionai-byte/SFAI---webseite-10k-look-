@@ -369,6 +369,81 @@ if (consoleRoot instanceof HTMLElement) {
     askAgent(question);
   });
 
+  // Cele narzędzia navigate_to (function calling w Realtime API).
+  // Klucze 1:1 z enumem w api/realtime-session.mjs, slugi usług 1:1 z src/data/services.js.
+  const NAV_TARGETS = {
+    'start': '/',
+    'uslugi': '/uslugi/',
+    'architekci-wartosci-ai': '/uslugi/architekci-wartosci-ai/',
+    'chatboty-ai': '/uslugi/chatboty-ai/',
+    'strony-www-seo-ai': '/uslugi/strony-www-seo-ai/',
+    'voiceboty-ai': '/uslugi/voiceboty-ai/',
+    'agenci-ai': '/uslugi/agenci-ai/',
+    'automatyzacja-procesow': '/uslugi/automatyzacja-procesow/',
+    'opieka-ai': '/uslugi/opieka-ai/',
+    'jak-pracujemy': '/jak-pracujemy/',
+    'realizacje': '/realizacje/',
+    'wiedza': '/wiedza/',
+    'o-nas': '/o-nas/',
+    'kontakt': '/kontakt/',
+  };
+  const NAV_DELAY_MS = 2_800;
+  let navTimer = 0;
+
+  const performNavigation = (sectionRaw) => {
+    const section = String(sectionRaw || '').trim();
+    const path = NAV_TARGETS[section];
+    if (!path) {
+      return { ok: false, error: 'unknown_section', known_sections: Object.keys(NAV_TARGETS) };
+    }
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const targetPath = path.replace(/\/+$/, '') || '/';
+    // Jeśli sekcja istnieje jako kotwica na bieżącej stronie (np. #uslugi na stronie
+    // głównej), przewijamy zamiast przeładowywać — rozmowa może trwać dalej po zamknięciu panelu.
+    const anchor = document.getElementById(section);
+    const willScroll = currentPath === targetPath || Boolean(anchor);
+
+    // Konsola zasłania stronę (modal + blokada scrolla), więc najpierw dajemy botowi
+    // chwilę na głosowe potwierdzenie, potem zamykamy panel i przenosimy użytkownika.
+    window.clearTimeout(navTimer);
+    navTimer = window.setTimeout(() => {
+      if (willScroll) {
+        closeConsole();
+        if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.location.href = path;
+      }
+    }, NAV_DELAY_MS);
+
+    return {
+      ok: true,
+      action: willScroll ? 'scroll' : 'open_page',
+      target: path,
+      note: 'Użytkownik zostanie przeniesiony za około trzy sekundy. Potwierdź jednym krótkim, dokończonym zdaniem.',
+    };
+  };
+
+  const handleFunctionCalls = (data) => {
+    const output = data?.response?.output;
+    if (!Array.isArray(output) || !voiceChannel) return;
+    for (const item of output) {
+      if (item?.type !== 'function_call' || item.name !== 'navigate_to' || !item.call_id) continue;
+      let args = {};
+      try { args = JSON.parse(item.arguments || '{}'); } catch {}
+      const result = performNavigation(args.section);
+      voiceChannel.send(JSON.stringify({
+        type: 'conversation.item.create',
+        item: {
+          type: 'function_call_output',
+          call_id: item.call_id,
+          output: JSON.stringify(result),
+        },
+      }));
+      voiceChannel.send(JSON.stringify({ type: 'response.create' }));
+    }
+  };
+
   const startVoice = async () => {
     if (!(voiceStart instanceof HTMLButtonElement) || !(transcript instanceof HTMLElement)) return;
     if (consoleRoot.hidden || currentMode !== 'voice') return;
@@ -483,6 +558,7 @@ if (consoleRoot instanceof HTMLElement) {
           emitVoiceEnergy(.9, 'speaking');
           setConnectionStatus('mówi', 'working');
         } else if (data.type === 'response.done') {
+          handleFunctionCalls(data);
           voiceStateFloor = .14;
           emitVoiceEnergy(.2, 'listening');
           setConnectionStatus('słucha', 'working');
