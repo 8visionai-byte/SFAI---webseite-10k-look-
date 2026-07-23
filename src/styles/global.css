@@ -587,13 +587,16 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-stage { position: relative; height: 100%; min-height: min(640px,100svh); overflow: hidden; isolation: isolate; background: var(--cinematic-bg); }
 .cinematic-stage::before { position: absolute; z-index: 0; inset: 0; background-image: linear-gradient(rgba(16,18,12,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(16,18,12,.065) 1px,transparent 1px); background-size: 8.333vw 8.333vw; content: ''; opacity: .42; mask-image: linear-gradient(transparent,#000 17%,#000 83%,transparent); }
 .cinematic-chapter { position: absolute; z-index: 8; top: calc(var(--header-h) + 25px); right: max(20px,calc((100vw - 1540px)/2)); left: max(20px,calc((100vw - 1540px)/2)); display: flex; justify-content: space-between; color: rgba(242,243,236,.58); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .11em; text-transform: uppercase; }
-.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(84vw,1060px); margin: 0; color: #fff; mix-blend-mode: difference; font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
+/* Limonka jak w proof: na ciemnym tle spoczywa limonkowo, nad jasnymi partiami zdjęć
+   odbija w kobalt — biały dawał ~zerową różnicę na ciemnych kadrach. */
+.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(84vw,1060px); margin: 0; color: var(--lime); mix-blend-mode: difference; font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
 .cinematic-title > span { display: block; will-change: opacity; }
-.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px #fff; }
+.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px var(--lime); }
 /* Scena 3D: perspektywa na kontenerze daje głębię dla animowanego `z` dzieci. */
 .cinematic-scatter { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .cinematic-shot { position: absolute; top: 50%; left: 50%; overflow: hidden; margin: 0; background: #141614; opacity: 0; box-shadow: 0 24px 58px rgba(0,0,0,.5); backface-visibility: hidden; will-change: transform; }
-.cinematic-shot img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(.36) sepia(.12) contrast(1.08); backface-visibility: hidden; }
+/* Jasne, nasycone kadry — difference na tytule ma z czego robić kontrast (grayscale go zabijał). */
+.cinematic-shot img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.3) contrast(1.12) saturate(1.18); backface-visibility: hidden; }
 /* Kształty zdjęć: portret / landscape / kwadrat, szerokości ~14–24vw. */
 .cinematic-shot--p1 { width: 14vw; aspect-ratio: 3 / 4; }
 .cinematic-shot--p2 { width: 17vw; aspect-ratio: 2 / 3; }
@@ -607,7 +610,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-cover::after { position: absolute; inset: 0; background: radial-gradient(circle at 50% 52%, rgba(8,9,6,.4), rgba(8,9,6,.06) 70%); content: ''; pointer-events: none; }
 .cinematic-outro { position: absolute; z-index: 2; top: 50%; left: 50%; width: min(84vw,1060px); margin: 0; color: #fff; font-size: clamp(3rem,5.6vw,6.4rem); font-weight: 580; line-height: .9; letter-spacing: -.062em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
 .cinematic-outro > span { display: block; opacity: 0; will-change: opacity; }
-.cinematic-outro em { color: var(--cinematic-bg); font-style: normal; }
+.cinematic-outro { text-shadow: 0 2px 30px rgba(0,0,0,.55); }
+.cinematic-outro em { color: var(--lime); font-style: normal; }
 .cinematic-progress { position: absolute; z-index: 6; right: max(20px,calc((100vw - 1540px)/2)); bottom: 28px; left: max(20px,calc((100vw - 1540px)/2)); height: 1px; background: rgba(16,18,12,.22); }
 .cinematic-progress i { display: block; width: 100%; height: 100%; background: var(--cinematic-ink); transform: scaleX(0); transform-origin: left center; }
 /* Fallback bez pinu: klasę .cinematic-static nadaje JS przy dotyku/mobile; reduced-motion ma
@@ -1084,7 +1088,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .proof-explore__sticky { position: sticky; top: 0; height: 100svh; overflow: hidden; isolation: isolate; display: grid; place-items: center; padding: 24px; }
 .proof-explore__media { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .proof-explore__img { position: absolute; margin: 0; overflow: hidden; clip-path: inset(50% 0% 50% 0%); opacity: 0; will-change: transform, clip-path, opacity; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
-.proof-explore__img img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.18) contrast(1.06); }
+.proof-explore__img img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.34) contrast(1.15) saturate(1.15); }
 .proof-explore__img--1 { top: 4%; left: calc(50% - min(19vw, 300px)); width: min(38vw, 600px); height: 46%; }
 .proof-explore__img--2 { top: 8%; left: 31%; width: min(20vw, 320px); height: 56%; }
 .proof-explore__img--3 { top: 6%; right: 29%; width: min(28vw, 450px); height: 32%; }

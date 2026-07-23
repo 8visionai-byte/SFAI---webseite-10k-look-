@@ -981,7 +981,8 @@ if (!reduced) {
       proofTl.fromTo(img, { y: '112vh' }, { y: '-18vh', duration: 0.3, ease: 'none' }, at);
       // Ostrość od razu na dole — zdjęcie jest wyraźne ZANIM najedzie na napis.
       proofTl.fromTo(img, { filter: 'blur(9px)' }, { filter: 'blur(0px)', duration: 0.08, ease: 'none' }, at);
-      proofTl.to(img, { y: '-136vh', filter: 'blur(5px)', duration: 0.24, ease: 'none' }, at + 0.3);
+      // Ostro do KOŃCA przelotu — blur na wyjściu rozmazywał strukturę na literach.
+      proofTl.to(img, { y: '-136vh', duration: 0.24, ease: 'none' }, at + 0.3);
     });
   }
 }
@@ -1078,13 +1079,24 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
       gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.22, ease: 'power2.in', overwrite: true });
     });
   });
-  window.addEventListener('scroll', () => {
+  const hideAllInsightPreviews = () => {
     document.querySelectorAll('.insight-preview').forEach((preview) => {
       if (Number(gsap.getProperty(preview, 'opacity')) > 0.05) {
-        gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.2, ease: 'power2.in', overwrite: true });
+        gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
       }
     });
-  }, { passive: true });
+  };
+  window.addEventListener('scroll', hideAllInsightPreviews, { passive: true });
+  // Twarde bezpieczniki: zejście z listy lub wyjazd sekcji z ekranu ZAWSZE chowa podgląd
+  // (naprawia „zawieszony" podgląd wjeżdżający na sekcję bąbelków).
+  document.querySelector('.insights-list')?.addEventListener('pointerleave', hideAllInsightPreviews);
+  ScrollTrigger.create({
+    trigger: '.insights-section',
+    start: 'top bottom',
+    end: 'bottom top',
+    onLeave: hideAllInsightPreviews,
+    onLeaveBack: hideAllInsightPreviews,
+  });
 }
 
 if (window.matchMedia('(pointer: fine)').matches && !reduced) {
