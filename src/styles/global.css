@@ -359,9 +359,17 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .process-title .mono-label { grid-column: 1 / 3; padding-top: 14px; }
 .process-title h2 { grid-column: 3 / 11; font-size: clamp(3.4rem, 7vw, 8rem); font-weight: 550; line-height: .9; letter-spacing: -.065em; }
 .process-list { display: grid; gap: clamp(16px, 2vw, 26px); perspective: 1200px; }
+/* Zdjęcia „Jeden przepływ": warstwy przełączane krokami (crossfade). */
+.story-media-frames { position: relative; }
+.story-media-frames img { transition: opacity .55s var(--ease-out); }
+.story-media-frames img:not(.is-active) { opacity: 0; }
+.story-media-frames img:not(:first-child) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
 .process-item { position: relative; }
 .process-item-inner { display: grid; grid-template-columns: minmax(230px,1.15fr) minmax(0,1.05fr) minmax(210px,.9fr); gap: clamp(24px, 3.4vw, 56px); align-items: center; min-height: clamp(360px, 52svh, 540px); overflow: hidden; border: 1px solid var(--line); border-radius: 20px; padding: clamp(24px, 3.2vw, 54px); background: #131514; backface-visibility: hidden; will-change: transform, opacity, filter; }
 .process-item:hover .process-item-inner { background: #161817; }
+/* Mgła kładzenia: rozmywa TYLKO górę karty (maska), dół zostaje ostry — czytelny efekt 3D. */
+.process-item-inner::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: var(--fold, 0); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 32%, transparent 80%); mask-image: linear-gradient(to bottom, #000 0%, #000 32%, transparent 80%); }
 .process-item-head { display: grid; align-content: start; gap: 18px; }
 .process-item-head > span { color: var(--lime); font-family: var(--font-mono); font-size: .72rem; }
 .process-item h3 { color: rgba(239,241,238,.46); font-size: clamp(2rem, 3.6vw, 4.3rem); font-weight: 520; line-height: .95; letter-spacing: -.055em; transition: color .3s ease; }
@@ -589,14 +597,15 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-chapter { position: absolute; z-index: 8; top: calc(var(--header-h) + 25px); right: max(20px,calc((100vw - 1540px)/2)); left: max(20px,calc((100vw - 1540px)/2)); display: flex; justify-content: space-between; color: rgba(242,243,236,.58); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .11em; text-transform: uppercase; }
 /* Limonka jak w proof: na ciemnym tle spoczywa limonkowo, nad jasnymi partiami zdjęć
    odbija w kobalt — biały dawał ~zerową różnicę na ciemnych kadrach. */
-.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(84vw,1060px); margin: 0; color: var(--lime); mix-blend-mode: difference; font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
+.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(90vw,1240px); margin: 0; color: var(--lime); mix-blend-mode: difference; font-size: clamp(4rem,8vw,9rem); font-weight: 650; line-height: .87; letter-spacing: -.062em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
 .cinematic-title > span { display: block; will-change: opacity; }
 .cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px var(--lime); }
 /* Scena 3D: perspektywa na kontenerze daje głębię dla animowanego `z` dzieci. */
 .cinematic-scatter { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .cinematic-shot { position: absolute; top: 50%; left: 50%; overflow: hidden; margin: 0; background: #141614; opacity: 0; box-shadow: 0 24px 58px rgba(0,0,0,.5); backface-visibility: hidden; will-change: transform; }
-/* Jasne, nasycone kadry — difference na tytule ma z czego robić kontrast (grayscale go zabijał). */
-.cinematic-shot img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.3) contrast(1.12) saturate(1.18); backface-visibility: hidden; }
+/* Mocny contrast wypycha szarości/metal ku bieli i czerni — difference ma na czym pracować
+   nawet na monochromatycznych kadrach. */
+.cinematic-shot img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.35) contrast(1.4) saturate(1.25); backface-visibility: hidden; }
 /* Kształty zdjęć: portret / landscape / kwadrat, szerokości ~14–24vw. */
 .cinematic-shot--p1 { width: 14vw; aspect-ratio: 3 / 4; }
 .cinematic-shot--p2 { width: 17vw; aspect-ratio: 2 / 3; }
@@ -629,15 +638,18 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .sequence-lab { height: 210svh; background: #0a0b0b; }
 .sequence-grid { position: sticky; top: 0; display: grid; height: 100svh; grid-template-columns: repeat(12,1fr); gap: 20px; align-content: center; overflow: hidden; padding-top: calc(var(--header-h) + 6px); }
 /* Pin ma pokazywać CAŁĄ sekcję: na niższych ekranach karty skalują się w dół, żeby nic nie ucinało. */
-@media (max-height: 1010px) { .sequence-deck { margin-top: clamp(22px,3vw,44px); transform: scale(.78); transform-origin: top center; } }
+/* Zwężenie zamiast transform:scale — scale rastrował tekst pigułek (rozmyte etykiety). */
+@media (max-height: 1010px) { .sequence-deck { margin-top: clamp(20px,2.6vw,36px); width: 86%; justify-self: center; } }
 .sequence-copy { grid-column: 1 / 9; }
 .sequence-copy h2 { margin-top: 28px; font-size: clamp(3rem,5.7vw,6.7rem); font-weight: 550; line-height: .87; letter-spacing: -.065em; }
 .sequence-copy > p:last-child { max-width: 430px; margin-top: 30px; color: var(--muted); font-size: 1.06rem; }
 .sequence-deck { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(12,1fr); gap: 20px; align-items: start; margin-top: clamp(50px,6vw,90px); }
 .sequence-card { position: relative; margin: 0; overflow: hidden; border: 1px solid var(--line); background: #141616; }
+/* 4 karty, mocniejsza różnorodność rozmiarów i formatów (duża/leżąca/średnia/mała pionowa). */
 .sequence-card--tall { grid-column: 1 / 5; aspect-ratio: .78; }
-.sequence-card--wide { grid-column: 5 / 9; aspect-ratio: 1.38; margin-top: clamp(60px,8vw,130px); }
-.sequence-card--mid { grid-column: 9 / -1; aspect-ratio: .95; margin-top: clamp(26px,3.5vw,60px); }
+.sequence-card--wide { grid-column: 5 / 9; aspect-ratio: 1.5; margin-top: clamp(60px,8vw,130px); }
+.sequence-card--mid { grid-column: 9 / 11; aspect-ratio: .9; margin-top: clamp(26px,3.5vw,60px); }
+.sequence-card--small { grid-column: 11 / -1; aspect-ratio: .72; margin-top: clamp(90px,11vw,170px); }
 .sequence-card-frames,.sequence-card-frame { position: absolute; inset: 0; }
 /* E1: miękkość przełączania robi CSS transition na opacity (krzywa "common" jak w Azurio). */
 .sequence-card-frame { opacity: 0; transition: opacity .3s cubic-bezier(.23,.65,.74,1.09); }
@@ -862,7 +874,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .sequence-copy { max-width: 560px; }
   .sequence-copy h2 { font-size: clamp(3.2rem,14vw,5.6rem); }
   .sequence-deck { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 55px; }
-  .sequence-card--tall,.sequence-card--wide,.sequence-card--mid { grid-column: auto; margin-top: 0; aspect-ratio: 1.08; }
+  .sequence-card--tall,.sequence-card--wide,.sequence-card--mid,.sequence-card--small { grid-column: auto; margin-top: 0; aspect-ratio: 1.08; }
   .sequence-card-title { font-size: clamp(1.6rem,7vw,2.2rem); }
   .story-grid { display: block; min-height: auto; }
   .story-media { position: sticky; z-index: 1; top: 0; height: 52svh; }

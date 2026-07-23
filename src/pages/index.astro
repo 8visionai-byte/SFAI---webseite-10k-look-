@@ -89,6 +89,13 @@ const sequenceCards = [
     aria: 'Mierzalny wynik: klatki pokazują zmierzony rezultat, skalowanie systemu i wartość dla biznesu',
     frames: [storyObservableResultImage, storyScaleCareImage, storyValueDiagnosisImage],
   },
+  {
+    variant: 'small',
+    title: 'Stała opieka',
+    tag: '04 / Opieka · Rozwój',
+    aria: 'Stała opieka: klatki pokazują monitoring systemu i rozwój o kolejne zadania',
+    frames: [careObservatoryImage, storyScaleCareImage],
+  },
 ];
 const processSteps = [
   { index: '01', title: 'Diagnoza wartości', text: 'Wybieramy proces, w którym efekt będzie widoczny i mierzalny.', image: storyValueDiagnosisImage, alt: 'Diagnoza wartości: mapa procesu z zaznaczonym miejscem, w którym znika czas i sprzedaż' },
@@ -286,7 +293,11 @@ const schema = {
     <section class="system-story">
       <div class="story-grid">
         <div class="story-media">
-          <Image src={storyControlledActionImage} alt="Architektura agenta AI prowadząca zadanie przez bramkę kontroli do wyniku" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
+          <div class="story-media-frames">
+            <Image class="is-active" data-story-visual="0" src={storyFirstSignalImage} alt="Agent AI odbiera pierwszy sygnał z rozmowy, wiadomości i systemów firmy" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
+            <Image data-story-visual="1" src={storyContextMemoryImage} alt="" aria-hidden="true" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
+            <Image data-story-visual="2" src={storyControlledActionImage} alt="" aria-hidden="true" widths={[760, 1100, 1500]} sizes="(max-width: 760px) 100vw, 52vw" format="webp" quality={84} />
+          </div>
           <div class="story-media-copy"><span>Flow architecture</span><span>Scroll / 01—03</span></div>
         </div>
         <div class="story-steps">

@@ -177,6 +177,10 @@ document.querySelectorAll('[data-scramble]').forEach((element) => {
   trigger.addEventListener('focus', () => runScramble(element));
 });
 
+// Hero: intro dekoduje się samo tuż po wejściu na stronę (od razu „coś się dzieje").
+const heroIntro = document.querySelector('.hero-intro');
+if (heroIntro) window.setTimeout(() => runScramble(heroIntro), 650);
+
 const hoverScrambleFrames = new WeakMap();
 const resetHoverScramble = (element) => {
   if (!(element instanceof HTMLElement)) return;
@@ -331,11 +335,10 @@ if (processRows.length && !reduced && !compactMotion) {
       const b = rect.bottom - window.innerHeight * 0.52;
       const span = Math.max(1, b - a);
       const p = Math.min(1, Math.max(0, -a / span));
-      gsap.set(inner, {
-        rotateX: 48 * p,
-        opacity: 1 - 0.7 * p,
-        filter: p > 0.005 ? `blur(${(4 * p).toFixed(2)}px)` : 'none',
-      });
+      // Rozmycie GRADIENTEM (góra we mgle, dół ostry) robi ::after z backdrop-filter + maską;
+      // tu sterujemy tylko jego siłą przez --fold. Jednolity blur zabijał efekt kładzenia.
+      gsap.set(inner, { rotateX: 48 * p, opacity: 1 - 0.55 * p });
+      inner.style.setProperty('--fold', p.toFixed(3));
     });
   };
   window.addEventListener('scroll', updateProcessFold, { passive: true });
@@ -349,6 +352,11 @@ if (storySteps.length) {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
       storySteps.forEach((step) => step.classList.toggle('is-active', step === entry.target));
+      // Zdjęcie po lewej podąża za aktywnym krokiem (Słucha / Rozumie / Wykonuje).
+      const activeIndex = storySteps.indexOf(entry.target);
+      document.querySelectorAll('[data-story-visual]').forEach((visual) => {
+        visual.classList.toggle('is-active', Number(visual.dataset.storyVisual) === activeIndex);
+      });
     });
   }, { rootMargin: '-38% 0px -42% 0px', threshold: 0 });
   storySteps.forEach((step) => storyObserver.observe(step));
@@ -433,18 +441,25 @@ if (!reduced) {
     // h2 ma pełny aria-label — pocięte znaki chowamy przed czytnikami ekranu.
     lines.forEach((line) => line.setAttribute('aria-hidden', 'true'));
     if (manifestoChars.length) {
-      gsap.from(manifestoChars, {
-        opacity: 0,
-        filter: 'blur(10px)',
-        stagger: 0.05,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: manifesto,
-          start: 'top 88%',
-          end: 'center 44%',
-          scrub: 2,
-        },
-      });
+      // Żywa geometria zamiast pozycji ScrollTriggera — na świeżym wczytaniu pozycje
+      // rozjeżdżały się przez piny i tekst bywał widoczny od razu. Tu nie ma jak.
+      const totalChars = manifestoChars.length;
+      gsap.set(manifestoChars, { opacity: 0, filter: 'blur(10px)' });
+      const updateManifestoChars = () => {
+        const rect = manifesto.getBoundingClientRect();
+        if (rect.bottom < -60 || rect.top > window.innerHeight + 60) return;
+        const vh = window.innerHeight;
+        const p = Math.min(1, Math.max(0, (vh * 0.9 - rect.top) / (vh * 1.25)));
+        manifestoChars.forEach((glyph, index) => {
+          const local = Math.min(1, Math.max(0, (p - (index / totalChars) * 0.7) / 0.3));
+          gsap.set(glyph, {
+            opacity: local,
+            filter: local > 0.98 ? 'none' : `blur(${(10 * (1 - local)).toFixed(1)}px)`,
+          });
+        });
+      };
+      window.addEventListener('scroll', updateManifestoChars, { passive: true });
+      updateManifestoChars();
     }
     manifestoTimeline.fromTo(signalRows, {
       opacity: 0,
@@ -653,12 +668,13 @@ if (!reduced) {
 
     const renderCinematic = (progress) => {
       shots.forEach((shot, index) => {
-        const p = Math.max(0, (progress - index * 0.03) * 4);
+        // Gęściej (stagger 0.018) i szybszy wzrost — zdjęcia wcześniej duże pod napisem.
+        const p = Math.max(0, (progress - index * 0.018) * 4);
         const end = scatterEnds[index];
         gsap.set(shot, {
           x: gsap.utils.interpolate(0, end.x, p),
           y: gsap.utils.interpolate(0, end.y, p),
-          scale: 2.3 * Math.min(1, p),
+          scale: 2.5 * Math.min(1, p * 1.35),
         });
       });
       // Tytuł intro gaśnie w oknie 0.60–0.75 (per linia, z lekkim przesunięciem).
@@ -794,9 +810,11 @@ if (!reduced) {
     exploreTimeline.fromTo(lines, {
       xPercent: -64,
       opacity: 0,
+      filter: 'blur(10px)',
     }, {
       xPercent: 0,
       opacity: 1,
+      filter: 'blur(0px)',
       stagger: 0.055,
       duration: 0.26,
       ease: 'none',
@@ -1093,9 +1111,31 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
         runScramble(row.querySelector('[data-scramble]'));
       }
     } else if (activeInsightPreview) {
-      gsap.to(activeInsightPreview, { x: event.clientX, y: event.clientY, duration: 0.13, ease: 'power3.out', overwrite: 'auto' });
+      // Twarde wyjście: kursor poniżej/powyżej listy = natychmiastowe schowanie
+      // (podgląd NIGDY nie wjeżdża na sekcję bąbelków).
+      const bounds = insightsListEl.getBoundingClientRect();
+      if (event.clientY > bounds.bottom + 6 || event.clientY < bounds.top - 6) {
+        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.15, ease: 'power2.in', overwrite: true });
+        activeInsightPreview = null;
+      } else {
+        gsap.to(activeInsightPreview, { x: event.clientX, y: event.clientY, duration: 0.13, ease: 'power3.out', overwrite: 'auto' });
+      }
     }
   }, { passive: true });
+  // Fallback per-wiersz: wejście na wiersz ZAWSZE pokazuje podgląd (nawet gdy kursor
+  // wcelował najpierw w przerwę i kontener nie zdążył złapać ruchu).
+  previewByRow.forEach((preview, row) => {
+    row.addEventListener('pointerenter', (event) => {
+      if (activeInsightPreview === preview) return;
+      if (activeInsightPreview) {
+        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.14, ease: 'power2.in', overwrite: true });
+      }
+      activeInsightPreview = preview;
+      gsap.set(preview, { x: event.clientX, y: event.clientY });
+      gsap.fromTo(preview, { scale: 0.6, opacity: 0 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'common', overwrite: true });
+      runScramble(row.querySelector('[data-scramble]'));
+    });
+  });
   insightsListEl?.addEventListener('pointerleave', () => {
     if (activeInsightPreview) {
       gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
