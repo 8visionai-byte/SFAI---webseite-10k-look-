@@ -593,6 +593,22 @@ if (!reduced) {
     }
   }
 
+  // Wejście „Jeden przepływ": sekcja jak kartka 2D obrócona na sztorc, prostuje się przy scrollu.
+  const storyGrid = document.querySelector('.system-story .story-grid');
+  if (storyGrid && !compactMotion) {
+    gsap.fromTo(storyGrid, {
+      rotateX: -56,
+      opacity: 0.12,
+      transformPerspective: 1100,
+      transformOrigin: '50% 0%',
+    }, {
+      rotateX: 0,
+      opacity: 1,
+      ease: 'none',
+      scrollTrigger: { trigger: '.system-story', start: 'top 94%', end: 'top 16%', scrub: narrativeScrub },
+    });
+  }
+
   const cinematic = document.querySelector('[data-cinematic]');
   if (cinematic) {
     const frames = [...cinematic.querySelectorAll('[data-cinematic-frame]')];
@@ -650,9 +666,6 @@ if (!reduced) {
         duration: 0.26,
         ease: 'none',
       }, at + 0.3);
-      // Kontrast: napis (spoczynkowo szary) rozjaśnia się do bieli, gdy karta przechodzi pod nim.
-      timeline.to('.cinematic-title', { color: '#f7f7f2', duration: 0.05, ease: 'none' }, at + 0.15);
-      timeline.to('.cinematic-title', { color: '#55584a', duration: 0.08, ease: 'none' }, at + 0.4);
       if (bitmap) {
         timeline.fromTo(bitmap, { scale: 1.06 }, { scale: 1, duration: 0.42, ease: 'none' }, at);
       }
@@ -1034,11 +1047,29 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     if (!(preview instanceof HTMLElement)) return;
     preview.setAttribute('aria-hidden', 'true');
     document.body.append(preview);
-    // Duży podgląd w stałym miejscu po prawej (wzorzec Azurio) — natychmiast na hover wiersza.
-    row.addEventListener('pointerenter', () => {
-      preview.classList.add('is-visible');
+    // Podgląd W punkcie kursora (Azurio): pojawia się od razu tam, gdzie myszka, i płynnie za nią podąża.
+    // Rozmiar mierzony offsetWidth/Height (layout), NIE getBoundingClientRect (scale fałszował wymiar).
+    const xTo = gsap.quickTo(preview, 'x', { duration: 0.35, ease: 'power3' });
+    const yTo = gsap.quickTo(preview, 'y', { duration: 0.35, ease: 'power3' });
+    const placePreview = (event, immediate) => {
+      const margin = 14;
+      const halfWidth = preview.offsetWidth / 2;
+      const halfHeight = preview.offsetHeight / 2;
+      const x = Math.min(innerWidth - halfWidth - margin, Math.max(halfWidth + margin, event.clientX));
+      const y = Math.min(innerHeight - halfHeight - margin, Math.max(halfHeight + margin, event.clientY));
+      if (immediate) {
+        gsap.set(preview, { x, y });
+      } else {
+        xTo(x);
+        yTo(y);
+      }
+    };
+    row.addEventListener('pointerenter', (event) => {
+      placePreview(event, true);
+      requestAnimationFrame(() => preview.classList.add('is-visible'));
       runScramble(row.querySelector('[data-scramble]'));
     });
+    row.addEventListener('pointermove', (event) => placePreview(event, false), { passive: true });
     row.addEventListener('pointerleave', () => preview.classList.remove('is-visible'));
   });
   window.addEventListener('scroll', () => {

@@ -594,16 +594,20 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-frame-2 { top: 0; right: 14%; width: min(35vw,580px); height: 38%; }
 .cinematic-frame-3 { top: 0; left: 37%; width: min(29vw,490px); height: 50%; }
 .cinematic-frame-4 { top: 0; right: 29%; width: min(23vw,390px); height: 60%; }
-.cinematic-title { position: absolute; z-index: 5; top: 50%; left: 50%; width: min(84vw,1060px); color: #55584a; font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
+/* „Przezroczysty" tytuł: wypełnienie = kolor tła + ciemny kontur. W spoczynku widać sam kontur,
+   a gdy ciemna karta przechodzi POD napisem, limonkowe litery odcinają się od zdjęcia (kontrast). */
+.cinematic-title { position: absolute; z-index: 5; top: 50%; left: 50%; width: min(84vw,1060px); color: var(--cinematic-bg); -webkit-text-stroke: 1.5px rgba(16,18,12,.6); font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
 .cinematic-title > span { display: block; overflow: hidden; padding: .035em .06em .045em 0; }
 .cinematic-title > span > span { display: block; will-change: transform,opacity; }
-.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px currentColor; }
+.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px rgba(16,18,12,.6); }
 .cinematic-progress { position: absolute; z-index: 6; right: max(20px,calc((100vw - 1540px)/2)); bottom: 28px; left: max(20px,calc((100vw - 1540px)/2)); height: 1px; background: rgba(16,18,12,.22); }
 .cinematic-progress i { display: block; width: 100%; height: 100%; background: var(--cinematic-ink); }
 
 /* Sequence-lab: 3 karty-zdjęcia, hover = cykliczny pokaz slajdów (Azurio E1: mxdHoverSlideshow) */
 .sequence-lab { height: 210svh; background: #0a0b0b; }
-.sequence-grid { position: sticky; top: 0; display: grid; height: 100svh; grid-template-columns: repeat(12,1fr); gap: 20px; align-content: center; }
+.sequence-grid { position: sticky; top: 0; display: grid; height: 100svh; grid-template-columns: repeat(12,1fr); gap: 20px; align-content: center; overflow: hidden; padding-top: calc(var(--header-h) + 6px); }
+/* Pin ma pokazywać CAŁĄ sekcję: na niższych ekranach karty skalują się w dół, żeby nic nie ucinało. */
+@media (max-height: 1010px) { .sequence-deck { margin-top: clamp(22px,3vw,44px); transform: scale(.78); transform-origin: top center; } }
 .sequence-copy { grid-column: 1 / 9; }
 .sequence-copy h2 { margin-top: 28px; font-size: clamp(3rem,5.7vw,6.7rem); font-weight: 550; line-height: .87; letter-spacing: -.065em; }
 .sequence-copy > p:last-child { max-width: 430px; margin-top: 30px; color: var(--muted); font-size: 1.06rem; }
@@ -635,9 +639,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .reel-big__bg { position: absolute; z-index: 1; inset: 0; display: grid; align-content: center; gap: 1.2vw; pointer-events: none; user-select: none; }
 .reel-big__row { color: var(--paper-2); font-size: clamp(96px,17.5vw,310px); font-weight: 600; line-height: .82; letter-spacing: -.055em; text-transform: uppercase; white-space: nowrap; }
 .reel-big__row { will-change: transform; }
-.reel-big__row:nth-child(1) { margin-left: -7vw; animation: reel-drift-r 44s linear infinite alternate; }
-.reel-big__row:nth-child(2) { margin-left: 3vw; animation: reel-drift-l 52s linear infinite alternate; }
-.reel-big__row:nth-child(3) { margin-left: -13vw; animation: reel-drift-r 60s linear infinite alternate; }
+.reel-big__row:nth-child(1) { margin-left: -7vw; animation: reel-drift-r 22s linear infinite alternate; }
+.reel-big__row:nth-child(2) { margin-left: 3vw; animation: reel-drift-l 26s linear infinite alternate; }
+.reel-big__row:nth-child(3) { margin-left: -13vw; animation: reel-drift-r 30s linear infinite alternate; }
 @keyframes reel-drift-r { from { transform: translateX(-4vw); } to { transform: translateX(7vw); } }
 @keyframes reel-drift-l { from { transform: translateX(4vw); } to { transform: translateX(-7vw); } }
 @media (prefers-reduced-motion: reduce) { .reel-big__row { animation: none; } }
@@ -697,9 +701,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .insight-row p { max-width: 390px; color: var(--muted); }
 .insight-row-arrow { color: var(--lime); font-size: 1.5rem; transition: transform .3s var(--ease-out); }
 .insight-row:hover .insight-row-arrow { transform: rotate(45deg); }
-/* Duży podgląd jak w Azurio: stały, po prawej stronie ekranu, wyskakuje na hover wiersza. */
-.insight-preview { position: fixed; z-index: 110; top: 50%; right: 4vw; left: auto; width: clamp(480px,40vw,800px); aspect-ratio: 1.22; overflow: hidden; background: #111; opacity: 0; pointer-events: none; translate: 0 -50%; scale: .9; transform-origin: 82% center; filter: blur(6px); transition: opacity .24s, scale .5s cubic-bezier(.23,.65,.74,1.09), filter .34s; }
-.insight-preview.is-visible { filter: blur(0px); }
+/* Podgląd przy kursorze (Azurio): połowa rozmiaru, pojawia się W punkcie myszki i płynnie za nią podąża. */
+.insight-preview { position: fixed; z-index: 110; top: 0; right: auto; left: 0; width: clamp(300px,26vw,430px); aspect-ratio: 1.1; overflow: hidden; background: #111; opacity: 0; pointer-events: none; translate: -50% -50%; scale: .55; transform-origin: center; transition: opacity .14s, scale .34s cubic-bezier(.23,.65,.74,1.09); }
 .insight-preview.is-visible { opacity: 1; scale: 1; }
 .insight-preview img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.85) contrast(1.1); }
 .insight-preview-cta { position: absolute; top: 50%; left: 50%; display: grid; width: 96px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: var(--white); color: var(--ink); font-family: var(--font-mono); font-size: .56rem; line-height: 1.15; letter-spacing: .08em; text-align: center; text-transform: uppercase; transform: translate(-50%,-50%); }
@@ -1014,6 +1017,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   isolation: isolate;
 }
 .video-divider--sm { height: 42vh; min-height: 300px; }
+.video-divider--xs { height: 30vh; min-height: 210px; }
+.fog-statement__copy .fog-ai { color: var(--lime); font-style: normal; }
+.video-triptych { display: grid; gap: 4px; background: var(--ink); }
 .video-divider--lg { height: 78vh; min-height: 460px; }
 .video-divider__media {
   position: absolute;
