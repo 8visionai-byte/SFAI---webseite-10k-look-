@@ -313,26 +313,33 @@ if (processRows.length && !reduced) {
 }
 
 // Stacked cards procesu: karta przy scrollu „kładzie się w głąb" i odsłania następną.
-// Azurio F2 (mxdPerspectiveList) 1:1: rotateX 30, opacity .3, blur 4px, ease none, scrub .6.
-// Perspektywę (~1200 px) trzyma kontener .process-list w CSS.
+// Azurio F2 (rotateX 30, opacity .3, blur 4) — ale liczone z ŻYWEJ geometrii karty
+// (getBoundingClientRect przy scrollu), NIE z pozycji ScrollTriggera: przypięte sekcje
+// wyżej zmieniają wysokość dokumentu i rozjeżdżały pozycje → karty gasły w złych miejscach.
+// Ta wersja matematycznie nie może się rozjechać: p=0 dopóki karta nie doszła do góry ekranu.
 if (processRows.length && !reduced && !compactMotion) {
-  processRows.forEach((row) => {
-    const inner = row.querySelector('[data-process-inner]');
-    if (!inner) return;
-    // PRZYWRÓCONE 1:1 do wersji, która działała (Azurio F2) — bez późniejszych modyfikacji.
-    gsap.to(inner, {
-      rotateX: 30,
-      opacity: 0.3,
-      filter: 'blur(4px)',
-      ease: 'none',
-      scrollTrigger: {
-        trigger: row,
-        start: '5% top',
-        end: 'bottom 40%',
-        scrub: 0.6,
-      },
+  const foldTargets = processRows
+    .map((row) => ({ row, inner: row.querySelector('[data-process-inner]') }))
+    .filter((entry) => entry.inner);
+  const updateProcessFold = () => {
+    foldTargets.forEach(({ row, inner }) => {
+      const rect = row.getBoundingClientRect();
+      if (rect.bottom < -140 || rect.top > window.innerHeight + 140) return;
+      // Odwzorowanie '5% top' -> 'bottom 40%': a=0 to start składania, b=0 to koniec.
+      const a = rect.top + rect.height * 0.05;
+      const b = rect.bottom - window.innerHeight * 0.4;
+      const span = Math.max(1, b - a);
+      const p = Math.min(1, Math.max(0, -a / span));
+      gsap.set(inner, {
+        rotateX: 30 * p,
+        opacity: 1 - 0.7 * p,
+        filter: p > 0.005 ? `blur(${(4 * p).toFixed(2)}px)` : 'none',
+      });
     });
-  });
+  };
+  window.addEventListener('scroll', updateProcessFold, { passive: true });
+  window.addEventListener('resize', updateProcessFold, { passive: true });
+  updateProcessFold();
 }
 
 const storySteps = [...document.querySelectorAll('[data-story-step]')];
@@ -1055,29 +1062,42 @@ if (sequenceLabCards.length) {
 }
 
 if (window.matchMedia('(pointer: fine)').matches && !reduced) {
+  // JEDNO źródło prawdy: kontener listy steruje JEDNYM aktywnym podglądem. Per-wiersz
+  // handlery gubiły enter/leave (wielkie nagłówki sąsiednich wierszy przejmowały hover),
+  // stąd „trzy zdjęcia naraz" i podgląd zawieszony z boku. Tu: max jeden, zawsze pod kursorem.
+  const previewByRow = new Map();
   document.querySelectorAll('[data-insight-row]').forEach((row) => {
     const preview = row.querySelector('[data-insight-preview]');
     if (!(preview instanceof HTMLElement)) return;
     preview.setAttribute('aria-hidden', 'true');
     document.body.append(preview);
-    // Podgląd W punkcie kursora (Azurio): pojawia się od razu tam, gdzie myszka, i płynnie za nią podąża.
-    // Rozmiar mierzony offsetWidth/Height (layout), NIE getBoundingClientRect (scale fałszował wymiar).
-    // Wszystko przez GSAP: xPercent/yPercent centrują na kursorze, scale+opacity animowane tweenem.
     gsap.set(preview, { xPercent: -50, yPercent: -50, opacity: 0, scale: 0.6 });
-    const xTo = gsap.quickTo(preview, 'x', { duration: 0.16, ease: 'power3' });
-    const yTo = gsap.quickTo(preview, 'y', { duration: 0.16, ease: 'power3' });
-    row.addEventListener('pointerenter', (event) => {
-      gsap.set(preview, { x: event.clientX, y: event.clientY });
-      gsap.to(preview, { opacity: 1, scale: 1, duration: 0.38, ease: 'common', overwrite: true });
-      runScramble(row.querySelector('[data-scramble]'));
-    });
-    row.addEventListener('pointermove', (event) => {
-      xTo(event.clientX);
-      yTo(event.clientY);
-    }, { passive: true });
-    row.addEventListener('pointerleave', () => {
-      gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.22, ease: 'power2.in', overwrite: true });
-    });
+    previewByRow.set(row, preview);
+  });
+  let activeInsightPreview = null;
+  const insightsListEl = document.querySelector('.insights-list');
+  insightsListEl?.addEventListener('pointermove', (event) => {
+    const row = event.target instanceof Element ? event.target.closest('[data-insight-row]') : null;
+    const preview = row ? previewByRow.get(row) : null;
+    if (preview !== activeInsightPreview) {
+      if (activeInsightPreview) {
+        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.16, ease: 'power2.in', overwrite: true });
+      }
+      activeInsightPreview = preview ?? null;
+      if (activeInsightPreview && row) {
+        gsap.set(activeInsightPreview, { x: event.clientX, y: event.clientY });
+        gsap.fromTo(activeInsightPreview, { scale: 0.6, opacity: 0 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'common', overwrite: true });
+        runScramble(row.querySelector('[data-scramble]'));
+      }
+    } else if (activeInsightPreview) {
+      gsap.to(activeInsightPreview, { x: event.clientX, y: event.clientY, duration: 0.13, ease: 'power3.out', overwrite: 'auto' });
+    }
+  }, { passive: true });
+  insightsListEl?.addEventListener('pointerleave', () => {
+    if (activeInsightPreview) {
+      gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
+      activeInsightPreview = null;
+    }
   });
   const hideAllInsightPreviews = () => {
     document.querySelectorAll('.insight-preview').forEach((preview) => {
