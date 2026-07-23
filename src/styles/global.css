@@ -581,16 +581,18 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
    end = 8 ekranów). Zdjęcia startują jako punkt w centrum (z:-1000, scale:0) i rozlatują się we
    wszystkich kierunkach; JS interpoluje transformy ręcznie z progressu. Warstwy: tytuł intro (z1)
    POD lecącymi zdjęciami (z2), okładka (z3) nakrywa całość, napis outro żyje wewnątrz okładki. */
-.cinematic-system { --cinematic-bg: #dfe743; --cinematic-ink: #10120c; position: relative; height: 100svh; background: var(--cinematic-bg); color: var(--cinematic-ink); }
+/* Ciemna scena jak w referencji: biały tytuł z difference NAD zdjęciami — kształty wchodzą
+   na litery, farba liter odwraca kolor (pomarańcz -> błękit), napis widoczny CAŁY czas. */
+.cinematic-system { --cinematic-bg: #0a0b0b; --cinematic-ink: #f2f3ec; position: relative; height: 100svh; background: var(--cinematic-bg); color: var(--cinematic-ink); }
 .cinematic-stage { position: relative; height: 100%; min-height: min(640px,100svh); overflow: hidden; isolation: isolate; background: var(--cinematic-bg); }
 .cinematic-stage::before { position: absolute; z-index: 0; inset: 0; background-image: linear-gradient(rgba(16,18,12,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(16,18,12,.065) 1px,transparent 1px); background-size: 8.333vw 8.333vw; content: ''; opacity: .42; mask-image: linear-gradient(transparent,#000 17%,#000 83%,transparent); }
-.cinematic-chapter { position: absolute; z-index: 6; top: calc(var(--header-h) + 25px); right: max(20px,calc((100vw - 1540px)/2)); left: max(20px,calc((100vw - 1540px)/2)); display: flex; justify-content: space-between; color: rgba(16,18,12,.62); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .11em; text-transform: uppercase; }
-.cinematic-title { position: absolute; z-index: 1; top: 50%; left: 50%; width: min(84vw,1060px); margin: 0; color: var(--cinematic-ink); font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
+.cinematic-chapter { position: absolute; z-index: 8; top: calc(var(--header-h) + 25px); right: max(20px,calc((100vw - 1540px)/2)); left: max(20px,calc((100vw - 1540px)/2)); display: flex; justify-content: space-between; color: rgba(242,243,236,.58); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .11em; text-transform: uppercase; }
+.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(84vw,1060px); margin: 0; color: #fff; mix-blend-mode: difference; font-size: clamp(3.45rem,6.4vw,7.2rem); font-weight: 580; line-height: .87; letter-spacing: -.069em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
 .cinematic-title > span { display: block; will-change: opacity; }
-.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px rgba(16,18,12,.66); }
+.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px #fff; }
 /* Scena 3D: perspektywa na kontenerze daje głębię dla animowanego `z` dzieci. */
 .cinematic-scatter { position: absolute; z-index: 2; inset: 0; perspective: 1000px; transform-style: preserve-3d; pointer-events: none; }
-.cinematic-shot { position: absolute; top: 50%; left: 50%; overflow: hidden; margin: 0; background: #bcc52c; opacity: 0; box-shadow: 0 24px 58px rgba(28,31,9,.18); backface-visibility: hidden; will-change: transform; }
+.cinematic-shot { position: absolute; top: 50%; left: 50%; overflow: hidden; margin: 0; background: #141614; opacity: 0; box-shadow: 0 24px 58px rgba(0,0,0,.5); backface-visibility: hidden; will-change: transform; }
 .cinematic-shot img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(.36) sepia(.12) contrast(1.08); backface-visibility: hidden; }
 /* Kształty zdjęć: portret / landscape / kwadrat, szerokości ~14–24vw. */
 .cinematic-shot--p1 { width: 14vw; aspect-ratio: 3 / 4; }
@@ -599,7 +601,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-shot--l2 { width: 24vw; aspect-ratio: 16 / 10; }
 .cinematic-shot--s1 { width: 15vw; aspect-ratio: 1 / 1; }
 .cinematic-shot--s2 { width: 19vw; aspect-ratio: 1 / 1; }
-.cinematic-cover-layer { position: absolute; z-index: 3; inset: 0; perspective: 1000px; pointer-events: none; }
+.cinematic-cover-layer { position: absolute; z-index: 7; inset: 0; perspective: 1000px; pointer-events: none; }
 .cinematic-cover { position: absolute; inset: 0; margin: 0; opacity: 0; backface-visibility: hidden; will-change: transform; }
 .cinematic-cover img { width: 100%; height: 100%; object-fit: cover; }
 .cinematic-cover::after { position: absolute; inset: 0; background: radial-gradient(circle at 50% 52%, rgba(8,9,6,.4), rgba(8,9,6,.06) 70%); content: ''; pointer-events: none; }
@@ -613,7 +615,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-system.cinematic-static { height: auto; }
 .cinematic-static .cinematic-stage { display: flex; flex-direction: column; gap: 38px; justify-content: center; height: auto; min-height: 100svh; overflow: visible; padding: calc(var(--header-h) + 66px) 14px 64px; }
 .cinematic-static .cinematic-scatter { display: none; }
-.cinematic-static .cinematic-title { position: static; width: min(92vw,1060px); margin-inline: auto; transform: none; }
+.cinematic-static .cinematic-title { position: static; width: min(92vw,1060px); margin-inline: auto; transform: none; mix-blend-mode: normal; }
 .cinematic-static .cinematic-cover-layer { position: static; perspective: none; }
 .cinematic-static .cinematic-cover { position: relative; inset: auto; width: min(100%,1100px); margin-inline: auto; aspect-ratio: 16 / 10; opacity: 1; transform: none !important; }
 .cinematic-static .cinematic-outro > span { opacity: 1; }
@@ -720,7 +722,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 /* Podgląd przy kursorze — pozycję, skalę i opacity prowadzi WYŁĄCZNIE GSAP
    (mieszanie CSS translate/scale z GSAP-owym x/y psuło pozycjonowanie: GSAP konsumuje
    i zeruje indywidualne propy transformu, więc podgląd lądował obok kursora). */
-.insight-preview { position: fixed; z-index: 110; top: 0; right: auto; left: 0; width: clamp(300px,26vw,430px); aspect-ratio: 1.1; overflow: hidden; background: #111; opacity: 0; pointer-events: none; will-change: transform, opacity; }
+.insight-preview { position: fixed; z-index: 110; top: 0; right: auto; left: 0; width: clamp(190px,16vw,270px); aspect-ratio: 1.05; overflow: hidden; background: #111; opacity: 0; pointer-events: none; will-change: transform, opacity; }
+/* Kursor ZAMIENIA się w podgląd: nad wierszami chowamy natywny kursor (desktop). */
+@media (pointer: fine) { .insights-list .insight-row { cursor: none; } }
 .insight-preview img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.85) contrast(1.1); }
 .insight-preview-cta { position: absolute; top: 50%; left: 50%; display: grid; width: 96px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: var(--white); color: var(--ink); font-family: var(--font-mono); font-size: .56rem; line-height: 1.15; letter-spacing: .08em; text-align: center; text-transform: uppercase; transform: translate(-50%,-50%); }
 .listing-card-copy { display: flex; height: 100%; flex-direction: column; }
@@ -1076,7 +1080,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 }
 
 /* --- proof „Explore" (Technologia znika) --- */
-.proof-explore { position: relative; height: 400svh; background: var(--ink); }
+.proof-explore { position: relative; height: 330svh; background: var(--ink); }
 .proof-explore__sticky { position: sticky; top: 0; height: 100svh; overflow: hidden; isolation: isolate; display: grid; place-items: center; padding: 24px; }
 .proof-explore__media { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .proof-explore__img { position: absolute; margin: 0; overflow: hidden; clip-path: inset(50% 0% 50% 0%); opacity: 0; will-change: transform, clip-path, opacity; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
@@ -1090,7 +1094,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .proof-explore__title span { display: block; }
 .proof-explore__kicker { position: absolute; z-index: 2; top: clamp(28px, 8vh, 88px); left: 50%; transform: translateX(-50%); color: #fff; mix-blend-mode: difference; letter-spacing: .14em; }
 @media (max-width: 760px) {
-  .proof-explore { height: 320svh; }
+  .proof-explore { height: 260svh; }
   .proof-explore__img { width: 66vw !important; height: 34% !important; left: 17vw !important; right: auto !important; }
   .proof-explore__title { font-size: clamp(2.6rem, 12vw, 4.4rem); }
 }

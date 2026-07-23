@@ -330,8 +330,8 @@ if (processRows.length && !reduced && !compactMotion) {
         // Zakres MUSI być monotoniczny (start przed end) — karta kładzie się dopiero,
         // gdy jej góra przechodzi przez górną strefę ekranu. Poprzedni zakres
         // (top 22% -> bottom 58%) odwracał się dla wysokich kart i składał je od razu.
-        start: 'top 24%',
-        end: 'top -42%',
+        start: 'top -2%',
+        end: 'top -68%',
         scrub: 0.6,
       },
     });
@@ -966,14 +966,15 @@ if (!reduced) {
     const kicker = proofExplore.querySelector('[data-proof-kicker]');
     const imgs = [...proofExplore.querySelectorAll('[data-proof-img]')];
 
-    gsap.set(lines, { opacity: 0, yPercent: 60, filter: 'blur(16px)' });
+    // Tytuł widoczny (we mgle) już przy WEJŚCIU sekcji — bez czarnej dziury przed pinem.
+    gsap.set(lines, { opacity: 0.35, yPercent: 22, filter: 'blur(9px)' });
     if (kicker) gsap.set(kicker, { opacity: 0 });
 
     const proofTl = gsap.timeline({
       scrollTrigger: { trigger: proofExplore, start: 'top top', end: 'bottom bottom', scrub: galleryScrub },
     });
-    if (kicker) proofTl.to(kicker, { opacity: 1, duration: 0.05, ease: 'none' }, 0.02);
-    proofTl.to(lines, { opacity: 1, yPercent: 0, filter: 'blur(0px)', stagger: 0.05, duration: 0.16, ease: 'none' }, 0.03);
+    if (kicker) proofTl.to(kicker, { opacity: 1, duration: 0.04, ease: 'none' }, 0);
+    proofTl.to(lines, { opacity: 1, yPercent: 0, filter: 'blur(0px)', stagger: 0.03, duration: 0.08, ease: 'none' }, 0);
     proofTl.to(title, { yPercent: -12, duration: 0.2, ease: 'none' }, 0.24);
     proofTl.to(title, { yPercent: 0, duration: 0.2, ease: 'none' }, 0.72);
 
@@ -1067,8 +1068,8 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     // Rozmiar mierzony offsetWidth/Height (layout), NIE getBoundingClientRect (scale fałszował wymiar).
     // Wszystko przez GSAP: xPercent/yPercent centrują na kursorze, scale+opacity animowane tweenem.
     gsap.set(preview, { xPercent: -50, yPercent: -50, opacity: 0, scale: 0.6 });
-    const xTo = gsap.quickTo(preview, 'x', { duration: 0.25, ease: 'power3' });
-    const yTo = gsap.quickTo(preview, 'y', { duration: 0.25, ease: 'power3' });
+    const xTo = gsap.quickTo(preview, 'x', { duration: 0.16, ease: 'power3' });
+    const yTo = gsap.quickTo(preview, 'y', { duration: 0.16, ease: 'power3' });
     row.addEventListener('pointerenter', (event) => {
       gsap.set(preview, { x: event.clientX, y: event.clientY });
       gsap.to(preview, { opacity: 1, scale: 1, duration: 0.38, ease: 'common', overwrite: true });
