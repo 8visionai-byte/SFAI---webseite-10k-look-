@@ -447,17 +447,43 @@ const buildAgentPayload = (voiceId, llm, toolId, kbLocator) => ({
 // tool_id => nowy tag => automatyczny PATCH agenta przy najbliższej sesji.
 const configTagFor = (payload) => `sfai-cfg-${sha12(payload)}`;
 
-let agentCache = { id: '', configTag: '' };
+let agentCache = { id: '', managed: false };
 let ensureInFlight = null;
 
-const ensureAgent = (apiKey, toolId, kbLocator) => {
+const ensureAgent = (apiKey) => {
   if (!ensureInFlight) {
-    ensureInFlight = doEnsureAgent(apiKey, toolId, kbLocator).finally(() => { ensureInFlight = null; });
+    ensureInFlight = doEnsureAgent(apiKey).finally(() => { ensureInFlight = null; });
   }
   return ensureInFlight;
 };
 
-const doEnsureAgent = async (apiKey, toolId, kbLocator) => {
+/*
+ * WŁASNOŚĆ KONFIGURACJI (decyzja Pawła 2026-07-24): dashboard ElevenLabs jest
+ * JEDYNYM źródłem prawdy dla istniejącego agenta — Paweł konfiguruje ręcznie
+ * (LLM, głos, prompt, narzędzia) i publikuje. Kod NIGDY nie PATCHuje
+ * istniejącego agenta: wcześniejszy config-drift-PATCH po ręcznym publishu
+ * wywalał provisioning (502 na sesji) i nadpisywał ręczne zmiany.
+ * Repo tworzy agenta z pełną konfiguracją TYLKO, gdy nie istnieje
+ * (pierwsza instalacja albo skasowany ręcznie w dashboardzie).
+ * managed=true wyłącznie dla agenta utworzonego przez repo w tym cyklu życia
+ * instancji — tylko wtedy wysyłamy overrides (mamy pewność zezwoleń).
+ */
+const doEnsureAgent = async (apiKey) => {
+  if (agentCache.id) return { id: agentCache.id, managed: agentCache.managed };
+
+  const listing = await elevenFetch(apiKey, `/v1/convai/agents?search=${encodeURIComponent(AGENT_NAME)}&page_size=100`);
+  const existing = (listing?.agents || []).find((agent) => agent?.name === AGENT_NAME);
+  if (existing?.agent_id) {
+    agentCache = { id: existing.agent_id, managed: false };
+    console.log('ElevenLabs agent adopted (dashboard = źródło prawdy)', existing.agent_id);
+    return { id: existing.agent_id, managed: false };
+  }
+
+  // Brak agenta: pełny provisioning (narzędzie nawigacji + baza wiedzy + agent).
+  const [toolId, kbLocator] = await Promise.all([
+    ensureTool(apiKey),
+    ensureKnowledgeDoc(apiKey),
+  ]);
   const payload = buildAgentPayload(
     resolveVoiceId(),
     (process.env.ELEVENLABS_LLM || '').trim() || DEFAULT_LLM,
@@ -465,47 +491,30 @@ const doEnsureAgent = async (apiKey, toolId, kbLocator) => {
     kbLocator,
   );
   const configTag = configTagFor(payload);
-  if (agentCache.id && agentCache.configTag === configTag) return agentCache.id;
-
-  const listing = await elevenFetch(apiKey, `/v1/convai/agents?search=${encodeURIComponent(AGENT_NAME)}&page_size=100`);
-  const existing = (listing?.agents || []).find((agent) => agent?.name === AGENT_NAME);
-
-  if (!existing) {
-    const created = await elevenFetch(apiKey, '/v1/convai/agents/create', {
-      method: 'POST',
-      body: { ...payload, tags: ['sfai-www', configTag] },
-    });
-    if (!created?.agent_id) throw new Error('ElevenLabs create agent: brak agent_id w odpowiedzi.');
-    // Wyścig dwóch zimnych startów (obie instancje tworzą agenta naraz):
-    // obie zbiegają do tego samego zwycięzcy (najstarszy), przegrany kasuje
-    // własny duplikat. Pusty configTag wymusi weryfikację configu zwycięzcy.
-    try {
-      const recheck = await elevenFetch(apiKey, `/v1/convai/agents?search=${encodeURIComponent(AGENT_NAME)}&page_size=100`);
-      const twins = (recheck?.agents || []).filter((agent) => agent?.name === AGENT_NAME);
-      const canonical = twins.sort((a, b) =>
-        ((a.created_at_unix_secs ?? 0) - (b.created_at_unix_secs ?? 0)) || String(a.agent_id).localeCompare(String(b.agent_id))
-      )[0];
-      if (canonical?.agent_id && canonical.agent_id !== created.agent_id) {
-        await elevenFetch(apiKey, `/v1/convai/agents/${created.agent_id}`, { method: 'DELETE' }).catch(() => {});
-        agentCache = { id: canonical.agent_id, configTag: '' };
-        console.log('ElevenLabs agent duplicate resolved ->', canonical.agent_id);
-        return canonical.agent_id;
-      }
-    } catch {}
-    agentCache = { id: created.agent_id, configTag };
-    console.log('ElevenLabs agent created', created.agent_id, configTag);
-    return created.agent_id;
-  }
-
-  if (!(existing.tags || []).includes(configTag)) {
-    await elevenFetch(apiKey, `/v1/convai/agents/${existing.agent_id}`, {
-      method: 'PATCH',
-      body: { ...payload, tags: ['sfai-www', configTag] },
-    });
-    console.log('ElevenLabs agent updated', existing.agent_id, configTag);
-  }
-  agentCache = { id: existing.agent_id, configTag };
-  return existing.agent_id;
+  const created = await elevenFetch(apiKey, '/v1/convai/agents/create', {
+    method: 'POST',
+    body: { ...payload, tags: ['sfai-www', configTag] },
+  });
+  if (!created?.agent_id) throw new Error('ElevenLabs create agent: brak agent_id w odpowiedzi.');
+  // Wyścig dwóch zimnych startów (obie instancje tworzą agenta naraz):
+  // obie zbiegają do tego samego zwycięzcy (najstarszy), przegrany kasuje
+  // własny duplikat.
+  try {
+    const recheck = await elevenFetch(apiKey, `/v1/convai/agents?search=${encodeURIComponent(AGENT_NAME)}&page_size=100`);
+    const twins = (recheck?.agents || []).filter((agent) => agent?.name === AGENT_NAME);
+    const canonical = twins.sort((a, b) =>
+      ((a.created_at_unix_secs ?? 0) - (b.created_at_unix_secs ?? 0)) || String(a.agent_id).localeCompare(String(b.agent_id))
+    )[0];
+    if (canonical?.agent_id && canonical.agent_id !== created.agent_id) {
+      await elevenFetch(apiKey, `/v1/convai/agents/${created.agent_id}`, { method: 'DELETE' }).catch(() => {});
+      agentCache = { id: canonical.agent_id, managed: true };
+      console.log('ElevenLabs agent duplicate resolved ->', canonical.agent_id);
+      return { id: canonical.agent_id, managed: true };
+    }
+  } catch {}
+  agentCache = { id: created.agent_id, managed: true };
+  console.log('ElevenLabs agent created', created.agent_id, configTag);
+  return { id: created.agent_id, managed: true };
 };
 
 // Preferujemy WebRTC (token); przy niepowodzeniu signed URL (WebSocket).
@@ -583,19 +592,19 @@ export default async function handler(request, response) {
   };
 
   let agentId;
+  let managedAgent = false;
   const pinnedAgentId = process.env.ELEVENLABS_AGENT_ID?.trim();
   if (pinnedAgentId) {
-    // Agent wskazany ręcznie: pomijamy cały provisioning (tool/KB/agent).
+    // Agent wskazany ręcznie: pomijamy provisioning; traktujemy jak adoptowany
+    // (bez overrides — nieznane zezwolenia).
     agentId = pinnedAgentId;
   } else {
     try {
-      const [toolId, kbLocator] = await raceDeadline(Promise.all([
-        timed('ensure_tool_ms', () => ensureTool(apiKey)),
-        timed('ensure_kb_ms', () => ensureKnowledgeDoc(apiKey)),
-      ]), 'tool_kb');
-      agentId = await raceDeadline(timed('ensure_agent_ms', () => ensureAgent(apiKey, toolId, kbLocator)), 'agent');
+      const found = await raceDeadline(timed('ensure_agent_ms', () => ensureAgent(apiKey)), 'agent');
+      agentId = found.id;
+      managedAgent = found.managed;
     } catch (error) {
-      console.error('ElevenLabs provisioning failed', error?.message || error);
+      console.error('ElevenLabs provisioning failed', error?.status || '', error?.message || error);
       return writeJson(response, 502, {
         error: 'Agent głosowy jest chwilowo niedostępny.',
         code: 'elevenlabs_provisioning_failed',
@@ -616,7 +625,7 @@ export default async function handler(request, response) {
     // tokenie unieważnia cache, żeby następny request na tej instancji przeszedł
     // pełny listing/create zamiast wiecznie celować w nieistniejącego agenta.
     if (!pinnedAgentId && typeof error?.status === 'number' && error.status >= 400 && error.status < 500 && error.status !== 429) {
-      agentCache = { id: '', configTag: '' };
+      agentCache = { id: '', managed: false };
     }
     console.error('ElevenLabs session credentials failed', error?.status || '', error?.message || error);
     return writeJson(response, 502, {
@@ -638,16 +647,19 @@ export default async function handler(request, response) {
   return writeJson(response, 200, {
     provider: 'elevenlabs',
     connection,
-    // Dieta promptu: żadnego pełnego promptu per sesja. Kontekst wznowienia
-    // idzie jako dynamic variable {{resume_note}} (placeholder w promptcie
-    // agenta), overrides tylko dla lekkich pól.
+    // Kontekst wznowienia jako dynamic variable {{resume_note}} — nadmiarowa
+    // zmienna jest bezpieczna, nawet gdy ręczny prompt nie ma placeholdera.
     ...(resumeNote ? { dynamicVariables: { resume_note: resumeNote } } : {}),
-    overrides: {
-      agent: {
-        firstMessage,
-        language: 'pl',
+    // Overrides TYLKO dla agenta utworzonego przez repo (pewność zezwoleń).
+    // Agent zarządzany ręcznie w dashboardzie mógłby odrzucić start sesji.
+    ...(managedAgent ? {
+      overrides: {
+        agent: {
+          firstMessage,
+          language: 'pl',
+        },
+        tts: { voiceId: resolveVoiceId() },
       },
-      tts: { voiceId: resolveVoiceId() },
-    },
+    } : {}),
   });
 }

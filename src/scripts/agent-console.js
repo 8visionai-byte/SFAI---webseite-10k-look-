@@ -669,7 +669,9 @@ if (consoleRoot instanceof HTMLElement) {
       if (!isVoiceSessionActive(generation)) return true;
       const conversation = await Conversation.startSession({
         ...session.connection, // { conversationToken } (WebRTC) lub { signedUrl } (WebSocket)
-        overrides: session.overrides,
+        // Overrides tylko, gdy serwer je przysłał (agent zarządzany ręcznie w
+        // dashboardzie może nie mieć nadanych zezwoleń na nadpisania).
+        ...(session.overrides ? { overrides: session.overrides } : {}),
         // Kontekst wznowienia po przejściu na podstronę: dynamic variable
         // {{resume_note}} w promptcie agenta (endpoint nie wysyła już pełnego
         // promptu per sesja — dieta promptu pod niskie TTFT).
