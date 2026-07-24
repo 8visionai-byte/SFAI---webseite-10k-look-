@@ -638,19 +638,21 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 
 /* Sequence-lab: 3 karty-zdjęcia, hover = cykliczny pokaz slajdów (Azurio E1: mxdHoverSlideshow) */
 .sequence-lab { height: 210svh; background: #0a0b0b; }
-.sequence-grid { position: sticky; top: 0; display: grid; height: 100svh; grid-template-columns: repeat(12,1fr); gap: 20px; align-content: center; overflow: hidden; padding-top: calc(var(--header-h) + 6px); }
+.sequence-grid { position: sticky; top: 0; display: grid; height: 100svh; grid-template-columns: repeat(12,1fr); gap: 20px; align-content: start; overflow: hidden; padding-top: calc(var(--header-h) + 6px); }
 /* Pin ma pokazywać CAŁĄ sekcję: na niższych ekranach karty skalują się w dół, żeby nic nie ucinało. */
 /* Zwężenie zamiast transform:scale — scale rastrował tekst pigułek (rozmyte etykiety). */
-@media (max-height: 1010px) { .sequence-deck { margin-top: clamp(20px,2.6vw,36px); width: 86%; justify-self: center; } }
 .sequence-copy { grid-column: 1 / 9; }
 .sequence-copy h2 { margin-top: 28px; font-size: clamp(3rem,5.7vw,6.7rem); font-weight: 550; line-height: .87; letter-spacing: -.065em; }
 .sequence-copy > p:last-child { max-width: 430px; margin-top: 30px; color: var(--muted); font-size: 1.06rem; }
-.sequence-deck { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(12,1fr); gap: 20px; align-items: start; margin-top: clamp(50px,6vw,90px); }
-.sequence-card { position: relative; margin: 0; overflow: hidden; border: 1px solid var(--line); background: #141616; }
+.sequence-deck { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(12,1fr); gap: 20px; align-items: start; margin-top: clamp(28px,2.6vw,44px); }
+.sequence-card { position: relative; width: 100%; margin: 0; overflow: hidden; border: 1px solid var(--line); background: #141616; }
 /* PRZYWRÓCONE do zatwierdzonej wersji 3 kart (układ 4 kart się nie sprawdził). */
-.sequence-card--tall { grid-column: 1 / 5; aspect-ratio: .78; }
-.sequence-card--wide { grid-column: 5 / 9; aspect-ratio: 1.38; margin-top: clamp(60px,8vw,130px); }
-.sequence-card--mid { grid-column: 9 / -1; aspect-ratio: .95; margin-top: clamp(26px,3.5vw,60px); }
+/* Układ lustrzany (2026-07-24): Kontrola+Wynik po lewej, wysoka karta AI po prawej,
+   podciągnięta ujemnym marginesem w wolną przestrzeń obok nagłówka — nic nie
+   wystaje poza sticky 100svh. */
+.sequence-card--tall { grid-column: 9 / -1; grid-row: 1; aspect-ratio: .78; max-height: min(66svh, 740px); margin-top: clamp(-320px, -18vw, -140px); }
+.sequence-card--wide { grid-column: 1 / 5; grid-row: 1; aspect-ratio: 1.38; max-height: 34svh; margin-top: 14px; }
+.sequence-card--mid { grid-column: 5 / 9; grid-row: 1; aspect-ratio: 1.12; max-height: 36svh; }
 .sequence-card-frames,.sequence-card-frame { position: absolute; inset: 0; }
 /* E1: miękkość przełączania robi CSS transition na opacity (krzywa "common" jak w Azurio). */
 .sequence-card-frame { opacity: 0; transition: opacity .3s cubic-bezier(.23,.65,.74,1.09); }
@@ -772,7 +774,8 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .cinematic-shot--p1 { width: 18vw; }.cinematic-shot--p2 { width: 21vw; }.cinematic-shot--l1 { width: 26vw; }.cinematic-shot--l2 { width: 29vw; }.cinematic-shot--s1 { width: 19vw; }.cinematic-shot--s2 { width: 23vw; }
   .sequence-copy { grid-column: 1 / 10; }
   .sequence-card-title { font-size: clamp(1.3rem,2.2vw,1.9rem); }
-  .sequence-card--wide { margin-top: clamp(40px,6vw,90px); }
+  /* Tablet: bez podciągania wysokiej karty (nagłówek sięga kolumny 10 — uniknij najechania na tekst) */
+  .sequence-card--tall { margin-top: 0; max-height: 46svh; }
   .insight-row { grid-template-columns: 1.2fr 3.4fr 2.2fr 28px; gap: 18px; }
   .manifesto .mono-label, .section-heading .mono-label, .process-title .mono-label, .content-grid > .mono-label { grid-column: 1 / 3; }
   .manifesto h2, .section-heading h2, .process-title h2, .content-grid > h2 { grid-column: 3 / -1; }
@@ -877,7 +880,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .sequence-copy { max-width: 560px; }
   .sequence-copy h2 { font-size: clamp(3.2rem,14vw,5.6rem); }
   .sequence-deck { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 55px; }
-  .sequence-card--tall,.sequence-card--wide,.sequence-card--mid { grid-column: auto; margin-top: 0; aspect-ratio: 1.08; }
+  .sequence-card--tall,.sequence-card--wide,.sequence-card--mid { grid-column: auto; grid-row: auto; margin-top: 0; aspect-ratio: 1.08; max-height: none; }
   .sequence-card-title { font-size: clamp(1.6rem,7vw,2.2rem); }
   .story-grid { display: block; min-height: auto; }
   .story-media { position: sticky; z-index: 1; top: 0; height: 52svh; }
