@@ -9,6 +9,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@elevenlabs/client": "1.15.2",
     "@fontsource-variable/instrument-sans": "5.2.8",
     "@fontsource/ibm-plex-mono": "5.2.7",
     "astro": "7.1.1",

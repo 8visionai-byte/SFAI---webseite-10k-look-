@@ -1,23 +1,8 @@
 import { createHash } from 'node:crypto';
-import { getVoiceInstructions } from './_knowledge.mjs';
+import { getVoiceInstructions, NAV_SECTIONS } from './_knowledge.mjs';
 
-// Sekcje serwisu dostępne dla narzędzia navigate_to. Slugi usług 1:1 z src/data/services.js.
-export const NAV_SECTIONS = [
-  'start',
-  'uslugi',
-  'architekci-wartosci-ai',
-  'chatboty-ai',
-  'strony-www-seo-ai',
-  'voiceboty-ai',
-  'agenci-ai',
-  'automatyzacja-procesow',
-  'opieka-ai',
-  'jak-pracujemy',
-  'realizacje',
-  'wiedza',
-  'o-nas',
-  'kontakt',
-];
+// Sekcje narzędzia navigate_to: wspólna mapa NAV_MAP/NAV_SECTIONS w _knowledge.mjs
+// (jedno źródło prawdy dla ElevenLabs i tego fallbacku OpenAI).
 
 const RATE_WINDOW_MS = 10 * 60 * 1_000;
 const MAX_SESSIONS_PER_WINDOW = 6;

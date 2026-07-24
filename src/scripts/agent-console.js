@@ -35,6 +35,11 @@ if (consoleRoot instanceof HTMLElement) {
   let voiceTokenController = null;
   let voiceStartInFlight = false;
   let voiceDisconnectTimer = 0;
+  // Ścieżka główna głosu: ElevenLabs Agents (SDK @elevenlabs/client, import dynamiczny).
+  // Istniejąca ścieżka OpenAI Realtime zostaje jako automatyczny fallback.
+  let elConversation = null; // aktywna sesja ElevenLabs
+  let elAgentMode = '';      // 'speaking' | 'listening' wg onModeChange SDK
+  let pendingCrossNav = null; // odroczone przejście na podstronę (czeka na koniec wypowiedzi agenta)
 
   const isVoiceSessionActive = (generation) => (
     generation === voiceSessionGeneration
@@ -183,6 +188,19 @@ if (consoleRoot instanceof HTMLElement) {
     voiceTokenController?.abort();
     voiceTokenController = null;
     stopVoiceMeter();
+    if (pendingCrossNav) {
+      window.clearTimeout(pendingCrossNav.timer);
+      pendingCrossNav = null;
+      // Użytkownik świadomie przerwał rozmowę przed odroczonym przejściem —
+      // flaga wznowienia nie może odpalić mikrofonu na następnej stronie.
+      try { sessionStorage.removeItem(RESUME_KEY); } catch {}
+    }
+    if (elConversation) {
+      const conversationToEnd = elConversation;
+      elConversation = null;
+      conversationToEnd.endSession().catch(() => {});
+    }
+    elAgentMode = '';
     voiceChannel?.close();
     voicePeer?.close();
     voiceStream?.getTracks().forEach((track) => track.stop());
@@ -431,9 +449,34 @@ if (consoleRoot instanceof HTMLElement) {
     'kontakt': 'kontakt i diagnoza',
   };
   const RESUME_KEY = 'sfai-voice-resume';
-  const CROSS_PAGE_DELAY_MS = 1_400; // krótkie okno na dokończenie zdania przed przeładowaniem
+  // Fallback OpenAI nie ma zdarzenia „koniec wypowiedzi agenta", więc zdanie
+  // zapowiedzi (wymuszone promptem) dostaje stały bufor przed przeładowaniem.
+  const CROSS_PAGE_DELAY_MS = 3_500;
   let navTimer = 0;
   let resumeContext = null; // ustawiane przy automatycznym wznowieniu po przejściu na podstronę
+
+  // ElevenLabs, mode "open": przeładowanie czeka, aż agent DOKOŃCZY zdanie
+  // zapowiedzi (przejście speaking -> listening w onModeChange). Bezpieczniki:
+  // brak mowy po wywołaniu narzędzia = 3,5 s; twardy limit łączny = 9 s.
+  const EL_CROSS_NAV_SILENT_MS = 3_500;
+  const EL_CROSS_NAV_MAX_MS = 9_000;
+  const executePendingCrossNav = () => {
+    if (!pendingCrossNav) return;
+    const { path, timer } = pendingCrossNav;
+    window.clearTimeout(timer);
+    pendingCrossNav = null;
+    window.location.href = path;
+  };
+  const scheduleElevenCrossNav = (path) => {
+    if (pendingCrossNav) window.clearTimeout(pendingCrossNav.timer);
+    const speaking = elAgentMode === 'speaking';
+    pendingCrossNav = {
+      path,
+      sawSpeech: speaking,
+      startedAt: Date.now(),
+      timer: window.setTimeout(executePendingCrossNav, speaking ? EL_CROSS_NAV_MAX_MS : EL_CROSS_NAV_SILENT_MS),
+    };
+  };
 
   // Znajdź cel scrolla na BIEŻĄCEJ stronie: sekcja po id (np. #uslugi na stronie
   // głównej) albo karta usługi po linku wewnątrz #main. Lookup po linku działa
@@ -450,7 +493,7 @@ if (consoleRoot instanceof HTMLElement) {
     return null;
   };
 
-  const performNavigation = (sectionRaw, modeRaw) => {
+  const performNavigation = (sectionRaw, modeRaw, options = {}) => {
     const section = String(sectionRaw || '').trim();
     const mode = modeRaw === 'open' ? 'open' : 'show';
     const path = NAV_TARGETS[section];
@@ -467,6 +510,13 @@ if (consoleRoot instanceof HTMLElement) {
     if (samePage || (mode !== 'open' && local)) {
       setDocked(true);
       window.clearTimeout(navTimer);
+      // Świeższe „pokaż tutaj" anuluje wcześniejsze odroczone przejście na
+      // podstronę (inaczej strona przeładowałaby się mimo obietnicy „rozmowa trwa").
+      if (pendingCrossNav) {
+        window.clearTimeout(pendingCrossNav.timer);
+        pendingCrossNav = null;
+        try { sessionStorage.removeItem(RESUME_KEY); } catch {}
+      }
       navTimer = window.setTimeout(() => {
         if (local?.element) local.element.scrollIntoView({ behavior: 'smooth', block: local.block });
         else window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -490,6 +540,16 @@ if (consoleRoot instanceof HTMLElement) {
       }));
     } catch {}
     window.clearTimeout(navTimer);
+    if (options.deferCrossPage) {
+      // ElevenLabs: przeładowanie po dokończeniu wypowiedzi agenta (patrz scheduleElevenCrossNav).
+      scheduleElevenCrossNav(path);
+      return {
+        ok: true,
+        action: 'open_page',
+        target: path,
+        note: 'Strona przeładuje się automatycznie zaraz po tym, jak dokończysz bieżącą wypowiedź, a rozmowa zostanie wznowiona na nowej podstronie. Dokończ tylko zdanie zapowiedzi, nie żegnaj się.',
+      };
+    }
     navTimer = window.setTimeout(() => { window.location.href = path; }, CROSS_PAGE_DELAY_MS);
     return {
       ok: true,
@@ -523,10 +583,142 @@ if (consoleRoot instanceof HTMLElement) {
     }
   };
 
+  // Wspólny stan UI po udanym zestawieniu sesji głosowej (oba silniki).
+  const setVoiceLiveUi = () => {
+    if (!(voiceStart instanceof HTMLButtonElement) || !(transcript instanceof HTMLElement)) return;
+    transcript.textContent = 'Słucham. Zacznij mówić.';
+    setConnectionStatus('słucha', 'working');
+    voiceStart.disabled = false;
+    voiceStart.setAttribute('aria-pressed', 'true');
+    const label = voiceStart.querySelector('span');
+    if (label) label.textContent = 'Zakończ rozmowę';
+    voiceStage?.classList.add('is-live');
+  };
+
+  // Zmiany trybu agenta ElevenLabs: energia wizualizacji, status pill oraz
+  // spust odroczonego przejścia na podstronę (koniec zdania zapowiedzi).
+  const handleElevenModeChange = (mode) => {
+    elAgentMode = mode;
+    if (mode === 'speaking') {
+      voiceStateFloor = .76;
+      emitVoiceEnergy(.9, 'speaking');
+      setConnectionStatus('mówi', 'working');
+      if (pendingCrossNav && !pendingCrossNav.sawSpeech) {
+        pendingCrossNav.sawSpeech = true;
+        window.clearTimeout(pendingCrossNav.timer);
+        const remaining = Math.max(1_000, EL_CROSS_NAV_MAX_MS - (Date.now() - pendingCrossNav.startedAt));
+        pendingCrossNav.timer = window.setTimeout(executePendingCrossNav, remaining);
+      }
+      return;
+    }
+    voiceStateFloor = .14;
+    emitVoiceEnergy(.2, 'listening');
+    setConnectionStatus('słucha', 'working');
+    if (pendingCrossNav?.sawSpeech) {
+      // Zapowiedź wybrzmiała: krótka chwila na końcówkę audio i przeładowanie.
+      window.clearTimeout(pendingCrossNav.timer);
+      pendingCrossNav.timer = window.setTimeout(executePendingCrossNav, 250);
+    }
+  };
+
+  // Client tool navigate_to (ElevenLabs SDK). Zwracany obiekt trafia do LLM
+  // (expects_response: true), więc note steruje dalszą wypowiedzią agenta.
+  const handleElevenNavigate = (parameters, generation) => {
+    if (!isVoiceSessionActive(generation)) return { ok: false, error: 'session_inactive' };
+    return performNavigation(parameters?.section, parameters?.mode, { deferCrossPage: true });
+  };
+
+  // Ścieżka główna: ElevenLabs Agents. Zwraca false, gdy trzeba użyć fallbacku
+  // OpenAI (brak klucza na serwerze, awaria provisioningu, padnięty start SDK).
+  // Rzuca przy błędach terminalnych (odmowa mikrofonu, limit prób) — wtedy
+  // fallback nie ma sensu i użytkownik dostaje właściwy komunikat.
+  const startVoiceEleven = async (generation, controller, resume) => {
+    let sessionResponse;
+    try {
+      sessionResponse = await fetch('/api/elevenlabs-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resume: resume ? { target: resume.target } : null }),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (controller.signal.aborted) throw error;
+      return false;
+    }
+    const session = await sessionResponse.json().catch(() => null);
+    if (sessionResponse.status === 429) {
+      const rateError = new Error(session?.error || 'Limit prób uruchomienia rozmowy został osiągnięty. Spróbuj ponownie za kilka minut.');
+      rateError.code = 'voice_rate_limited';
+      throw rateError;
+    }
+    if (!sessionResponse.ok || !session?.connection) return false;
+    if (!isVoiceSessionActive(generation)) return true;
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!isVoiceSessionActive(generation)) {
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    }
+    voiceStream = stream;
+    startVoiceMeter(stream, generation);
+
+    try {
+      // Import dynamiczny: SDK (z warstwą WebRTC) ładuje się dopiero przy starcie
+      // rozmowy, nie w głównym bundlu każdej strony.
+      const { Conversation } = await import('@elevenlabs/client');
+      if (!isVoiceSessionActive(generation)) return true;
+      const conversation = await Conversation.startSession({
+        ...session.connection, // { conversationToken } (WebRTC) lub { signedUrl } (WebSocket)
+        overrides: session.overrides,
+        clientTools: {
+          navigate_to: async (parameters) => handleElevenNavigate(parameters, generation),
+        },
+        onModeChange: ({ mode }) => {
+          if (isVoiceSessionActive(generation)) handleElevenModeChange(mode);
+        },
+        onStatusChange: ({ status }) => {
+          if (!isVoiceSessionActive(generation)) return;
+          if (status === 'connecting') setConnectionStatus('łączy', 'working');
+        },
+        onDisconnect: () => {
+          if (!isVoiceSessionActive(generation)) return;
+          stopVoice();
+          transcript.textContent = 'Połączenie zostało zakończone. Uruchom rozmowę ponownie.';
+          setConnectionStatus('rozłączony', 'local');
+        },
+        onError: () => {
+          if (!isVoiceSessionActive(generation)) return;
+          voiceStateFloor = 0;
+          emitVoiceEnergy(0, 'error');
+          transcript.textContent = 'Połączenie zostało przerwane. Spróbuj ponownie.';
+          setConnectionStatus('błąd', 'local');
+        },
+      });
+      if (!isVoiceSessionActive(generation)) {
+        conversation.endSession().catch(() => {});
+        return true;
+      }
+      elConversation = conversation;
+      elAgentMode = 'speaking'; // agent zaczyna od first message
+      voiceStateFloor = .14;
+      emitVoiceEnergy(.14, 'listening');
+      setVoiceLiveUi();
+      return true;
+    } catch {
+      // Start SDK nie wyszedł: sprzątamy mikrofon i schodzimy na fallback OpenAI.
+      if (isVoiceSessionActive(generation)) {
+        stream.getTracks().forEach((track) => track.stop());
+        if (voiceStream === stream) voiceStream = null;
+        stopVoiceMeter();
+      }
+      return false;
+    }
+  };
+
   const startVoice = async () => {
     if (!(voiceStart instanceof HTMLButtonElement) || !(transcript instanceof HTMLElement)) return;
     if (consoleRoot.hidden || currentMode !== 'voice') return;
-    if (voicePeer) {
+    if (voicePeer || elConversation) {
       stopVoice();
       transcript.textContent = 'Rozmowa zakończona. Możesz uruchomić ją ponownie.';
       setConnectionStatus('gotowy');
@@ -543,8 +735,38 @@ if (consoleRoot instanceof HTMLElement) {
     const controller = new AbortController();
     voiceTokenController?.abort();
     voiceTokenController = controller;
+    const resume = resumeContext; // kontekst jednorazowy, konsumowany przez obie ścieżki
+    resumeContext = null;
 
     try {
+      const startedEleven = await startVoiceEleven(generation, controller, resume);
+      if (!startedEleven && isVoiceSessionActive(generation)) {
+        await startVoiceOpenAI(generation, controller, resume);
+      }
+    } catch (error) {
+      if (!isVoiceSessionActive(generation)) return;
+      stopVoice();
+      if (error?.name === 'NotAllowedError') {
+        transcript.textContent = 'Dostęp do mikrofonu nie został udzielony.';
+        setConnectionStatus('brak mikrofonu', 'local');
+      } else if (error?.code === 'voice_rate_limited') {
+        transcript.textContent = error.message;
+        setConnectionStatus('limit rozmów', 'local');
+      } else if (error?.code === 'agent_not_configured') {
+        transcript.textContent = 'Interfejs jest gotowy. Do rozmowy potrzebny jest bezpieczny klucz API ustawiony na hostingu.';
+        setConnectionStatus('oczekuje na klucz', 'local');
+      } else {
+        transcript.textContent = 'Nie udało się uruchomić rozmowy. Spróbuj ponownie lub użyj czatu tekstowego.';
+        setConnectionStatus('głos nieaktywny', 'local');
+      }
+    } finally {
+      if (voiceTokenController === controller) voiceTokenController = null;
+      if (generation === voiceSessionGeneration) voiceStartInFlight = false;
+    }
+  };
+
+  // Fallback: dotychczasowa ścieżka OpenAI Realtime (WebRTC + data channel).
+  const startVoiceOpenAI = async (generation, controller, resume) => {
       const tokenResponse = await fetch('/api/realtime-session', { method: 'POST', signal: controller.signal });
       const token = await tokenResponse.json();
       if (!tokenResponse.ok || !token?.value) {
@@ -605,19 +827,12 @@ if (consoleRoot instanceof HTMLElement) {
         if (!isVoiceSessionActive(generation)) return;
         voiceStateFloor = .14;
         emitVoiceEnergy(.14, 'listening');
-        transcript.textContent = 'Słucham. Zacznij mówić.';
-        setConnectionStatus('słucha', 'working');
-        voiceStart.disabled = false;
-        voiceStart.setAttribute('aria-pressed', 'true');
-        const label = voiceStart.querySelector('span');
-        if (label) label.textContent = 'Zakończ rozmowę';
-        voiceStage?.classList.add('is-live');
+        setVoiceLiveUi();
         // Po przejściu na podstronę w trakcie rozmowy: kontynuacja tematu zamiast
         // powitania od zera (kontekst z sessionStorage, patrz performNavigation).
-        const greeting = resumeContext
-          ? `Użytkownik w trakcie rozmowy głosowej przeszedł właśnie na podstronę ${resumeContext.target} serwisu (temat rozmowy: ${resumeContext.topic}). Nawiąż jednym krótkim, w pełni dokończonym zdaniem do tematu i płynnie kontynuuj rozmowę naturalną, rodzimą polszczyzną. Nie przedstawiaj się od nowa, nie witaj się od zera i pod żadnym pozorem nie mów, że rozmowa została przerwana lub zakończona.`
+        const greeting = resume
+          ? `Użytkownik w trakcie rozmowy głosowej przeszedł właśnie na podstronę ${resume.target} serwisu (temat rozmowy: ${resume.topic}). Nawiąż jednym krótkim, w pełni dokończonym zdaniem do tematu i płynnie kontynuuj rozmowę naturalną, rodzimą polszczyzną. Nie przedstawiaj się od nowa, nie witaj się od zera i pod żadnym pozorem nie mów, że rozmowa została przerwana lub zakończona.`
           : 'Przywitaj użytkownika naturalną, rodzimą polszczyzną z neutralnym, ogólnopolskim akcentem, jednym krótkim i w pełni dokończonym zdaniem, a potem zapytaj, w czym możesz pomóc jego firmie.';
-        resumeContext = null;
         voiceChannel?.send(JSON.stringify({
           type: 'response.create',
           response: {
@@ -672,26 +887,6 @@ if (consoleRoot instanceof HTMLElement) {
       const answerSdp = await sdpResponse.text();
       if (!isVoiceSessionActive(generation)) return;
       await peer.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-    } catch (error) {
-      if (!isVoiceSessionActive(generation)) return;
-      stopVoice();
-      if (error?.name === 'NotAllowedError') {
-        transcript.textContent = 'Dostęp do mikrofonu nie został udzielony.';
-        setConnectionStatus('brak mikrofonu', 'local');
-      } else if (error?.code === 'voice_rate_limited') {
-        transcript.textContent = error.message;
-        setConnectionStatus('limit rozmów', 'local');
-      } else if (error?.code === 'agent_not_configured') {
-        transcript.textContent = 'Interfejs jest gotowy. Do rozmowy potrzebny jest bezpieczny klucz API ustawiony na hostingu.';
-        setConnectionStatus('oczekuje na klucz', 'local');
-      } else {
-        transcript.textContent = 'Nie udało się uruchomić rozmowy. Spróbuj ponownie lub użyj czatu tekstowego.';
-        setConnectionStatus('głos nieaktywny', 'local');
-      }
-    } finally {
-      if (voiceTokenController === controller) voiceTokenController = null;
-      if (generation === voiceSessionGeneration) voiceStartInFlight = false;
-    }
   };
 
   voiceStart?.addEventListener('click', startVoice);
