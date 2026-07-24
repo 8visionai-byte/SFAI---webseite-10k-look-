@@ -455,13 +455,14 @@ const schema = {
 
     <section class="care-callout">
       <div class="care-callout-sticky">
+        {/* Pełna limonka (dyktando): zdjęcie obserwatorium usunięte, mono-labelka zostaje. */}
         <div class="care-callout-visual" aria-hidden="true">
-          <Image src={careObservatoryImage} alt="" widths={[720,1080,1440]} sizes="(max-width:760px) 100vw, 58vw" format="webp" quality={84} />
           <span>[ 07 systems / monitored ]</span>
         </div>
         <div class="care-callout-inner section-shell">
           <p class="mono-label">/ Opieka AI</p>
-          <h2 data-reveal>Twój dział AI. <em>Bez rekrutacji.</em></h2>
+          {/* Bez data-reveal: wejście nagłówka robią „wlepki" per słowo (site.js, once). */}
+          <h2>Twój dział AI. <em>Bez rekrutacji.</em></h2>
           <div class="care-callout-copy" data-reveal>
             <p>Po wdrożeniu nie zostajesz z panelem, hasłem i instrukcją. Pilnujemy jakości, aktualizujemy wiedzę, rozwijamy integracje i reagujemy na zmiany w firmie.</p>
             <a class="text-link" href="/uslugi/opieka-ai/">Zobacz stałą opiekę <span>↗</span></a>

@@ -11,6 +11,9 @@ CustomEase.create('common', '.23, .65, .74, 1.09');
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const compactMotion = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+// GLOBALNA zasada scramble (dyktando Pawła): dekodowanie napisów odpala się WYŁĄCZNIE
+// z hovera na precyzyjnym wskaźniku. Dotyk/mobile = napisy statyczne (zero skakania strony).
+const scrambleAllowed = !reduced && !compactMotion && window.matchMedia('(pointer: fine)').matches;
 const narrativeScrub = compactMotion ? 0.72 : 1.05;
 const galleryScrub = compactMotion ? 0.86 : 1.2;
 const header = document.querySelector('[data-header]');
@@ -142,16 +145,29 @@ if (reduced) {
 
 const scrambleGlyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+-<>[]';
 const scrambleTimers = new WeakMap();
+// Zamrożenie layoutu na czas dekodowania: losowe znaki mają różne szerokości, więc bez
+// blokady zmieniało się łamanie linii, a z nim wysokość elementu — cała strona "skakała"
+// (najbardziej na mobile). Inline height + overflow:clip = offsetHeight stały co do piksela;
+// po zakończeniu przebiegu obie właściwości schodzą i element wraca do naturalnego flow.
+const freezeScrambleLayout = (element) => {
+  element.style.height = `${element.offsetHeight}px`;
+  element.style.overflow = 'clip';
+};
+const releaseScrambleLayout = (element) => {
+  element.style.removeProperty('height');
+  element.style.removeProperty('overflow');
+};
 const runScramble = (element) => {
-  if (!(element instanceof HTMLElement) || reduced) return;
+  if (!(element instanceof HTMLElement) || !scrambleAllowed) return;
+  // Retrigger dozwolony dopiero PO zakończeniu bieżącego przebiegu — machanie myszą nie sieka.
+  if (scrambleTimers.has(element)) return;
   const original = element.dataset.scrambleOriginal ?? element.textContent?.trim() ?? '';
   if (!original) return;
   element.dataset.scrambleOriginal = original;
   element.setAttribute('aria-label', original);
   element.setAttribute('aria-live', 'off');
   if (!element.style.minWidth) element.style.minWidth = `${Math.ceil(element.getBoundingClientRect().width)}px`;
-  const currentTimer = scrambleTimers.get(element);
-  if (currentTimer) window.clearInterval(currentTimer);
+  freezeScrambleLayout(element);
   let frame = 0;
   // Dłuższe teksty składają się szybciej na znak, żeby całość trwała podobnie (~3,5 s max).
   const rate = Math.max(1, original.length / 95);
@@ -166,6 +182,7 @@ const runScramble = (element) => {
       window.clearInterval(timer);
       element.textContent = original;
       scrambleTimers.delete(element);
+      releaseScrambleLayout(element);
     }
   }, 56);
   scrambleTimers.set(element, timer);
@@ -177,9 +194,85 @@ document.querySelectorAll('[data-scramble]').forEach((element) => {
   trigger.addEventListener('focus', () => runScramble(element));
 });
 
-// Hero: intro dekoduje się samo tuż po wejściu na stronę (od razu „coś się dzieje").
-const heroIntro = document.querySelector('.hero-intro');
-if (heroIntro) window.setTimeout(() => runScramble(heroIntro), 650);
+// Etykiety „01 / Znajdź stratę" i podpisy kafli system-explore: dekodowanie na hover CAŁEGO
+// wiersza/kafla (sam napis to za mały cel dla myszy), zawsze z powrotem do poprawnej formy.
+document.querySelectorAll('.manifesto-signals li, [data-explore-item]').forEach((row) => {
+  const label = row.querySelector('[data-scramble]');
+  if (label) row.addEventListener('pointerenter', () => runScramble(label));
+});
+
+// Hero „AI, które dowozi.": najazd kursorem rozkodowuje litery i szybko składa je z powrotem.
+// Retrigger dopiero po zakończeniu bieżącego przebiegu — bez sieczki przy machaniu myszą.
+// (Auto-dekodowanie hero-intro po 650 ms USUNIĘTE — scramble działa wyłącznie z hovera.)
+const heroTitle = document.querySelector('.hero-title');
+if (heroTitle && scrambleAllowed) {
+  // Linia 2 dekoduje się na <em> (outline), żeby nie zgubić stylowania konturu.
+  const heroTargets = [...heroTitle.querySelectorAll('.line > span')]
+    .map((line) => line.querySelector('em') ?? line);
+  let heroQueued = 0;
+  heroTitle.addEventListener('pointerenter', () => {
+    if (heroQueued > 0 || heroTargets.some((target) => scrambleTimers.has(target))) return;
+    heroTargets.forEach((target, index) => {
+      heroQueued += 1;
+      window.setTimeout(() => {
+        heroQueued -= 1;
+        runScramble(target);
+      }, index * 90);
+    });
+  });
+}
+
+// Marquee usług: pętla BEZSZWOWA. Dotąd tor (2 kopie treści w HTML) bywał węższy niż okno
+// na szerokich monitorach — zanim keyframe przewinął połowę, w kadr wjeżdżał pusty fragment
+// i „przerwany ciąg" (dyktando pkt 3). Tu: kopie doklejane aż tor ma >= 2x szerokości okna
+// + jedna kopia zapasu (przy KAŻDEJ szerokości viewportu), a przesuw liczony modulo szerokości
+// jednej kopii (gsap.utils.wrap) — nigdy pusty kadr, nigdy skok. Tempo bez zmian: kopia / 34 s.
+const marqueeBand = document.querySelector('.marquee-band');
+const marqueeTrack = marqueeBand?.querySelector('.marquee-track');
+if (marqueeBand && marqueeTrack instanceof HTMLElement && !reduced && marqueeTrack.children.length > 1) {
+  const baseCount = Math.max(1, Math.floor(marqueeTrack.children.length / 2)); // HTML niesie 2 kopie (fallback CSS)
+  const baseSpans = [...marqueeTrack.children].slice(0, baseCount);
+  const copyWidth = () => marqueeTrack.scrollWidth * (baseCount / marqueeTrack.children.length);
+  const ensureCoverage = () => {
+    let guard = 0;
+    while (marqueeTrack.scrollWidth < window.innerWidth * 2 + copyWidth() && guard < 12) {
+      baseSpans.forEach((span) => {
+        const clone = span.cloneNode(true);
+        if (clone instanceof Element) clone.setAttribute('aria-hidden', 'true');
+        marqueeTrack.append(clone);
+      });
+      guard += 1;
+    }
+  };
+  ensureCoverage();
+  marqueeTrack.classList.add('is-wrapped'); // CSS gasi keyframes — ruch przejmuje ticker
+  let marqueeUnit = copyWidth();
+  let marqueeWrap = gsap.utils.wrap(-marqueeUnit, 0);
+  window.addEventListener('resize', () => {
+    ensureCoverage();
+    marqueeUnit = copyWidth();
+    marqueeWrap = gsap.utils.wrap(-marqueeUnit, 0);
+  }, { passive: true });
+  // Webfont (IBM Plex Mono, font-display: swap) potrafi wjechać PO pierwszym pomiarze
+  // i poszerzyć kopię o kilkadziesiąt px — bez przeliczenia pas skakałby na szwie co obieg.
+  document.fonts?.ready.then(() => {
+    ensureCoverage();
+    marqueeUnit = copyWidth();
+    marqueeWrap = gsap.utils.wrap(-marqueeUnit, 0);
+  });
+  let marqueePaused = false;
+  if (window.matchMedia('(pointer: fine)').matches) {
+    // Jak dotychczasowe :hover na keyframes — pauza pod kursorem (desktop).
+    marqueeBand.addEventListener('pointerenter', () => { marqueePaused = true; });
+    marqueeBand.addEventListener('pointerleave', () => { marqueePaused = false; });
+  }
+  let marqueePos = 0;
+  gsap.ticker.add((_, deltaTime) => {
+    if (marqueePaused || marqueeUnit <= 0) return;
+    marqueePos -= (marqueeUnit / 34) * (deltaTime / 1000);
+    gsap.set(marqueeTrack, { x: marqueeWrap(marqueePos) });
+  });
+}
 
 const hoverScrambleFrames = new WeakMap();
 const resetHoverScramble = (element) => {
@@ -193,7 +286,7 @@ const resetHoverScramble = (element) => {
 };
 
 const runHoverScramble = (element) => {
-  if (!(element instanceof HTMLElement) || reduced || compactMotion) return;
+  if (!(element instanceof HTMLElement) || !scrambleAllowed) return;
   resetHoverScramble(element);
   const original = element.dataset.hoverScrambleOriginal ?? element.textContent ?? '';
   if (!original.trim()) return;
@@ -256,13 +349,13 @@ const processGlyphFor = (character, characterIndex, tick) => {
 };
 
 const runProcessScramble = (row, element) => {
-  if (!(row instanceof HTMLElement) || !(element instanceof HTMLElement) || reduced) return;
+  if (!(row instanceof HTMLElement) || !(element instanceof HTMLElement) || !scrambleAllowed) return;
+  // Ta sama globalna zasada co runScramble: retrigger po zakończeniu + zamrożona wysokość.
+  if (processScrambleFrames.has(element)) return;
   const original = element.dataset.processScrambleOriginal ?? element.textContent ?? '';
   if (!original.trim()) return;
   element.dataset.processScrambleOriginal = original;
-
-  const activeFrame = processScrambleFrames.get(element);
-  if (activeFrame) window.cancelAnimationFrame(activeFrame);
+  freezeScrambleLayout(element);
 
   const characters = [...original];
   const duration = 1180;
@@ -288,6 +381,7 @@ const runProcessScramble = (row, element) => {
 
     element.textContent = original;
     processScrambleFrames.delete(element);
+    releaseScrambleLayout(element);
     window.setTimeout(() => row.classList.remove('is-scrambling'), 120);
   };
 
@@ -296,22 +390,11 @@ const runProcessScramble = (row, element) => {
 
 const processRows = [...document.querySelectorAll('[data-process-row]')];
 if (processRows.length && !reduced) {
-  const processObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      const row = entry.target;
-      // Kodowanie na PRAWYM opisie (decyzja Pawła) — tytuły po lewej zostają statyczne.
-      const description = row.querySelector('.process-item-inner > p');
-      const rowIndex = Math.max(0, processRows.indexOf(row));
-      window.setTimeout(() => runProcessScramble(row, description), rowIndex * 80);
-      processObserver.unobserve(row);
-    });
-  }, { threshold: 0.52, rootMargin: '0px 0px -8% 0px' });
-
+  // Kodowanie TYLKO na hover karty (dyktando: koniec kodowania przy scrollu — to ono
+  // zmieniało łamanie linii i huśtało stroną). Cel: PRAWY opis, tytuły zostają statyczne.
   processRows.forEach((row) => {
     const description = row.querySelector('.process-item-inner > p');
     if (!(description instanceof HTMLElement)) return;
-    processObserver.observe(row);
     row.addEventListener('pointerenter', () => runProcessScramble(row, description));
     row.addEventListener('focusin', () => runProcessScramble(row, description));
   });
@@ -400,18 +483,14 @@ if (!reduced) {
     const signalRows = [...manifesto.querySelectorAll('.manifesto-signals li')];
     const signalRules = [...manifesto.querySelectorAll('.manifesto-signals i')];
     const copy = [...manifesto.querySelectorAll('[data-manifesto-copy] p')];
-    const scrambleLabels = [...manifesto.querySelectorAll('[data-scramble]')];
-    const scrambleManifestoLabels = () => scrambleLabels.forEach((label, index) => {
-      window.setTimeout(() => runScramble(label), index * 76);
-    });
+    // Scroll-scramble etykiet USUNIĘTY (dyktando: scramble wyłącznie z hovera) —
+    // etykiety [data-scramble] dekodują się na hover wiersza (listener wyżej).
     const manifestoTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: manifesto,
         start: 'clamp(top 82%)',
         end: 'clamp(center 42%)',
         scrub: narrativeScrub,
-        onEnter: scrambleManifestoLabels,
-        onEnterBack: scrambleManifestoLabels,
       },
     });
     // Azurio "reveal-type": nagłówek cięty na znaki, wyostrza się z mgły scrollem (scrub 2).
@@ -496,17 +575,8 @@ if (!reduced) {
       ease: 'none',
     }, 0.42);
 
-    // Akapity rozsypują się i składają jak etykiety (spójna iluminacja całej sekcji).
-    if (copy.length) {
-      ScrollTrigger.create({
-        trigger: copy[0],
-        start: 'top 82%',
-        once: true,
-        onEnter: () => copy.forEach((paragraph, index) => {
-          window.setTimeout(() => runScramble(paragraph), 380 * index);
-        }),
-      });
-    }
+    // (Scroll-scramble akapitów USUNIĘTY — wieloliniowe kodowanie zmieniało łamanie linii
+    // i wysokość sekcji: to był główny generator „skakania" strony przy scrollu.)
 
     // Hover na nagłówku -> zdjęcia wyskakują jedno po drugim i chowają się (Azurio E1:
     // setInterval ~420 ms, miękkość robi CSS transition na opacity+scale). Desktop-only,
@@ -573,37 +643,91 @@ if (!reduced) {
         onLeaveBack: hideBridge,
       });
     }
+
+    // Outro (dyktando): napis stoi ~jeden scroll (sekcja wydłużona do 270svh w CSS),
+    // a przy kolejnym scrollu zbiega się do punktu styku dłoni (środek kompozycji) i gaśnie.
+    // Scrub = w pełni odwracalne. CZYSTE 2D (scale/opacity, force3D off) — overlay pracuje
+    // na mix-blend difference, translateZ odcinałby blend (ta sama lekcja co w cinematic).
+    const bridgeOverlay = humanBridge.querySelector('[data-hb-overlay]');
+    if (bridgeOverlay && !compactMotion) {
+      // Wydłużona wysokość sekcji (270svh) obowiązuje TYLKO gdy outro realnie istnieje —
+      // klasa spina CSS z tą gałęzią (okno wąskie przy load → brak outra → zwykłe 168svh).
+      humanBridge.classList.add('has-outro');
+      const bridgeOutro = gsap.timeline({
+        scrollTrigger: {
+          trigger: humanBridge,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: narrativeScrub,
+        },
+      });
+      // Okno 0.62-0.96 progresu sekcji: wcześniej napis stoi nieruchomo (faza zatrzymania).
+      bridgeOutro.fromTo(bridgeOverlay, { scale: 1, opacity: 1 }, {
+        scale: 0.045,
+        opacity: 0,
+        transformOrigin: '50% 50%',
+        duration: 0.34,
+        ease: 'power2.in',
+        force3D: false,
+        immediateRender: false,
+      }, 0.62);
+      // Pusty marker na 1.0 — pełny zakres scrolla mapuje się 1:1 na oś czasu.
+      bridgeOutro.set({}, {}, 1);
+    }
   }
 
-  // Care „Twój dział AI": sekcja pinuje się, zdjęcie oddycha ostrością scrollem
-  // (mgła -> ostre -> trzyma -> znów mgła). Mobile/reduced = statyczne (CSS).
+  // Care „Twój dział AI. Bez rekrutacji.": pełna limonka (zdjęcie i blur-sweep USUNIĘTE —
+  // dyktando: „kompletnie żółta strona"). Słowa nagłówka lądują KOLEJNO jak wlepki przybijane
+  // młotkiem: scale 1.6 -> 1 na easie 'hop' + mikro-wstrząs całego nagłówka przy każdym stemplu.
+  // Trigger: raz przy wejściu sekcji (once) — scroll w górę NIE restartuje.
+  // Mobile/reduced: statyczna żółta sekcja z widocznym tekstem (split robimy tylko tutaj).
   const careCallout = document.querySelector('.care-callout');
   if (careCallout && !compactMotion) {
-    const careImg = careCallout.querySelector('.care-callout-visual img');
-    if (careImg) {
-      const careTl = gsap.timeline({
-        scrollTrigger: { trigger: careCallout, start: 'top top', end: 'bottom bottom', scrub: narrativeScrub },
-      });
-      careTl.fromTo(careImg,
-        { filter: 'blur(18px) saturate(.72) contrast(1.08)', scale: 1.06 },
-        { filter: 'blur(0px) saturate(.72) contrast(1.08)', scale: 1, duration: 0.45, ease: 'none' }, 0);
-      careTl.to(careImg, { filter: 'blur(0px) saturate(.72) contrast(1.08)', duration: 0.17, ease: 'none' }, 0.45);
-      careTl.to(careImg, { filter: 'blur(14px) saturate(.72) contrast(1.08)', opacity: 0.5, duration: 0.38, ease: 'none' }, 0.62);
-    }
-  } else if (careCallout) {
-    // Mobile: sekcja zostaje statyczna (CSS), ale tło dostaje miękkie wejście (fade + dojazd
-    // skali) zamiast suchego bloku. Klasa .care-mobile-motion zdejmuje CSS-owy freeze
-    // (opacity/transform !important) TYLKO w gałęzi mobile — desktop nietknięty.
-    const careImg = careCallout.querySelector('.care-callout-visual img');
-    if (careImg) {
-      careCallout.classList.add('care-mobile-motion');
-      gsap.fromTo(careImg, { opacity: 0, scale: 1.08 }, {
-        opacity: 1,
-        scale: 1,
-        duration: 1.15,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: careCallout, start: 'top 72%', once: true },
-      });
+    const careHeading = careCallout.querySelector('h2');
+    if (careHeading) {
+      careHeading.setAttribute('aria-label', (careHeading.textContent ?? '').trim().replace(/\s+/g, ' '));
+      // Podział na słowa z zachowaniem <em> (outline „Bez rekrutacji." w drugiej linii).
+      const careWords = [];
+      const splitToWords = (node) => {
+        [...node.childNodes].forEach((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            const fragment = document.createDocumentFragment();
+            child.textContent.split(/(\s+)/).forEach((chunk) => {
+              if (!chunk) return;
+              if (/^\s+$/.test(chunk)) {
+                fragment.append(chunk);
+                return;
+              }
+              const word = document.createElement('span');
+              word.className = 'care-word';
+              word.textContent = chunk;
+              fragment.append(word);
+              careWords.push(word);
+            });
+            child.replaceWith(fragment);
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            splitToWords(child);
+          }
+        });
+      };
+      splitToWords(careHeading);
+      [...careHeading.children].forEach((child) => child.setAttribute('aria-hidden', 'true'));
+
+      if (careWords.length) {
+        gsap.set(careWords, { opacity: 0, scale: 1.6, transformOrigin: '50% 70%' });
+        const stampTl = gsap.timeline({
+          scrollTrigger: { trigger: careCallout, start: 'top 72%', once: true },
+        });
+        careWords.forEach((word, index) => {
+          const at = index * 0.34;
+          // Wlepka: pojawia się duża i lekko przezroczysta, dobija twardo na 'hop'.
+          stampTl.fromTo(word, { opacity: 0 }, { opacity: 1, duration: 0.22, ease: 'power1.out' }, at);
+          stampTl.fromTo(word, { scale: 1.6 }, { scale: 1, duration: 0.5, ease: 'hop' }, at);
+          // Mikro-wstrząs nagłówka w momencie „dobicia" (młotek stuknął).
+          stampTl.to(careHeading, { y: 5, duration: 0.06, ease: 'power2.in' }, at + 0.42);
+          stampTl.to(careHeading, { y: 0, duration: 0.14, ease: 'power3.out' }, at + 0.48);
+        });
+      }
     }
   }
 
@@ -909,17 +1033,19 @@ if (!reduced) {
       const bitmap = item.querySelector('img');
       const entry = 0.045 + index * 0.145;
 
+      // autoAlpha (nie opacity): przy 0 GSAP stawia visibility:hidden, więc niewidoczne
+      // kafle NIE łapią hovera (inaczej przechwytywałyby scramble widocznego kafla).
       exploreTimeline.fromTo(item, {
         xPercent: compactMotion ? 28 : 38,
         yPercent: index % 2 === 0 ? -2 : 2.5,
         rotate: 0.8,
-        opacity: 0,
+        autoAlpha: 0,
         filter: 'blur(10px)',
       }, {
         xPercent: compactMotion ? 5 : 7,
         yPercent: 0,
         rotate: 0.15,
-        opacity: 0.94,
+        autoAlpha: 0.94,
         filter: 'blur(0px)',
         duration: 0.15,
         ease: 'none',
@@ -940,7 +1066,7 @@ if (!reduced) {
       exploreTimeline.to(item, {
         xPercent: 0,
         rotate: 0,
-        opacity: 1,
+        autoAlpha: 1,
         duration: 0.11,
         ease: 'none',
       }, entry + 0.14);
@@ -949,7 +1075,7 @@ if (!reduced) {
         xPercent: compactMotion ? -18 : -25,
         yPercent: index % 2 === 0 ? 1.5 : -1.5,
         rotate: -0.55,
-        opacity: 0,
+        autoAlpha: 0,
         duration: 0.17,
         ease: 'none',
       }, entry + 0.26);
@@ -1261,27 +1387,42 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
       activeInsightPreview = null;
     }
   });
-  const hideAllInsightPreviews = () => {
+  const hideAllInsightPreviews = (force = false) => {
     // Kursor nad listą = NIE chowaj (scroll-hide walczył z hoverem podczas dojeżdżania
     // płynnego scrolla i podgląd znikał zaraz po pojawieniu — stąd "za którymś razem").
-    if (pointerInsideInsights) return;
+    // force = twardy bezpiecznik (sekcja wyjechała z viewportu): chowa ZAWSZE i zeruje stan —
+    // przy scrollu bez ruchu myszy pointerleave nie przychodzi i flaga wisiała na true,
+    // a activeInsightPreview blokował ponowne pokazanie na tym samym wierszu („zawieszka").
+    if (!force && pointerInsideInsights) return;
+    if (force) pointerInsideInsights = false;
+    activeInsightPreview = null;
     document.querySelectorAll('.insight-preview').forEach((preview) => {
       if (Number(gsap.getProperty(preview, 'opacity')) > 0.05) {
-        gsap.to(preview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
+        gsap.to(preview, { opacity: 0, scale: 0.7, duration: force ? 0.15 : 0.18, ease: 'power2.in', overwrite: true });
       }
     });
   };
-  window.addEventListener('scroll', hideAllInsightPreviews, { passive: true });
-  // Bezpiecznik: wyjazd sekcji z ekranu ZAWSZE chowa podgląd. Trigger tworzony tylko tam,
-  // gdzie sekcja istnieje (na podstronach GSAP logował warning i tworzył martwy trigger).
+  window.addEventListener('scroll', () => hideAllInsightPreviews(false), { passive: true });
+  // Bezpiecznik 1: wyjazd sekcji z ekranu ZAWSZE chowa podgląd (twardo). Trigger tworzony
+  // tylko tam, gdzie sekcja istnieje (na podstronach GSAP logował warning i martwy trigger).
   if (document.querySelector('.insights-section')) {
     ScrollTrigger.create({
       trigger: '.insights-section',
       start: 'top bottom',
       end: 'bottom top',
-      onLeave: hideAllInsightPreviews,
-      onLeaveBack: hideAllInsightPreviews,
+      onLeave: () => hideAllInsightPreviews(true),
+      onLeaveBack: () => hideAllInsightPreviews(true),
     });
+  }
+  // Bezpiecznik 2: działa też na /wiedza/ (.listing-grid, gdzie nie ma .insights-section) —
+  // lista poza viewportem = natychmiastowe schowanie, niezależnie od stanu hovera.
+  if (insightsListEl) {
+    const listVisibility = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) hideAllInsightPreviews(true);
+      });
+    });
+    listVisibility.observe(insightsListEl);
   }
 }
 

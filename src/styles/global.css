@@ -204,11 +204,14 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .hero-copy { position: relative; z-index: 3; grid-column: 1 / 11; align-self: center; padding-top: 5vh; pointer-events: none; }
 .hero-kicker { display: flex; align-items: center; gap: 16px; margin-bottom: clamp(22px, 4vh, 52px); }
 .hero-kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 18px var(--lime); }
-.hero-title { max-width: 1220px; font-size: clamp(4.7rem, 10.2vw, 10.8rem); font-weight: 590; line-height: .82; letter-spacing: -.075em; text-wrap: balance; }
+/* width: max-content + pointer-events: auto — hover-scramble tytułu (hero-copy ma pointer-events
+   none, żeby nie zasłaniać FlowCore; sam h1 zwężony do szerokości liter nie sięga voice-triggera). */
+.hero-title { width: max-content; max-width: 1220px; font-size: clamp(4.7rem, 10.2vw, 10.8rem); font-weight: 590; line-height: .82; letter-spacing: -.075em; text-wrap: balance; pointer-events: auto; }
 .hero-title .line { display: block; overflow: hidden; padding-right: .1em; }
 .hero-title .line > span { display: block; transform: translateY(115%); animation: title-in .9s var(--ease-out) forwards; }
 .hero-title .line:nth-child(2) > span { animation-delay: .1s; }
-.hero-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px rgba(247,247,242,.88); }
+/* inline-block: scramble mrozi wysokość inline (height) — na czystym inline by nie zadziałało. */
+.hero-title em { display: inline-block; color: transparent; font-style: normal; -webkit-text-stroke: 1.5px rgba(247,247,242,.88); }
 @keyframes title-in { to { transform: none; } }
 .hero-side-list { position: relative; z-index: 3; grid-column: 11 / -1; align-self: end; padding-bottom: 13vh; color: var(--muted); font-family: var(--font-mono); font-size: .61rem; line-height: 1.85; letter-spacing: .05em; text-transform: uppercase; }
 .hero-bottom { position: relative; z-index: 4; display: grid; grid-column: 1 / -1; grid-template-columns: repeat(12, 1fr); gap: 20px; align-items: end; }
@@ -240,6 +243,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .marquee-track span::after { width: 7px; height: 7px; margin: 0 36px; border-radius: 50%; background: var(--lime); content: ''; }
 .marquee-band:hover .marquee-track { animation-play-state: paused; }
 @keyframes marquee { to { transform: translateX(-50%); } }
+/* Pętlę bezszwową prowadzi JS (przesuw modulo, kopie doklejone do >= 2x okna) — keyframes
+   zostają tylko jako fallback bez JS; .is-wrapped je gasi, żeby nie walczyły z tickerem. */
+.marquee-track.is-wrapped { animation: none; }
 
 /* Manifesto */
 .manifesto { position: relative; height: 220svh; background: var(--ink); }
@@ -384,7 +390,10 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .process-item:hover .process-item-media img { transform: scale(1.035); }
 .process-item p { max-width: 380px; color: var(--muted); font-size: 1.02rem; }
 
-.care-callout { position: relative; height: 220svh; background: var(--lime); color: var(--ink); }
+/* Dyktando: „kompletnie żółta strona" — pełna limonka bez zdjęcia i bez blur-sweep.
+   Pin skrócony 220 -> 150svh (bez oddechu ostrości dłuższy pin był martwym scrollem);
+   zostaje ~pół ekranu zatrzymania na stemple nagłówka (once, site.js). */
+.care-callout { position: relative; height: 150svh; background: var(--lime); color: var(--ink); }
 .care-callout-sticky { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 .care-callout-inner { display: grid; height: 100%; grid-template-columns: repeat(12,1fr); gap: 20px; align-items: center; padding: 90px 0; }
 .care-callout .mono-label { grid-column: 1 / 3; align-self: start; color: rgba(13,14,14,.55); }
@@ -528,13 +537,18 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 @keyframes voice-breathe { 0%,100% { opacity: .42; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.08); } }
 
 /* Full-bleed human / technology interlude */
+/* 270svh (było 168): napis stoi ~jeden scroll dłużej, a ostatni odcinek zjada outro
+   (zbieg do punktu styku, scrub w site.js). Mobile 112svh i tablet coarse 168svh niżej. */
 .human-ai-bridge { position: relative; height: 168svh; background: #dfe3e1; }
+/* 270svh tylko, gdy JS realnie zbudował outro (klasa z site.js) — inaczej martwy scroll */
+.human-ai-bridge.has-outro { height: 270svh; }
 .human-ai-bridge__sticky { position: sticky; top: 0; height: 100svh; min-height: min(620px,100svh); overflow: hidden; isolation: isolate; }
 .human-ai-bridge__media { position: absolute; inset: -4%; transform-origin: 50% 50%; will-change: transform; }
 .human-ai-bridge__media img,
 .human-ai-bridge__media video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.9) contrast(1.035); }
 .human-ai-bridge__video { background: #0d0e0e; }
-.human-ai-bridge__overlay { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 20px; padding: 24px; text-align: center; pointer-events: none; mix-blend-mode: difference; }
+/* will-change: transform — outro skaluje CAŁY overlay do punktu styku (scrub, czyste 2D). */
+.human-ai-bridge__overlay { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; gap: 20px; padding: 24px; text-align: center; pointer-events: none; mix-blend-mode: difference; will-change: transform, opacity; }
 .human-ai-bridge__overlay .mono-label { color: #fff; }
 .human-ai-bridge__title { margin: 0; color: #fff; font-family: var(--font-display); font-weight: 560; font-size: clamp(2.7rem, 7.4vw, 6.6rem); line-height: .96; letter-spacing: -.03em; }
 .human-ai-bridge__title .hb-line { display: block; overflow: hidden; padding-bottom: .08em; }
@@ -564,7 +578,9 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .system-explore__sticky { position: sticky; top: 0; height: 100svh; min-height: min(620px,100svh); overflow: hidden; isolation: isolate; }
 .system-explore__media-plane { position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; left: 43%; overflow: hidden; }
 .system-explore__row { position: absolute; inset: 0; pointer-events: none; }
-.system-explore__item { position: absolute; width: min(25vw,420px); margin: 0; opacity: 0; backface-visibility: hidden; will-change: transform,opacity; }
+/* pointer-events: auto — podpis kafla dekoduje się na hover CAŁEGO kafla (dyktando pkt 4a);
+   rodzic .system-explore__row zostaje na none (rzędy nachodzą na siebie inset 0). */
+.system-explore__item { position: absolute; width: min(25vw,420px); margin: 0; opacity: 0; backface-visibility: hidden; will-change: transform,opacity; pointer-events: auto; }
 .system-explore__image { --sfai-curtain: 0; position: relative; aspect-ratio: 1.24; overflow: hidden; background: #121414; contain: paint; }
 .motion-ready .system-explore__image { --sfai-curtain: 1; }
 .system-explore__image::before { position: absolute; z-index: 2; inset: 0; background: #090a0a; content: ''; pointer-events: none; transform: scaleY(var(--sfai-curtain)); transform-origin: bottom center; will-change: transform; }
@@ -599,9 +615,11 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .cinematic-chapter { position: absolute; z-index: 8; top: calc(var(--header-h) + 25px); right: max(20px,calc((100vw - 1540px)/2)); left: max(20px,calc((100vw - 1540px)/2)); display: flex; justify-content: space-between; color: rgba(242,243,236,.58); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .11em; text-transform: uppercase; }
 /* Limonka jak w proof: na ciemnym tle spoczywa limonkowo, nad jasnymi partiami zdjęć
    odbija w kobalt — biały dawał ~zerową różnicę na ciemnych kadrach. */
-.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(90vw,1240px); margin: 0; color: var(--lime); mix-blend-mode: difference; font-size: clamp(4rem,8vw,9rem); font-weight: 650; line-height: .87; letter-spacing: -.062em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
+/* Dyktando: litery ~9% większe (clamp w górę), tytuł w JEDNYM kolorze — bez wariantu outline.
+   Nadal czyste 2D (tylko color + font-size), mix-blend difference nietknięty. */
+.cinematic-title { position: absolute; z-index: 6; top: 50%; left: 50%; width: min(90vw,1240px); margin: 0; color: var(--lime); mix-blend-mode: difference; font-size: clamp(4.35rem,8.7vw,9.8rem); font-weight: 650; line-height: .87; letter-spacing: -.062em; text-align: center; text-wrap: balance; transform: translate(-50%,-50%); }
 .cinematic-title > span { display: block; will-change: opacity; }
-.cinematic-title em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px var(--lime); }
+.cinematic-title em { color: var(--lime); font-style: normal; -webkit-text-stroke: 0; }
 /* Scena 3D: perspektywa na kontenerze daje głębię dla animowanego `z` dzieci. */
 .cinematic-scatter { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .cinematic-shot { position: absolute; top: 50%; left: 50%; overflow: hidden; margin: 0; background: #141614; opacity: 0; box-shadow: 0 24px 58px rgba(0,0,0,.5); backface-visibility: hidden; will-change: transform; }
@@ -717,14 +735,14 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 .reel-card-copy i { font-style: normal; transition: transform .3s var(--ease-out); }
 .reel-card:hover .reel-card-copy i { transform: rotate(45deg); }
 
-/* Care visual layer */
-.care-callout-visual { position: absolute; z-index: 0; top: 0; right: 0; bottom: 0; width: 57%; overflow: hidden; opacity: .72; }
-.care-callout-visual::after { position: absolute; inset: 0; background: linear-gradient(90deg,var(--lime) 0,rgba(223,255,63,.9) 20%,transparent 68%),linear-gradient(0deg,var(--lime),transparent 48%); content: ''; }
-/* Oddech ostrości robi scrub GSAP na img (blur 18 -> 0 -> 14), stąd will-change. */
-.care-callout-visual img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.72) contrast(1.08); will-change: transform, filter; }
+/* Care visual layer: po zdjęciu i blur-sweep została mono-labelka „[ 07 systems / monitored ]"
+   — pełna nieprzezroczystość, żeby nie zginęła na żółtym. */
+.care-callout-visual { position: absolute; z-index: 0; top: 0; right: 0; bottom: 0; width: 57%; overflow: hidden; opacity: 1; }
 .care-callout-visual > span { position: absolute; z-index: 2; right: 18px; bottom: 16px; font-family: var(--font-mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; }
 .care-callout-inner { position: relative; z-index: 2; }
 .care-callout h2 { position: relative; z-index: 2; }
+/* Stemple „wlepek": słowa nagłówka animowane per span (scale 1.6 -> 1, ease hop, site.js). */
+.care-word { display: inline-block; will-change: transform, opacity; }
 
 /* Cursor-led editorial list */
 .insights-list { border-top: 1px solid var(--line); }
@@ -830,7 +848,7 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .manifesto-signals li i { display: none; }
   .manifesto-copy { display: block; margin-top: 44px; }
   .manifesto-copy p + p { margin-top: 24px; }
-  .human-ai-bridge { height: 112svh; }
+  .human-ai-bridge, .human-ai-bridge.has-outro { height: 112svh; }
   .human-ai-bridge__sticky { min-height: min(560px,100svh); }
   .human-ai-bridge__media { inset: -3%; }
   .human-ai-bridge__media img { object-position: center; }
@@ -927,12 +945,11 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .reel-card[aria-hidden='true'] { display: none; }
   .care-callout { height: auto; }
   .care-callout-sticky { position: static; height: auto; overflow: visible; }
-  /* Freeze tylko bez JS-owej gałęzi mobile (.care-mobile-motion daje zdjęciu miękkie wejście). */
-  .care-callout:not(.care-mobile-motion) .care-callout-visual img { filter: saturate(.72) contrast(1.08) !important; opacity: 1 !important; transform: none !important; }
+  /* (Reguły zdjęcia care usunięte — sekcja jest pełną limonką bez tła.) */
   .care-callout-inner { display: block; min-height: auto; padding: 100px 0; }
   .care-callout h2 { margin-top: 34px; font-size: clamp(4.2rem,19vw,7rem); }
   .care-callout-copy { margin-top: 60px; }
-  .care-callout-visual { width: 100%; opacity: .38; }
+  .care-callout-visual { width: 100%; }
   .insights-grid { display: block; }
   .insight-card, .insight-card:nth-child(2), .insight-card:nth-child(3) { margin: 0 0 70px; }
   .insight-row { display: flex; min-height: auto; flex-direction: column; align-items: stretch; gap: 14px; padding: 0 0 48px; margin-bottom: 42px; }
@@ -1025,7 +1042,10 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .manifesto-sticky { position: static; display: block; height: auto; padding-block: 100px; }
   .care-callout { height: auto; }
   .care-callout-sticky { position: static; height: auto; overflow: visible; }
-  .care-callout-visual img { filter: saturate(.72) contrast(1.08) !important; opacity: 1 !important; transform: none !important; }
+  /* Reduced: stemple care nie startują (gałąź !reduced w JS), tekst widoczny od razu;
+     overlay bridge bez outro (czysty reset, wysokość auto ustawia reguła wyżej). */
+  .care-word { opacity: 1 !important; transform: none !important; }
+  .human-ai-bridge__overlay { opacity: 1 !important; transform: none !important; }
   .human-ai-bridge__sticky,.fog-statement__stage,.system-explore__sticky { position: relative; height: 100svh; }
   .human-ai-bridge__media { transform: none !important; }
   .fog-statement__image { filter: none !important; opacity: .45 !important; transform: none !important; }
@@ -1157,12 +1177,13 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
   .mist-veil i:nth-child(-n+4) { display: none; }
 }
 
-/* Tablet dotykowy >760px: JS pomija animację care (compactMotion), więc pin 220svh
-   byłby martwym scrollem — sekcja wraca do statycznej wysokości (FIND-3 audytu). */
+/* Tablet dotykowy >760px: JS pomija animacje care i outro bridge (compactMotion) —
+   care wraca do statycznej wysokości (FIND-3 audytu), bridge do sprzed wydłużenia
+   (270svh bez outro byłoby martwym scrollem). */
 @media (pointer: coarse) and (min-width: 761px) {
   .care-callout { height: auto; }
   .care-callout-sticky { position: static; height: auto; overflow: visible; }
-  .care-callout-visual img { filter: saturate(.72) contrast(1.08) !important; opacity: 1 !important; transform: none !important; }
+  .human-ai-bridge { height: 168svh; }
 }
 
 /* Manifesto: znaki „pisane z mgły" (reveal-type) */
