@@ -413,41 +413,40 @@ if (consoleRoot instanceof HTMLElement) {
     askAgent(question);
   });
 
-  // Cele narzędzia navigate_to (function calling w Realtime API).
-  // Klucze 1:1 z enumem w api/realtime-session.mjs, slugi usług 1:1 z src/data/services.js.
-  const NAV_TARGETS = {
-    'start': '/',
-    'uslugi': '/uslugi/',
-    'architekci-wartosci-ai': '/uslugi/architekci-wartosci-ai/',
-    'chatboty-ai': '/uslugi/chatboty-ai/',
-    'strony-www-seo-ai': '/uslugi/strony-www-seo-ai/',
-    'voiceboty-ai': '/uslugi/voiceboty-ai/',
-    'agenci-ai': '/uslugi/agenci-ai/',
-    'automatyzacja-procesow': '/uslugi/automatyzacja-procesow/',
-    'opieka-ai': '/uslugi/opieka-ai/',
-    'jak-pracujemy': '/jak-pracujemy/',
-    'realizacje': '/realizacje/',
-    'wiedza': '/wiedza/',
-    'o-nas': '/o-nas/',
-    'kontakt': '/kontakt/',
-  };
-  // Ludzkie etykiety sekcji: temat wznowienia rozmowy po przejściu na podstronę.
-  const NAV_LABELS = {
-    'start': 'strona główna',
-    'uslugi': 'lista usług',
-    'architekci-wartosci-ai': 'usługa Architekci Wartości AI',
-    'chatboty-ai': 'usługa Chatboty AI',
-    'strony-www-seo-ai': 'usługa Strony WWW pod SEO i AI',
-    'voiceboty-ai': 'usługa Voiceboty AI',
-    'agenci-ai': 'usługa Agenci AI',
-    'automatyzacja-procesow': 'usługa Automatyzacja procesów',
-    'opieka-ai': 'usługa Opieka AI',
-    'jak-pracujemy': 'sposób pracy SimpleFast.ai',
-    'realizacje': 'realizacje',
-    'wiedza': 'baza wiedzy',
-    'o-nas': 'zespół SimpleFast.ai',
-    'kontakt': 'kontakt i diagnoza',
-  };
+  // WSPÓLNA STAŁA nawigacji po stronie klienta (jedno źródło w tym bundlu).
+  // Klucze (id) 1:1 i W TEJ SAMEJ KOLEJNOŚCI co NAV_MAP/NAV_SECTIONS w
+  // api/_knowledge.mjs (enum narzędzia navigate_to u obu dostawców głosu).
+  // Zgodność obu plików pilnuje mock harness (test NAV sync).
+  // `anchor` = realne id elementu w DOM, gdy różni się od klucza (miasta).
+  const NAV_CLIENT = [
+    { id: 'start', path: '/', label: 'strona główna' },
+    { id: 'uslugi', path: '/uslugi/', label: 'lista usług' },
+    { id: 'architekci-wartosci-ai', path: '/uslugi/architekci-wartosci-ai/', label: 'usługa Architekci Wartości AI' },
+    { id: 'chatboty-ai', path: '/uslugi/chatboty-ai/', label: 'usługa Chatboty AI' },
+    { id: 'strony-www-seo-ai', path: '/uslugi/strony-www-seo-ai/', label: 'usługa Strony WWW pod SEO i AI' },
+    { id: 'voiceboty-ai', path: '/uslugi/voiceboty-ai/', label: 'usługa Voiceboty AI' },
+    { id: 'agenci-ai', path: '/uslugi/agenci-ai/', label: 'usługa Agenci AI' },
+    { id: 'automatyzacja-procesow', path: '/uslugi/automatyzacja-procesow/', label: 'usługa Automatyzacja procesów' },
+    { id: 'opieka-ai', path: '/uslugi/opieka-ai/', label: 'usługa Opieka AI' },
+    { id: 'jak-pracujemy', path: '/jak-pracujemy/', label: 'sposób pracy SimpleFast.ai' },
+    { id: 'realizacje', path: '/realizacje/', label: 'realizacje' },
+    { id: 'wiedza', path: '/wiedza/', label: 'baza wiedzy' },
+    { id: 'o-nas', path: '/o-nas/', label: 'zespół SimpleFast.ai' },
+    { id: 'kontakt', path: '/kontakt/', label: 'kontakt i diagnoza' },
+    // Sekcje strony głównej (mode 'show'; id sekcji istnieją w index.astro).
+    { id: 'manifest', path: '/#manifest', label: 'sekcja Nasze podejście (manifest)' },
+    { id: 'przeplyw', path: '/#przeplyw', label: 'sekcja Jeden przepływ (jak działa agent)' },
+    { id: 'filary', path: '/#filary', label: 'sekcja kart Trzy filary wdrożenia (najedź i zobacz)' },
+    { id: 'proces', path: '/#proces', label: 'sekcja Jak pracujemy (proces w 4 krokach)' },
+    { id: 'opieka', path: '/#opieka', label: 'sekcja Twój dział AI (opieka po wdrożeniu)' },
+    { id: 'artykuly', path: '/#artykuly', label: 'sekcja artykułów Co działa w AI dla firm' },
+    { id: 'miasta', path: '/#cities-physics', label: 'sekcja mapy Polski (miasta w bąbelkach)', anchor: 'cities-physics' },
+    { id: 'diagnoza', path: '/#diagnoza', label: 'stopka z wezwaniem do kontaktu' },
+  ];
+  // Mapy pochodne (kontrakt jak dotąd: klucz -> ścieżka / etykieta / kotwica DOM).
+  const NAV_TARGETS = Object.fromEntries(NAV_CLIENT.map((entry) => [entry.id, entry.path]));
+  const NAV_LABELS = Object.fromEntries(NAV_CLIENT.map((entry) => [entry.id, entry.label]));
+  const NAV_ANCHORS = Object.fromEntries(NAV_CLIENT.map((entry) => [entry.id, entry.anchor || entry.id]));
   const RESUME_KEY = 'sfai-voice-resume';
   // Fallback OpenAI nie ma zdarzenia „koniec wypowiedzi agenta", więc zdanie
   // zapowiedzi (wymuszone promptem) dostaje stały bufor przed przeładowaniem.
@@ -478,12 +477,14 @@ if (consoleRoot instanceof HTMLElement) {
     };
   };
 
-  // Znajdź cel scrolla na BIEŻĄCEJ stronie: sekcja po id (np. #uslugi na stronie
-  // głównej) albo karta usługi po linku wewnątrz #main. Lookup po linku działa
-  // TYLKO na stronie głównej (karty usług z opisami); na podstronach link do celu
-  // to zwykle przycisk CTA, a nie treść — wtedy lepsze jest przejście na podstronę.
+  // Znajdź cel scrolla na BIEŻĄCEJ stronie: element po kotwicy DOM z NAV_ANCHORS
+  // (dla sekcji strony głównej to realne id sekcji z index.astro; #diagnoza to
+  // stopka obecna na KAŻDEJ stronie) albo karta usługi po linku wewnątrz #main.
+  // Lookup po linku działa TYLKO na stronie głównej (karty usług z opisami);
+  // na podstronach link do celu to zwykle przycisk CTA, a nie treść — wtedy
+  // lepsze jest przejście na podstronę.
   const findLocalTarget = (section, path) => {
-    const byId = document.getElementById(section);
+    const byId = document.getElementById(NAV_ANCHORS[section] || section);
     if (byId) return { element: byId, block: 'start' };
     const onHomepage = (window.location.pathname.replace(/\/+$/, '') || '/') === '/';
     if (onHomepage && path && path !== '/') {
@@ -501,7 +502,9 @@ if (consoleRoot instanceof HTMLElement) {
       return { ok: false, error: 'unknown_section', known_sections: Object.keys(NAV_TARGETS) };
     }
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
-    const targetPath = path.replace(/\/+$/, '') || '/';
+    // Porównujemy SAME ścieżki (bez '#kotwicy'): cel '/#proces' na stronie
+    // głównej to ta sama strona (scroll), nigdy przeładowanie przez hash.
+    const targetPath = (path.split('#')[0].replace(/\/+$/, '') || '/');
     const samePage = currentPath === targetPath;
     const local = section === 'start' && samePage ? null : findLocalTarget(section, path);
 
@@ -706,6 +709,13 @@ if (consoleRoot instanceof HTMLElement) {
       }
       elConversation = conversation;
       elAgentMode = 'speaking'; // agent zaczyna od first message
+      // Kontekst wznowienia NIEZALEŻNY od promptu w dashboardzie: serwer przy
+      // wznowieniu przysyła gotową notkę (resumeContextualUpdate), a klient
+      // wysyła ją metodą sendContextualUpdate SDK tuż po udanym starcie sesji.
+      // Działa nawet, gdy prompt agenta nie ma placeholdera {{resume_note}}.
+      if (typeof session.resumeContextualUpdate === 'string' && session.resumeContextualUpdate) {
+        try { conversation.sendContextualUpdate(session.resumeContextualUpdate); } catch {}
+      }
       voiceStateFloor = .14;
       emitVoiceEnergy(.14, 'listening');
       setVoiceLiveUi();

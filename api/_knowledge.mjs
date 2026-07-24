@@ -40,19 +40,28 @@ Najpierw daj krótką, bezpośrednią odpowiedź. Potem — jeśli to pomaga —
 
 /*
  * MAPA NAWIGACJI GŁOSOWEJ — JEDYNE źródło prawdy po stronie serwera.
- * Zbudowana 1:1 z realnych treści strony: src/pages/index.astro (sekcje #uslugi,
- * karty usług), src/data/services.js (slugi, opisy, use case'y) i podstron
- * (/jak-pracujemy, /realizacje, /wiedza, /o-nas, /kontakt).
+ * Zbudowana 1:1 z realnych treści strony: src/pages/index.astro (sekcje strony
+ * głównej z realnymi id), src/data/services.js (slugi, opisy, use case'y),
+ * src/components/Footer.astro (#diagnoza), CitiesPhysicsBoard (#cities-physics)
+ * i podstron (/jak-pracujemy, /realizacje, /wiedza, /o-nas, /kontakt).
+ *
+ * Pole `kind`:
+ *  - 'sekcja'  = sekcja strony głównej (mode 'show': scroll na bieżącej stronie),
+ *  - brak/'podstrona' = osobna podstrona (mode wg dotychczasowych reguł).
+ * Ścieżki sekcji strony głównej mają format '/#kotwica' (kotwica = realne id
+ * elementu w DOM), więc przejście cross-page z podstrony samo doscrolluje.
  *
  * Używana przez:
- *  - api/elevenlabs-session.mjs (prompt agenta ElevenLabs + enum narzędzia),
+ *  - api/elevenlabs-session.mjs (prompt agenta ElevenLabs + enum narzędzia,
+ *    synchronizowany na platformie w KAŻDEJ sesji przez ensureTool),
  *  - api/realtime-session.mjs (enum narzędzia OpenAI Realtime, fallback),
  *  - getVoiceInstructions()/getElevenLabsAgentPrompt() (sekcja promptu).
- * Klientowa mapa ścieżek (NAV_TARGETS w src/scripts/agent-console.js) musi mieć
- * te same klucze — to osobny bundle przeglądarkowy, zmieniaj oba miejsca razem.
+ * Klientowa mapa (NAV_CLIENT w src/scripts/agent-console.js) musi mieć te same
+ * klucze W TEJ SAMEJ KOLEJNOŚCI — to osobny bundle przeglądarkowy; zgodność
+ * pilnuje test w mock harness (porównanie NAV_SECTIONS vs NAV_CLIENT).
  *
- * UWAGA: każda zmiana tej mapy automatycznie podbija wersję konfiguracji agenta
- * ElevenLabs (hash promptu w api/elevenlabs-session.mjs) i propaguje się sama.
+ * UWAGA: każda zmiana tej mapy automatycznie aktualizuje definicję narzędzia
+ * navigate_to na platformie ElevenLabs (PATCH toola nie dotyka agenta).
  */
 export const NAV_MAP = [
   {
@@ -153,12 +162,83 @@ export const NAV_MAP = [
     about: 'formularz kontaktowy i umówienie krótkiej diagnozy procesu',
     aliases: 'kontakt, wycena, cena, koszt, umów spotkanie, umów rozmowę, formularz, napiszę do was, diagnoza, chcę porozmawiać z człowiekiem',
   },
+  // ---- Sekcje strony głównej (kind: 'sekcja', mode 'show') ----
+  {
+    id: 'manifest',
+    path: '/#manifest',
+    kind: 'sekcja',
+    label: 'sekcja Nasze podejście (manifest)',
+    about: 'manifest podejścia firmy: nie wdrażamy AI dla efektu wow, wdrażamy efekt widoczny w pracy; trzy kroki: znajdź stratę, zbuduj system, zmierz efekt',
+    aliases: 'nasze podejście, manifest, filozofia, czym się kierujecie, dlaczego wy, jak myślicie o AI, podejście do wdrożeń',
+  },
+  {
+    id: 'przeplyw',
+    path: '/#przeplyw',
+    kind: 'sekcja',
+    label: 'sekcja Jeden przepływ (jak działa agent)',
+    about: 'jak agent AI pracuje w praktyce, trzy kroki: słucha sygnału (telefon, e-mail, CRM), rozumie kontekst (wiedza i zasady firmy), wykonuje pracę (akcja pod kontrolą)',
+    aliases: 'jak działa agent, przepływ, od chaosu do wyniku, jak to działa w praktyce, co robi agent krok po kroku, zero ręcznego pilnowania',
+  },
+  {
+    id: 'filary',
+    path: '/#filary',
+    kind: 'sekcja',
+    label: 'sekcja kart Trzy filary wdrożenia (najedź i zobacz)',
+    about: 'interaktywne karty trzech filarów jednego wdrożenia: silnik zasilany przez AI, kontrola człowieka, mierzalny wynik; po najechaniu karty zmieniają klatki',
+    aliases: 'trzy filary, karty, najedź zobacz, filary wdrożenia, kontrola człowieka, mierzalny wynik, jak system dojrzewa',
+  },
+  {
+    id: 'proces',
+    path: '/#proces',
+    kind: 'sekcja',
+    label: 'sekcja Jak pracujemy (proces w 4 krokach)',
+    about: 'proces wdrożenia krok po kroku: 01 diagnoza wartości, 02 pierwszy system, 03 test na żywo, 04 opieka i skala; hasło: mały krok, szybki dowód, stały rozwój',
+    aliases: 'proces, jak wygląda wdrożenie krok po kroku, mały krok szybki dowód, etapy wdrożenia, plan działania, jak zaczynacie, kroki współpracy',
+  },
+  {
+    id: 'opieka',
+    path: '/#opieka',
+    kind: 'sekcja',
+    label: 'sekcja Twój dział AI (opieka po wdrożeniu)',
+    about: 'skrót o stałej opiece: Twój dział AI bez rekrutacji; po wdrożeniu pilnujemy jakości, aktualizujemy wiedzę, rozwijamy integracje',
+    aliases: 'twój dział AI, dział AI bez rekrutacji, co po wdrożeniu, kto się tym opiekuje na co dzień, opieka w skrócie',
+  },
+  {
+    id: 'artykuly',
+    path: '/#artykuly',
+    kind: 'sekcja',
+    label: 'sekcja artykułów Co działa w AI dla firm',
+    about: 'zapowiedzi artykułów na stronie głównej: agent AI czy automatyzacja, widoczność w odpowiedziach ChatGPT, 7 zadań do przejęcia przez agenta',
+    aliases: 'posty, artykuły, co czytać na start, wiedza na stronie głównej, zapowiedzi artykułów, co działa w AI dla firm',
+  },
+  {
+    id: 'miasta',
+    path: '/#cities-physics',
+    kind: 'sekcja',
+    label: 'sekcja mapy Polski (miasta w bąbelkach)',
+    about: 'interaktywne bąbelki polskich miast: jeden system, cała Polska; diagnoza, wdrożenie i opieka zdalnie, niezależnie od miasta; bąbelki można przeciągać',
+    aliases: 'mapa Polski, miasta, bąbelki, banieczki, czy działacie w moim mieście, zasięg, cała Polska, współpraca zdalna',
+  },
+  {
+    id: 'diagnoza',
+    path: '/#diagnoza',
+    kind: 'sekcja',
+    label: 'stopka z wezwaniem do kontaktu',
+    about: 'wezwanie do działania na dole każdej strony: zróbmy z AI realną pracę; e-mail kontakt@simplefast.ai, telefon +48 696 674 874; szybka droga do diagnozy',
+    aliases: 'przewiń do kontaktu, stopka, dane kontaktowe, e-mail, telefon, numer telefonu, pokaż kontakt tutaj na dole',
+  },
 ];
 
 export const NAV_SECTIONS = NAV_MAP.map((entry) => entry.id);
 
+const navKindLabel = (entry) => {
+  if (entry.kind === 'sekcja') return 'sekcja strony głównej, pokazuj przez mode show';
+  if (entry.id === 'start') return 'strona główna';
+  return 'osobna podstrona';
+};
+
 const renderNavMap = () => NAV_MAP
-  .map((entry) => `- ${entry.id} → ${entry.about}. Typowe prośby: ${entry.aliases}.`)
+  .map((entry) => `- ${entry.id} (${navKindLabel(entry)}) → ${entry.about}. Typowe prośby: ${entry.aliases}.`)
   .join('\n');
 
 /*
@@ -179,13 +259,16 @@ ${renderNavMap()}
 - KLUCZOWE rozróżnienie: „voicebot", „bot głosowy", „telefon", „dzwonienie", „infolinia", „odbieranie połączeń" = sekcja voiceboty-ai. „chatbot", „czat", „bot piszący", „bot na stronę" = sekcja chatboty-ai. To dwie różne usługi, nigdy ich nie mieszaj i nigdy nie wybieraj zamiast nich sekcji architekci-wartosci-ai.
 - Samo „bot" bez kontekstu → zapytaj jednym krótkim zdaniem: tekstowy na stronę czy głosowy do telefonów?
 - „Strategia", „audyt", „od czego zacząć", „doradztwo" → architekci-wartosci-ai.
-- Pytania o cenę lub wycenę → najpierw krótko wyjaśnij, że cena zależy od zakresu, potem zaproponuj sekcję kontakt.
+- Pary sekcja strony głównej vs podstrona: szybki rzut oka w trakcie rozmowy → sekcja strony głównej (show); pełne szczegóły albo wyraźna prośba o przejście → podstrona. Konkretnie: proces (sekcja) vs jak-pracujemy (podstrona), opieka (sekcja) vs opieka-ai (podstrona z pełną usługą), artykuly (sekcja) vs wiedza (podstrona z artykułami).
+- Pytania o cenę lub wycenę → najpierw krótko wyjaśnij, że cena zależy od zakresu, potem zaproponuj sekcję kontakt albo pokaż diagnoza (stopka z danymi kontaktowymi).
+- Pytania „czy działacie w moim mieście / zdalnie" → sekcja miasta.
 - Jeśli prośba jest niejednoznaczna albo pasuje do kilku sekcji → NIE zgaduj. Zadaj jedno krótkie pytanie doprecyzowujące i nawiguj dopiero po odpowiedzi.
 - Używaj narzędzia zawsze, gdy rozmówca prosi „pokaż", „przenieś mnie", „otwórz", „gdzie znajdę" albo pyta o miejsce na stronie. Nie opisuj drogi słowami, po prostu wywołaj narzędzie.
 
 ## Reguły trybu i zapowiedzi
 - Domyślnie wybieraj mode „show": pokazuj sekcję na bieżącej stronie i OPOWIADAJ dalej o tym, co użytkownik właśnie widzi. Wywołuj narzędzie od razu, w trakcie wypowiedzi, bez żadnej zapowiedzi. Rozmowa się przy tym nie kończy.
-- mode „open" wybieraj tylko wtedy, gdy użytkownik wyraźnie prosi o przejście na podstronę albo o szczegóły, których nie widać na bieżącej stronie.
+- Sekcje strony głównej (oznaczone w mapie) pokazuj ZAWSZE przez mode „show". Nigdy nie używaj dla nich mode „open".
+- mode „open" wybieraj tylko dla osobnych podstron i tylko wtedy, gdy użytkownik wyraźnie prosi o przejście na podstronę albo o szczegóły, których nie widać na bieżącej stronie.
 - OBOWIĄZKOWA ZAPOWIEDŹ przy mode „open": zanim wywołasz narzędzie, powiedz po polsku jedno pełne zdanie zapowiedzi, że przenosisz rozmówcę na nową zakładkę i że rozmowa na kilka sekund się przeładuje, np. „Przenoszę Cię na podstronę voicebotów. Poczekaj kilka sekund, zaraz wrócę.". W tej samej wypowiedzi: najpierw CAŁE zdanie zapowiedzi, dopiero po nim wywołanie navigate_to. Nigdy nie żegnaj się i nigdy nie mów, że rozmowa się kończy.
 - Po wznowieniu rozmowy na nowej podstronie krótko potwierdź, gdzie jesteście, i płynnie kontynuuj temat.`;
 
@@ -309,7 +392,8 @@ ${VOICE_PERSONA}
 ${NAV_PROMPT}
 
 # Kontekst wznowienia
-{{resume_note}}`;
+Notatka wznowienia: {{resume_note}}
+Jeśli notatka mówi, że to początek zupełnie nowej rozmowy, prowadź rozmowę normalnie od powitania. Jeśli notatka jest niepusta i opisuje przejście w inne miejsce serwisu, NIE witaj się od nowa, nie przedstawiaj się ponownie i nie mów o żadnej przerwie. Jednym krótkim zdaniem nawiąż do tematu z notatki i płynnie kontynuuj rozmowę.`;
 
 /*
  * Surowa treść zdalnej bazy wiedzy (Google Doc) dla natywnej knowledge base

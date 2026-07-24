@@ -9,21 +9,24 @@ import {
 /*
  * Sesja głosowa ElevenLabs Agents (platforma Agents / Conversational AI).
  *
- * Flow:
+ * Flow (kontrakt własności z 2026-07-24, rozszerzony o introspekcję):
  *  1. Klient robi POST (opcjonalnie z kontekstem wznowienia po przejściu na podstronę).
- *  2. Endpoint SAM dba o trzy zasoby na platformie ElevenLabs (self-provisioning):
- *     a) narzędzie navigate_to w /v1/convai/tools (inline prompt.tools jest
- *        DEPRECATED w OpenAPI — "use tool_ids instead"), podpinane do agenta
- *        przez prompt.tool_ids;
- *     b) dokument natywnej knowledge base (treść z KNOWLEDGE_DOC_URL) —
- *        re-upload tylko przy zmianie hasha treści, nazwa dokumentu zawiera
- *        hash, stare wersje są sprzątane po aktualizacji agenta;
- *     c) agenta — szuka po nazwie, tworzy gdy brak, PATCH gdy hash konfiguracji
- *        w repo (prompt + tool_ids + knowledge base + turn-taking) się zmienił.
- *  3. Zwraca token sesji WebRTC (fallback: signed URL WebSocket) + lekkie
- *     overrides (first message, język, głos) + dynamic variable resume_note.
- *     Pełny prompt NIE jest już wysyłany per sesja (dieta promptu = szybszy
- *     start odpowiedzi). Klucz API NIGDY nie trafia do przeglądarki.
+ *  2. AGENT: adopt-only. Istniejący agent "SFAI Voice Agent" jest zarządzany
+ *     RĘCZNIE w dashboardzie (LLM, głos, prompt, publish) — kod go NIGDY nie
+ *     modyfikuje. Pełny provisioning (tool + KB + agent) odpala się tylko, gdy
+ *     agenta brak. Po adopcji JEDEN GET /v1/convai/agents/{id} na instancję
+ *     (introspekcja): jakie overrides są dozwolone + czy prompt ma placeholder
+ *     resume_note. Na tej podstawie odpowiedź buduje overrides DYNAMICZNIE.
+ *  3. TOOL navigate_to: kontrakt techniczny repo — ensureTool w KAŻDEJ sesji
+ *     (cache na hash konfiguracji), bo enum sekcji musi być 1:1 z mapą klienta.
+ *     PATCH definicji toola nie dotyka agenta (referencja po id, publish
+ *     nienaruszony). Inline prompt.tools jest DEPRECATED — tool żyje w
+ *     /v1/convai/tools, agent trzyma prompt.tool_ids.
+ *  4. Zwraca token sesji WebRTC (fallback: signed URL WebSocket) + capabilities
+ *     + (przy wznowieniu) resumeContextualUpdate dla sendContextualUpdate,
+ *     dynamic variable resume_note tylko gdy prompt MA placeholder, override
+ *     firstMessage tylko gdy dashboard na to zezwala. Pełny prompt NIE jest
+ *     wysyłany per sesja. Klucz API NIGDY nie trafia do przeglądarki.
  *
  * Latencja (skarga: 5-6 s ciszy przed odpowiedzią) — co ją zbijało:
  *  - LLM bez "myślenia": GPT-4.1 Mini (klasa non-reasoning; docs: "Keep
@@ -256,6 +259,17 @@ const doEnsureTool = async (apiKey) => {
     return created.id;
   }
 
+  // Więcej niż jeden tool o tej nazwie: aktualizujemy TYLKO kanoniczny
+  // (najmniejsze id). Nie przepinamy nic na agencie (PATCH agenta zabroniony);
+  // jeśli agent trzyma referencję do innego id, Paweł musi posprzątać w dashboardzie.
+  if (matches.length > 1) {
+    console.warn(
+      'ElevenLabs: znaleziono wiele narzędzi o nazwie',
+      TOOL_NAME,
+      matches.map((tool) => tool.id).join(','),
+      '- aktualizuję tylko kanoniczne (najmniejsze id). Sprawdź w dashboardzie, do którego agent ma referencję.',
+    );
+  }
   const existing = matches.sort((a, b) => String(a.id).localeCompare(String(b.id)))[0];
   if (!isSubsetDeep(desired, existing.tool_config)) {
     await elevenFetch(apiKey, `/v1/convai/tools/${existing.id}`, {
@@ -517,6 +531,62 @@ const doEnsureAgent = async (apiKey) => {
   return { id: created.agent_id, managed: true };
 };
 
+/*
+ * INTROSPEKCJA ADOPTOWANEGO AGENTA (agent zarządzany ręcznie w dashboardzie):
+ * jeden GET /v1/convai/agents/{agent_id} na instancję (cache; inwalidacja razem
+ * z cache agenta po 4xx przy tokenie). Odpowiada na dwa pytania:
+ *  1) które overrides per sesja są REALNIE dozwolone (inaczej start sesji z
+ *     override'em kończy się odmową platformy),
+ *  2) czy prompt z dashboardu zawiera placeholder resume_note (bez niego
+ *     dynamic variable ginie i wznowienie nie ma kontekstu w promptcie).
+ * Ścieżki pól potwierdzone w https://api.elevenlabs.io/openapi.json (2026-07-24):
+ *  - GetAgentResponseModel.platform_settings (AgentPlatformSettingsResponseModel)
+ *      .overrides (ConversationInitiationClientDataConfig)
+ *      .conversation_config_override (ConversationConfigClientOverrideConfig)
+ *        .agent.first_message / .agent.language (AgentConfigOverrideConfig,
+ *         boolean, default false)
+ *        .tts.voice_id (TTSConversationalConfigOverrideConfig, boolean, default false)
+ *  - GetAgentResponseModel.conversation_config.agent.prompt.prompt (string).
+ */
+const NO_CAPS = Object.freeze({
+  firstMessageOverride: false,
+  languageOverride: false,
+  voiceOverride: false,
+  resumeVarInPrompt: false,
+});
+// Agent utworzony przez repo w tym cyklu życia instancji: zezwolenia i prompt
+// znamy z buildAgentPayload (overrides włączone, prompt ma {{resume_note}}).
+const MANAGED_CAPS = Object.freeze({
+  firstMessageOverride: true,
+  languageOverride: true,
+  voiceOverride: true,
+  resumeVarInPrompt: true,
+});
+
+let capsCache = { agentId: '', caps: null };
+let capsInFlight = null;
+
+const introspectAgent = (apiKey, agentId) => {
+  if (capsCache.agentId === agentId && capsCache.caps) return Promise.resolve(capsCache.caps);
+  if (!capsInFlight) {
+    capsInFlight = doIntrospectAgent(apiKey, agentId).finally(() => { capsInFlight = null; });
+  }
+  return capsInFlight;
+};
+
+const doIntrospectAgent = async (apiKey, agentId) => {
+  const data = await elevenFetch(apiKey, `/v1/convai/agents/${agentId}`);
+  const override = data?.platform_settings?.overrides?.conversation_config_override || {};
+  const caps = {
+    firstMessageOverride: override?.agent?.first_message === true,
+    languageOverride: override?.agent?.language === true,
+    voiceOverride: override?.tts?.voice_id === true,
+    resumeVarInPrompt: String(data?.conversation_config?.agent?.prompt?.prompt || '').includes('resume_note'),
+  };
+  capsCache = { agentId, caps };
+  return caps;
+};
+
 // Preferujemy WebRTC (token); przy niepowodzeniu signed URL (WebSocket).
 const createSessionCredentials = async (apiKey, agentId) => {
   try {
@@ -591,12 +661,22 @@ export default async function handler(request, response) {
     }
   };
 
+  // Narzędzie navigate_to = kontrakt techniczny repo (enum sekcji MUSI być
+  // zsynchronizowany z mapą klienta), więc ensureTool odpala się w KAŻDEJ sesji,
+  // równolegle z ensureAgent. Cache jak dotąd: przy zgodnym hashu konfiguracji
+  // zero requestów. PATCH definicji toola nie dotyka agenta ani jego publisha
+  // (agent trzyma tylko referencję po id). Awaria synchronizacji nie blokuje
+  // sesji: logujemy i jedziemy dalej na starej definicji.
+  const toolSync = timed('ensure_tool_ms', () => ensureTool(apiKey)).catch((error) => {
+    console.error('ElevenLabs tool sync failed', error?.status || '', error?.message || error);
+  });
+
   let agentId;
   let managedAgent = false;
   const pinnedAgentId = process.env.ELEVENLABS_AGENT_ID?.trim();
   if (pinnedAgentId) {
     // Agent wskazany ręcznie: pomijamy provisioning; traktujemy jak adoptowany
-    // (bez overrides — nieznane zezwolenia).
+    // (zezwolenia na overrides sprawdza introspekcja niżej).
     agentId = pinnedAgentId;
   } else {
     try {
@@ -609,6 +689,24 @@ export default async function handler(request, response) {
         error: 'Agent głosowy jest chwilowo niedostępny.',
         code: 'elevenlabs_provisioning_failed',
       });
+    }
+  }
+  // Synchronizacja toola ma się domknąć przed odpowiedzią (Vercel może zamrozić
+  // instancję po response.end). Błędy już złapane wyżej; deadline też nie blokuje.
+  await raceDeadline(toolSync, 'tool').catch(() => {});
+
+  // Zezwolenia agenta: dla managed znamy z payloadu, dla adoptowanego/pinned
+  // pyta introspekcja (1 GET na instancję). Awaria introspekcji = zachowanie
+  // zachowawcze (zero overrides), sesja startuje normalnie.
+  let caps = NO_CAPS;
+  if (managedAgent) {
+    caps = MANAGED_CAPS;
+  } else {
+    try {
+      caps = await raceDeadline(timed('agent_introspection_ms', () => introspectAgent(apiKey, agentId)), 'introspection');
+    } catch (error) {
+      console.error('ElevenLabs agent introspection failed', error?.status || '', error?.message || error);
+      caps = NO_CAPS;
     }
   }
 
@@ -626,6 +724,8 @@ export default async function handler(request, response) {
     // pełny listing/create zamiast wiecznie celować w nieistniejącego agenta.
     if (!pinnedAgentId && typeof error?.status === 'number' && error.status >= 400 && error.status < 500 && error.status !== 429) {
       agentCache = { id: '', managed: false };
+      // Introspekcja dotyczyła (być może już nieistniejącego) agenta: odświeżamy razem.
+      capsCache = { agentId: '', caps: null };
     }
     console.error('ElevenLabs session credentials failed', error?.status || '', error?.message || error);
     return writeJson(response, 502, {
@@ -638,28 +738,43 @@ export default async function handler(request, response) {
 
   const resume = resolveResume(request.body?.resume);
   const resumeNote = resume
-    ? `Użytkownik w trakcie rozmowy głosowej przeszedł właśnie na podstronę ${resume.path} serwisu (${resume.label}; ${resume.about}). Nawiąż do tematu i płynnie kontynuuj rozmowę. Nie przedstawiaj się od nowa, nie witaj się od zera i pod żadnym pozorem nie mów, że rozmowa została przerwana lub zakończona.`
+    ? `Użytkownik w trakcie rozmowy głosowej przeszedł właśnie w miejsce serwisu: ${resume.label} (${resume.path}; ${resume.about}). Nawiąż do tematu i płynnie kontynuuj rozmowę. Nie przedstawiaj się od nowa, nie witaj się od zera i pod żadnym pozorem nie mów, że rozmowa została przerwana lub zakończona.`
     : '';
   const firstMessage = resume
     ? `Jesteśmy na miejscu, przed Tobą ${resume.label}. O czym chcesz posłuchać?`
     : FIRST_MESSAGE;
 
+  // Overrides budowane DYNAMICZNIE według realnych zezwoleń:
+  //  - managed (agent utworzony przez repo): pełny zestaw jak dotąd,
+  //  - adoptowany/pinned: wyłącznie firstMessage przy wznowieniu i tylko gdy
+  //    dashboard zezwala na override first_message; głosu i języka nie ruszamy
+  //    (dashboard = źródło prawdy).
+  const overrides = managedAgent
+    ? {
+      agent: { firstMessage, language: 'pl' },
+      tts: { voiceId: resolveVoiceId() },
+    }
+    : (resume && caps.firstMessageOverride ? { agent: { firstMessage } } : null);
+
+  // Kontekst wznowienia niezależny od promptu: klient wysyła ten tekst przez
+  // conversation.sendContextualUpdate() tuż po starcie sesji. Działa także,
+  // gdy prompt w dashboardzie nie ma placeholdera {{resume_note}}.
+  const resumeContextualUpdate = resume
+    ? `Notatka nawigacyjna: użytkownik przeszedł właśnie w miejsce serwisu: ${resume.label} (${resume.about}). Kontynuuj rozmowę dokładnie w tym temacie. Nie witaj się od nowa, nie przedstawiaj się ponownie i nie wspominaj o żadnej przerwie technicznej.`
+    : '';
+
   return writeJson(response, 200, {
     provider: 'elevenlabs',
     connection,
-    // Kontekst wznowienia jako dynamic variable {{resume_note}} — nadmiarowa
-    // zmienna jest bezpieczna, nawet gdy ręczny prompt nie ma placeholdera.
-    ...(resumeNote ? { dynamicVariables: { resume_note: resumeNote } } : {}),
-    // Overrides TYLKO dla agenta utworzonego przez repo (pewność zezwoleń).
-    // Agent zarządzany ręcznie w dashboardzie mógłby odrzucić start sesji.
-    ...(managedAgent ? {
-      overrides: {
-        agent: {
-          firstMessage,
-          language: 'pl',
-        },
-        tts: { voiceId: resolveVoiceId() },
-      },
-    } : {}),
+    // Diagnostyka dla klienta (zero sekretów): co realnie wolno tej sesji.
+    capabilities: {
+      firstMessageOverride: caps.firstMessageOverride,
+      resumeVarInPrompt: caps.resumeVarInPrompt,
+    },
+    // Dynamic variable {{resume_note}} tylko, gdy prompt agenta MA placeholder
+    // (inaczej wartość i tak ginie; introspekcja to sprawdziła).
+    ...(resumeNote && caps.resumeVarInPrompt ? { dynamicVariables: { resume_note: resumeNote } } : {}),
+    ...(resumeContextualUpdate ? { resumeContextualUpdate } : {}),
+    ...(overrides ? { overrides } : {}),
   });
 }
