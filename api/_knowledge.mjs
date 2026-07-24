@@ -47,7 +47,7 @@ Najpierw daj krótką, bezpośrednią odpowiedź. Potem — jeśli to pomaga —
  * Używana przez:
  *  - api/elevenlabs-session.mjs (prompt agenta ElevenLabs + enum narzędzia),
  *  - api/realtime-session.mjs (enum narzędzia OpenAI Realtime, fallback),
- *  - getVoiceInstructions()/getElevenLabsSessionPrompt() (sekcja promptu).
+ *  - getVoiceInstructions()/getElevenLabsAgentPrompt() (sekcja promptu).
  * Klientowa mapa ścieżek (NAV_TARGETS w src/scripts/agent-console.js) musi mieć
  * te same klucze — to osobny bundle przeglądarkowy, zmieniaj oba miejsca razem.
  *
@@ -296,23 +296,32 @@ ${NAV_PROMPT}
 - Przy mode „open" strona się przeładuje, a rozmowa zostanie automatycznie wznowiona po przejściu.`;
 
 /*
- * Prompt bazowy agenta ElevenLabs — wersja STATYCZNA (bez zdalnej bazy wiedzy),
- * zapisywana w konfiguracji agenta na platformie ElevenLabs przy provisioningu.
- * To fallback na wypadek, gdyby override sesyjny nie doszedł; pełny prompt
- * (z Google Doc) jest wstrzykiwany per sesja przez getElevenLabsSessionPrompt().
- * Hash tego promptu jest częścią wersji konfiguracji agenta (auto-update).
+ * Prompt agenta ElevenLabs — STATYCZNY, mieszka NA agencie (PATCH przy zmianie
+ * w repo przez hash konfiguracji). Per sesja NIE wysyłamy już pełnego promptu:
+ *  - zdalna baza wiedzy (Google Doc) trafia do NATYWNEJ knowledge base agenta
+ *    jako dokument tekstowy (patrz getRemoteKnowledgeText + elevenlabs-session),
+ *  - kontekst wznowienia wchodzi przez dynamic variable {{resume_note}}
+ *    (placeholder poniżej; wartość domyślna ustawiana w konfiguracji agenta).
+ * Dieta promptu = krótszy payload sesji i szybszy start odpowiedzi (TTFT).
  */
 export const getElevenLabsAgentPrompt = () => `${COMPANY_KNOWLEDGE}
 ${VOICE_PERSONA}
-${NAV_PROMPT}`;
-
-/*
- * Prompt sesyjny ElevenLabs: wiedza (w tym zdalny Google Doc) + persona +
- * nawigacja + ewentualny kontekst wznowienia po przejściu na podstronę.
- */
-export const getElevenLabsSessionPrompt = async (resumeNote = '') => `${withRemoteKnowledge(COMPANY_KNOWLEDGE, await loadRemoteKnowledge())}
-${VOICE_PERSONA}
-${NAV_PROMPT}${resumeNote ? `
+${NAV_PROMPT}
 
 # Kontekst wznowienia
-${resumeNote}` : ''}`;
+{{resume_note}}`;
+
+/*
+ * Surowa treść zdalnej bazy wiedzy (Google Doc) dla natywnej knowledge base
+ * agenta ElevenLabs. Cache i limity jak wyżej (loadRemoteKnowledge).
+ * Pusty string = brak KNOWLEDGE_DOC_URL lub błąd pobierania (fallback: agent
+ * działa na wiedzy wbudowanej z promptu).
+ */
+export const getRemoteKnowledgeText = async () => {
+  const remote = await loadRemoteKnowledge();
+  if (!remote) return '';
+  // Nagłówek nadrzędności podróżuje w SAMYM dokumencie KB (zero kosztu per sesja):
+  // Google Doc ma wygrywać z wiedzą wbudowaną w prompt agenta.
+  return `AKTUALNA BAZA WIEDZY FIRMY (źródło nadrzędne: jeśli poniższe informacje różnią się od wiedzy wbudowanej w prompt systemowy, pierwszeństwo mają poniższe):
+${remote}`;
+};

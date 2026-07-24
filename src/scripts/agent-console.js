@@ -670,6 +670,10 @@ if (consoleRoot instanceof HTMLElement) {
       const conversation = await Conversation.startSession({
         ...session.connection, // { conversationToken } (WebRTC) lub { signedUrl } (WebSocket)
         overrides: session.overrides,
+        // Kontekst wznowienia po przejściu na podstronę: dynamic variable
+        // {{resume_note}} w promptcie agenta (endpoint nie wysyła już pełnego
+        // promptu per sesja — dieta promptu pod niskie TTFT).
+        ...(session.dynamicVariables ? { dynamicVariables: session.dynamicVariables } : {}),
         clientTools: {
           navigate_to: async (parameters) => handleElevenNavigate(parameters, generation),
         },
