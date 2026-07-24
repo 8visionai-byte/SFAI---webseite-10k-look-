@@ -1165,3 +1165,62 @@ body.cursor-active .cursor-orbit span { background: rgba(223,255,63,.18); transf
 /* Manifesto: znaki „pisane z mgły" (reveal-type) */
 .manifesto h2 .mword { display: inline-block; white-space: nowrap; }
 .manifesto h2 .mchar { display: inline-block; will-change: filter, opacity; }
+
+/* ===== MOBILE POLISH (≤760 / coarse) — rytm, typografia, tap-targety, wydajność.
+   Wyłącznie gałęzie mobilne; desktop bit w bit nietknięty. ===== */
+@media (max-width: 760px) {
+  /* 1) Spójny rytm pionowy sekcji: jeden krok 96px zamiast mieszanki 100/110/120 */
+  .services-section { padding: 96px 0; }
+  .process-section { padding: 96px 0; }
+  .insights-section { padding-block: 96px; }
+  .manifesto-sticky { padding-block: 96px; }
+  .sequence-lab { padding-block: 96px; }
+  .care-callout-inner { padding: 96px 0; }
+  .footer-top { padding: 96px 0 64px; }
+  .services-reel-section { padding-block: 0 88px; }
+  .section-heading, .process-title { margin-bottom: 40px; }
+
+  /* 2) Typografia: nagłówki bez brzydkich łamań polskich wyrazów.
+     Care: przy 19vw obie linie („Twój dział AI." / „Bez rekrutacji.") łamały się
+     w poszarpane 3-4 wiersze — 13.4vw trzyma dwie czyste linie na 390px. */
+  .care-callout h2 { font-size: clamp(3rem, 13.4vw, 4.8rem); line-height: .84; letter-spacing: -.07em; text-wrap: balance; }
+  /* Footer: „realną pracę ↗" przy 17vw balansowało na granicy zawijania (320-390px). */
+  .footer-headline { font-size: clamp(3.3rem, 16vw, 5.9rem); }
+  .section-heading h2, .story-intro h2, .process-title h2, .content-grid > h2 { text-wrap: balance; }
+  /* Mikro-mono: 7.5px było poniżej progu czytelności na telefonie */
+  .manifesto-signals li { font-size: .56rem; }
+  .system-explore__item figcaption { font-size: .48rem; }
+
+  /* Sequence: na dotyku karty cyklują same (IntersectionObserver), więc „Najedź." znika */
+  .sq-hover-word { display: none; }
+
+  /* 3) Sekcje statyczne mają wyglądać zaprojektowane, nie jak fallback */
+  .cinematic-title { mix-blend-mode: normal; }
+  .cinematic-cover { overflow: hidden; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 18px 60px rgba(0, 0, 0, .45); }
+  .reel-big__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,14,14,.16), transparent 38%, transparent 60%, rgba(13,14,14,.42)); pointer-events: none; }
+  .story-media-copy { right: 14px; bottom: 16px; left: 14px; }
+  .service-card-copy { min-height: 460px; }
+  /* Tryptyk wideo: 3 x 42vh = półtora ekranu samego wideo; 34vh trzyma rytm i baterię */
+  .video-triptych .video-divider { height: 34vh; min-height: 240px; }
+
+  /* 4) Header / menu overlay */
+  .site-header.is-scrolled { background: rgba(13, 14, 14, .95); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .mobile-menu { overflow-y: auto; }
+  .mobile-menu-grid { height: auto; min-height: 100%; padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+  .mobile-menu-contact a { padding-block: 8px; }
+
+  /* 5) Tap-targety ≥ 40px */
+  .text-link { padding: 10px 0 12px; }
+  .footer-grid a:not(.wordmark) { display: inline-block; padding-block: 7px; line-height: 1.4; }
+  .footer-bottom { padding: 20px 0 calc(28px + env(safe-area-inset-bottom, 0px)); }
+  .footer-bottom a { display: inline-block; padding-block: 8px; }
+
+  /* 6) Wydajność: backdrop-filter na małych ruchomych elementach kosztuje na dotyku */
+  .media-label, .sequence-card-tag { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(13, 14, 14, .6); }
+  .voice-core-trigger { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+@media (max-width: 420px) {
+  /* Przywraca dopracowany rytm insights (nadpisany unifikacją 96px wyżej) */
+  .insights-section { padding-block: 88px 76px; }
+}

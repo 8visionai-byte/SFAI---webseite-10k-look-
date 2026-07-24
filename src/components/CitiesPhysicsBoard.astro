@@ -471,11 +471,12 @@ const instructionId = `${id}-instruction`;
 
   @media (max-width: 700px) {
     .cities-physics {
-      padding-top: 5.5rem;
+      /* 6rem = 96px: wspólny mobilny krok rytmu sekcji (patrz global.css MOBILE POLISH) */
+      padding-top: 6rem;
     }
 
     .cities-physics__shell {
-      width: calc(100% - 1.25rem);
+      width: calc(100% - 1.75rem);
     }
 
     .cities-physics__header h2 {
@@ -491,15 +492,15 @@ const instructionId = `${id}-instruction`;
 
     .cities-physics__instruction {
       bottom: 0.9rem;
-      left: 0.65rem;
-      max-width: calc(100% - 1.3rem);
-      font-size: 0.48rem;
+      left: 0.875rem;
+      max-width: calc(100% - 1.75rem);
+      font-size: 0.55rem;
     }
 
     .cities-physics__bubble {
       min-height: 1.7rem;
       padding: 0.43rem 0.62rem;
-      font-size: 0.48rem;
+      font-size: 0.52rem;
     }
   }
 
@@ -534,6 +535,26 @@ const instructionId = `${id}-instruction`;
     if (!(world instanceof HTMLElement) || !tileElements.length) return;
 
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // GAŁĄŹ MOBILE: na małym viewporcie symulujemy tylko 48 największych miast —
+    // mniej ciał = mniejszy koszt CPU/warstw, większe i czytelniejsze bańki.
+    // Desktop: compactViewport=false, zero zmian w zachowaniu.
+    const MOBILE_BUBBLE_CAP = 48;
+    const compactViewport = window.matchMedia('(max-width: 760px)').matches;
+    let mobileHiddenTiles = [];
+    if (compactViewport && tileElements.length > MOBILE_BUBBLE_CAP) {
+      mobileHiddenTiles = [...tileElements]
+        .sort((a, b) => (Number(b.dataset.pop) || 0) - (Number(a.dataset.pop) || 0))
+        .slice(MOBILE_BUBBLE_CAP);
+      // Chowamy tylko w trybie fizyki: przy reduced-motion od startu zostaje
+      // statyczna chmura chipów ze WSZYSTKIMI miastami.
+      if (!motionQuery.matches) {
+        mobileHiddenTiles.forEach((element) => { element.style.display = 'none'; });
+      }
+    }
+    const simTiles = mobileHiddenTiles.length
+      ? tileElements.filter((element) => !mobileHiddenTiles.includes(element))
+      : tileElements;
 
     // --- Parametry symulacji (dwie fazy: DROP -> WATER) ---
     // DROP: banieczki startują NAD planszą i spadają jak bąbelki wrzucone do
@@ -594,7 +615,7 @@ const instructionId = `${id}-instruction`;
 
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-    const bodies = tileElements.map((element, index) => {
+    const bodies = simTiles.map((element, index) => {
       const label = (element.dataset.city || element.textContent || '').trim();
       const longest = label
         .split(/[\s-]+/)
@@ -1034,7 +1055,10 @@ const instructionId = `${id}-instruction`;
           finishDrag(body);
           clearInline(body);
         });
+        // Reduced: wracamy do statycznej chmury chipów — pokaż wszystkie miasta.
+        mobileHiddenTiles.forEach((element) => element.style.removeProperty('display'));
       } else {
+        mobileHiddenTiles.forEach((element) => { element.style.display = 'none'; });
         scheduleResize();
         start();
       }

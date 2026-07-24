@@ -688,3 +688,47 @@ body.agent-console-open { overflow: hidden; }
 }
 
 .agent-console.is-docked .agent-console__undock { display: inline-flex; }
+
+/* ===== MOBILE POLISH (≤760 / coarse) — desktop bit w bit nietknięty ===== */
+@media (pointer: coarse) {
+  /* iOS zoomuje stronę przy fokusie pola z fontem < 16px */
+  .agent-console__form textarea { font-size: 16px; }
+  .agent-console__suggestions button { min-height: 44px; padding-block: 10px; }
+  /* Dotyk: „sticky hover" po tapnięciu nie może zostawiać FABa rozjechanego na 154px */
+  .agent-fab:hover:not(:focus-visible) { width: 68px; border-color: rgba(223, 255, 63, .46); background: rgba(13, 14, 14, .86); color: var(--white); transform: none; }
+  .agent-fab:hover:not(:focus-visible) svg { transform: none; }
+  .agent-fab:hover:not(:focus-visible) .agent-fab__label { opacity: 0; transform: translateX(12px); }
+  .agent-fab:hover:not(:focus-visible) .agent-fab__signal { background: var(--lime); box-shadow: 0 0 16px var(--lime); }
+}
+
+@media (max-width: 760px) {
+  .agent-fab {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(13, 14, 14, .94);
+  }
+
+  /* Pełnoekranowa konsola bez ramki 8px — edge-to-edge na telefonie */
+  .agent-console { padding: 0; }
+  .agent-console__panel { height: 100dvh; border: 0; border-radius: 0; }
+  .agent-console__footer { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); font-size: .56rem; }
+  .voice-agent-stage__note { font-size: .5rem; }
+
+  /* Dock podczas nawigacji: dolny sheet na całą szerokość zamiast pionowego paska 400px,
+     który na 390px zasłaniał prawie cały viewport z dziwną szczeliną z lewej. */
+  .agent-console.is-docked { inset: auto 0 0 0; width: 100%; padding: 0; }
+  .agent-console.is-docked .agent-console__panel {
+    height: min(62dvh, 520px);
+    border-top: 1px solid rgba(247, 247, 242, .22);
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -28px 90px rgba(4, 5, 5, .6);
+  }
+  .agent-console.is-docked .agent-console__header { min-height: 56px; padding-block: 8px; }
+  .agent-console.is-docked .voice-agent-stage { padding: 18px 14px; }
+  .agent-console.is-docked .voice-agent-stage__field { top: 44%; width: min(46vw, 210px); }
+  .agent-console.is-docked .voice-agent-stage h3 { font-size: clamp(1.4rem, 6.5vw, 2rem); }
+  .agent-console.is-docked .voice-agent-stage__button { min-height: 48px; margin-top: 12px; }
+  .agent-console.is-docked .agent-console__footer { display: none; }
+}
