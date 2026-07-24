@@ -32,7 +32,7 @@ import {
 const API_BASE = 'https://api.elevenlabs.io';
 const AGENT_NAME = process.env.ELEVENLABS_AGENT_NAME?.trim() || 'SFAI Voice Agent';
 // Voice ID to identyfikator publiczny (nie sekret). Env ELEVENLABS_VOICE_ID nadpisuje.
-const DEFAULT_VOICE_ID = 'd4Z5Fvjohw3zxGpV8XUV';
+const DEFAULT_VOICE_ID = 'Bz1e1clEKwgN71Vx7cxj';
 // LLM: docs client-tools rekomendują m.in. Gemini 2.5 Flash do tool-callingu
 // (szybki i tani); enum modeli w API create-agent. Env ELEVENLABS_LLM nadpisuje.
 const DEFAULT_LLM = 'gemini-2.5-flash';
