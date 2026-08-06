@@ -25,6 +25,7 @@
   color: var(--white);
   box-shadow: 0 0 0 9px rgba(223, 255, 63, .035), 0 18px 60px rgba(0, 0, 0, .4);
   cursor: pointer;
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   transition: width .5s var(--ease-out), border-color .3s, background .3s, transform .3s var(--ease-out);
 }
@@ -37,6 +38,8 @@
   color: var(--ink);
   transform: translateY(-3px);
 }
+
+.agent-fab:active { transform: translateY(-1px) scale(.95); transition-duration: .12s; }
 
 .agent-fab svg {
   width: 24px;
@@ -97,6 +100,7 @@
     radial-gradient(circle at 68% 28%, rgba(223, 255, 63, .08), transparent 28%),
     rgba(4, 5, 5, .76);
   cursor: default;
+  -webkit-backdrop-filter: blur(14px) saturate(.72);
   backdrop-filter: blur(14px) saturate(.72);
   animation: agent-backdrop-in .45s ease both;
 }
@@ -243,7 +247,7 @@
 
 .agent-console__main { display: grid; min-height: 0; grid-template-rows: auto 1fr auto; }
 .agent-console__tabs { display: flex; min-height: 52px; border-bottom: 1px solid var(--line); }
-.agent-console__tabs button { min-width: 132px; border: 0; border-right: 1px solid var(--line); padding: 0 22px; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: .65rem; letter-spacing: .07em; text-transform: uppercase; cursor: pointer; }
+.agent-console__tabs button { min-width: 132px; border: 0; border-right: 1px solid var(--line); padding: 0 22px; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: .65rem; letter-spacing: .07em; text-transform: uppercase; cursor: pointer; transition: background .25s, color .25s; }
 .agent-console__tabs button span { margin-right: 10px; font-size: .52rem; }
 .agent-console__tabs button[aria-selected="true"] { background: rgba(223, 255, 63, .06); color: var(--lime); }
 
@@ -265,12 +269,17 @@
 .agent-console__suggestions button:focus-visible { border-color: var(--lime); background: rgba(223, 255, 63, .07); color: var(--white); }
 
 .agent-console__form { display: grid; grid-template-columns: 1fr auto; gap: 10px; border-top: 1px solid var(--line); padding: 14px clamp(16px, 2.4vw, 26px); }
-.agent-console__form textarea { width: 100%; min-height: 50px; max-height: 130px; resize: none; overflow-y: hidden; border: 1px solid rgba(247, 247, 242, .16); border-radius: 0; padding: 14px 15px; outline: none; background: rgba(247, 247, 242, .035); color: var(--white); font-size: .82rem; line-height: 1.45; }
+.agent-console__form textarea { width: 100%; min-height: 50px; max-height: 130px; resize: none; overflow-y: hidden; border: 1px solid rgba(247, 247, 242, .16); border-radius: 0; padding: 14px 15px; outline: none; background: rgba(247, 247, 242, .035); color: var(--white); font-size: .82rem; line-height: 1.45; transition: border-color .25s, box-shadow .25s; }
 .agent-console__form textarea::placeholder { color: #717672; }
 .agent-console__form textarea:focus { border-color: rgba(223, 255, 63, .55); box-shadow: 0 0 0 3px rgba(223, 255, 63, .06); }
 .agent-console__form button { display: flex; min-width: 118px; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--lime); background: var(--lime); color: var(--ink); font-family: var(--font-mono); font-size: .65rem; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
 .agent-console__form button:disabled { opacity: .45; cursor: wait; }
 .agent-console__form button svg { width: 18px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+
+/* Press feedback konsoli — tier .12s, wyłącznie transform. */
+.agent-console__form button:active,
+.agent-console__suggestions button:active,
+.voice-agent-stage__button:active { transform: scale(.96); transition-duration: .12s; }
 
 .agent-console__mode--voice {
   position: relative;
@@ -479,6 +488,7 @@
   padding: 4px;
   background: rgba(9, 11, 8, .66);
   box-shadow: 0 12px 34px rgba(0, 0, 0, .22);
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
@@ -536,6 +546,7 @@
   letter-spacing: .06em;
   text-transform: uppercase;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   transition: color .28s, background .28s, border-color .28s, box-shadow .28s, transform .28s var(--ease-out);
 }
@@ -574,6 +585,14 @@ body.agent-console-open { overflow: hidden; }
 
 @keyframes agent-backdrop-in { from { opacity: 0; } }
 @keyframes agent-panel-in { from { opacity: 0; transform: translateY(42px) scale(.975); filter: blur(8px); } }
+
+/* Animowane zamknięcie: lustro trasy wejścia, krótsze (zasada exit < enter).
+   Klasę .is-closing nadaje agent-console.js na 300ms przed hidden=true. */
+.agent-console.is-closing { pointer-events: none; }
+.agent-console.is-closing .agent-console__backdrop { animation: agent-backdrop-out .25s ease both; }
+.agent-console.is-closing .agent-console__panel { animation: agent-panel-out .3s var(--ease-in-out) both; }
+@keyframes agent-backdrop-out { to { opacity: 0; } }
+@keyframes agent-panel-out { to { opacity: 0; transform: translateY(26px) scale(.985); filter: blur(6px); } }
 @keyframes agent-status { 50% { opacity: .25; transform: scale(.72); } }
 @keyframes agent-cursor { 50% { opacity: 0; } }
 @keyframes voice-orbit { to { transform: rotate(360deg); } }

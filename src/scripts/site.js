@@ -140,6 +140,15 @@ if (reduced) {
     } else {
       mistVeil.classList.add('is-on');
     }
+    // Stopka: mgła schodzi na samym końcu strony — drobny tekst .footer-bottom (© / Prywatność)
+    // stał nieruchomo pod blur 2.5-5px i wyglądał jak błąd renderowania. Przejście opacity .7s
+    // z CSS daje miękkie zejście; scroll w górę przywraca mgłę.
+    ScrollTrigger.create({
+      trigger: '.site-footer',
+      start: 'bottom bottom+=120',
+      onEnter: () => mistVeil.classList.add('is-off'),
+      onLeaveBack: () => mistVeil.classList.remove('is-off'),
+    });
   }
 }
 
@@ -168,24 +177,34 @@ const runScramble = (element) => {
   element.setAttribute('aria-live', 'off');
   if (!element.style.minWidth) element.style.minWidth = `${Math.ceil(element.getBoundingClientRect().width)}px`;
   freezeScrambleLayout(element);
-  let frame = 0;
   // Dłuższe teksty składają się szybciej na znak, żeby całość trwała podobnie (~3,5 s max).
   const rate = Math.max(1, original.length / 95);
-  const timer = window.setInterval(() => {
+  // rAF z akumulatorem czasu (~56 ms na krok) zamiast setInterval: identyczne tempo wizualne,
+  // ale bez dryfu przy obciążonym main-thread (pozostałe dwa scramble już są na rAF).
+  let start = null;
+  let lastFrame = -1;
+  const stepFn = (time) => {
+    if (start === null) start = time;
+    const frame = Math.floor((time - start) / 56);
+    if (frame === lastFrame) {
+      scrambleTimers.set(element, window.requestAnimationFrame(stepFn));
+      return;
+    }
+    lastFrame = frame;
     const resolved = Math.floor((frame * rate) / 2);
     element.textContent = [...original].map((character, index) => {
       if (/\s/.test(character) || index < resolved) return character;
       return scrambleGlyphs[Math.floor(Math.random() * scrambleGlyphs.length)];
     }).join('');
-    frame += 1;
     if (resolved >= original.length) {
-      window.clearInterval(timer);
       element.textContent = original;
       scrambleTimers.delete(element);
       releaseScrambleLayout(element);
+      return;
     }
-  }, 56);
-  scrambleTimers.set(element, timer);
+    scrambleTimers.set(element, window.requestAnimationFrame(stepFn));
+  };
+  scrambleTimers.set(element, window.requestAnimationFrame(stepFn));
 };
 
 document.querySelectorAll('[data-scramble]').forEach((element) => {
@@ -197,6 +216,13 @@ document.querySelectorAll('[data-scramble]').forEach((element) => {
 // Etykiety „01 / Znajdź stratę" i podpisy kafli system-explore: dekodowanie na hover CAŁEGO
 // wiersza/kafla (sam napis to za mały cel dla myszy), zawsze z powrotem do poprawnej formy.
 document.querySelectorAll('.manifesto-signals li, [data-explore-item]').forEach((row) => {
+  const label = row.querySelector('[data-scramble]');
+  if (label) row.addEventListener('pointerenter', () => runScramble(label));
+});
+
+// Hero-side-list: li > span bez a/button, więc trigger był samym napisem .61rem — wbrew
+// zasadzie „cały wiersz jest celem" (jak wyżej). Hover CAŁEGO li dekoduje etykietę.
+document.querySelectorAll('.hero-side-list li').forEach((row) => {
   const label = row.querySelector('[data-scramble]');
   if (label) row.addEventListener('pointerenter', () => runScramble(label));
 });
@@ -267,9 +293,20 @@ if (marqueeBand && marqueeTrack instanceof HTMLElement && !reduced && marqueeTra
     marqueeBand.addEventListener('pointerleave', () => { marqueePaused = false; });
   }
   let marqueePos = 0;
+  // Płynne dogaszenie zamiast bramki boolowskiej (pas stawał w jedną klatkę): prędkość
+  // dojeżdża do celu w ~0.3 s. Poza viewportem ticker po wytraceniu nie pisze transformu
+  // (dotąd pisał przez ~95% sesji). Pozycja liczona z delty — po powrocie zero szwu.
+  let marqueeSpeed = 1;
+  let marqueeInView = true;
+  // entries są chronologiczne — czytamy NAJNOWSZY (batch [false,true] przy szarpnięciu
+  // suwakiem zostawiłby stale=false i pas stałby widoczny; wzorzec jak listVisibility).
+  new IntersectionObserver((entries) => { marqueeInView = entries[entries.length - 1].isIntersecting; }).observe(marqueeBand);
   gsap.ticker.add((_, deltaTime) => {
-    if (marqueePaused || marqueeUnit <= 0) return;
-    marqueePos -= (marqueeUnit / 34) * (deltaTime / 1000);
+    if (marqueeUnit <= 0) return;
+    const target = marqueePaused || !marqueeInView ? 0 : 1;
+    marqueeSpeed += (target - marqueeSpeed) * Math.min(1, (deltaTime / 1000) * 7);
+    if (marqueeSpeed < .002 && target === 0) return;
+    marqueePos -= (marqueeUnit / 34) * (deltaTime / 1000) * marqueeSpeed;
     gsap.set(marqueeTrack, { x: marqueeWrap(marqueePos) });
   });
 }
@@ -412,10 +449,11 @@ if (processRows.length && !reduced) {
   const foldAngle = compactMotion ? 28 : 48;
   const foldFade = compactMotion ? 0.42 : 0.55;
   const foldTargets = processRows
-    .map((row) => ({ row, inner: row.querySelector('[data-process-inner]') }))
+    .map((row) => ({ row, inner: row.querySelector('[data-process-inner]'), lastP: -1 }))
     .filter((entry) => entry.inner);
   const updateProcessFold = () => {
-    foldTargets.forEach(({ row, inner }) => {
+    foldTargets.forEach((entry) => {
+      const { row, inner } = entry;
       const rect = row.getBoundingClientRect();
       if (rect.bottom < -140 || rect.top > window.innerHeight + 140) return;
       // Składanie zaczyna się WCZEŚNIEJ (góra karty przy ~22% ekranu) i jest MOCNIEJSZE (48st)
@@ -424,10 +462,15 @@ if (processRows.length && !reduced) {
       const b = rect.bottom - window.innerHeight * 0.52;
       const span = Math.max(1, b - a);
       const p = Math.min(1, Math.max(0, -a / span));
+      // Early-out: poza oknem przejścia p stoi na 0 lub 1 — zero pracy w handlerze scrolla.
+      const foldValue = p.toFixed(3);
+      const pf = Number(foldValue);
+      if (pf === entry.lastP) return;
+      entry.lastP = pf;
       // Rozmycie GRADIENTEM (góra we mgle, dół ostry) robi ::after z backdrop-filter + maską;
       // tu sterujemy tylko jego siłą przez --fold. Jednolity blur zabijał efekt kładzenia.
       gsap.set(inner, { rotateX: foldAngle * p, opacity: 1 - foldFade * p });
-      inner.style.setProperty('--fold', p.toFixed(3));
+      inner.style.setProperty('--fold', foldValue);
     });
   };
   window.addEventListener('scroll', updateProcessFold, { passive: true });
@@ -529,12 +572,17 @@ if (!reduced) {
       // Żywa geometria zamiast pozycji ScrollTriggera — na świeżym wczytaniu pozycje
       // rozjeżdżały się przez piny i tekst bywał widoczny od razu. Tu nie ma jak.
       const totalChars = manifestoChars.length;
+      // Early-out: p jest sclampowane do [0,1], więc poza oknem przejścia handler nie robi
+      // żadnej pracy (dotąd gsap.set na ~100 .mchar w każdej klatce przez całą sekcję).
+      let lastManifestoP = -1;
       gsap.set(manifestoChars, { opacity: 0, filter: 'blur(10px)' });
       const updateManifestoChars = () => {
         const rect = manifesto.getBoundingClientRect();
         if (rect.bottom < -60 || rect.top > window.innerHeight + 60) return;
         const vh = window.innerHeight;
         const p = Math.min(1, Math.max(0, (vh * 0.9 - rect.top) / (vh * 1.25)));
+        if (p === lastManifestoP) return;
+        lastManifestoP = p;
         manifestoChars.forEach((glyph, index) => {
           const local = Math.min(1, Math.max(0, (p - (index / totalChars) * 0.7) / 0.3));
           gsap.set(glyph, {
@@ -630,11 +678,11 @@ if (!reduced) {
       if (bridgeKicker) gsap.set(bridgeKicker, { opacity: 0, y: 14 });
       const showBridge = () => {
         if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: true });
-        gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power3.out', stagger: 0.14, overwrite: true });
+        gsap.to(bridgeLines, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.95, ease: 'power3.out', stagger: 0.14, overwrite: true });
       };
       const hideBridge = () => {
-        if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 0, y: 14, duration: 0.4, ease: 'power2.in', overwrite: true });
-        gsap.to(bridgeLines, { yPercent: 118, opacity: 0, filter: 'blur(6px)', duration: 0.5, ease: 'power2.in', stagger: 0.06, overwrite: true });
+        if (bridgeKicker) gsap.to(bridgeKicker, { opacity: 0, y: 14, duration: 0.45, ease: 'power2.in', overwrite: true });
+        gsap.to(bridgeLines, { yPercent: 118, opacity: 0, filter: 'blur(6px)', duration: 0.45, ease: 'power2.in', stagger: 0.06, overwrite: true });
       };
       ScrollTrigger.create({
         trigger: humanBridge,
@@ -800,7 +848,7 @@ if (!reduced) {
         opacity: 1,
         y: 0,
         filter: 'blur(0px)',
-        duration: 0.85,
+        duration: 0.95,
         ease: 'power3.out',
         stagger: 0.14,
         scrollTrigger: { trigger: cinematic, start: 'top 74%', once: true },
@@ -1126,7 +1174,7 @@ if (!reduced) {
         trigger: reelBig,
         start: '48% top',
         onEnter: () => gsap.to(reelTitleLines, { yPercent: 0, duration: 0.85, ease: 'common', stagger: 0.09, overwrite: true }),
-        onLeaveBack: () => gsap.to(reelTitleLines, { yPercent: 108, duration: 0.5, ease: 'power2.in', stagger: 0.05, overwrite: true }),
+        onLeaveBack: () => gsap.to(reelTitleLines, { yPercent: 108, duration: 0.45, ease: 'power2.in', stagger: 0.05, overwrite: true }),
       });
     }
 
@@ -1173,8 +1221,8 @@ if (!reduced) {
     if (reelImg) {
       gsap.fromTo(reelImg, { scale: 1.12 }, {
         scale: 1,
-        duration: 1.2,
-        ease: 'power2.out',
+        duration: 0.95,
+        ease: 'power3.out',
         scrollTrigger: { trigger: reelBig.querySelector('[data-reel-big-media]') ?? reelBig, start: 'top 82%', once: true },
       });
     }
@@ -1184,9 +1232,9 @@ if (!reduced) {
     gsap.fromTo(card, { y: compactMotion ? 28 : 46, rotate: card.dataset.accent === 'blue' ? -0.35 : 0.35 }, {
       y: 0,
       rotate: 0,
-      duration: 1,
-      ease: 'power3.out',
-      scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: 'play none none none' },
+      duration: 0.85,
+      ease: 'common',
+      scrollTrigger: { trigger: card, start: 'top 90%', once: true },
     });
 
     // „Zobacz usługę" (prawy górny róg karty) wjeżdża strzałką od lewej przy wejściu karty.
@@ -1195,7 +1243,7 @@ if (!reduced) {
       gsap.fromTo(cardLink, { x: -28, opacity: 0 }, {
         x: 0,
         opacity: 1,
-        duration: 0.7,
+        duration: 0.75,
         ease: 'common',
         delay: 0.3,
         scrollTrigger: { trigger: card, start: 'top 82%', once: true },
@@ -1322,6 +1370,17 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
   // handlery gubiły enter/leave (wielkie nagłówki sąsiednich wierszy przejmowały hover),
   // stąd „trzy zdjęcia naraz" i podgląd zawieszony z boku. Tu: max jeden, zawsze pod kursorem.
   const previewByRow = new Map();
+  // Jeden czas chowania dla całego gestu (dotąd 0.14/0.15/0.16/0.18 w jednym geście);
+  // force zostaje 0.15 jako szybszy bezpiecznik.
+  const PREVIEW_HIDE = 0.16;
+  // Follow za kursorem przez gsap.quickTo (wzorzec: orbit .42, badge .4) — bez alokacji
+  // nowego tweena na każdy pointermove. Tworzone przy KAŻDYM pokazaniu podglądu, bo
+  // show/hide z overwrite:true zabijają poprzednie tweeny quickTo tego elementu.
+  let insightFollow = null;
+  const buildInsightFollow = (preview) => ({
+    x: gsap.quickTo(preview, 'x', { duration: 0.13, ease: 'power3.out' }),
+    y: gsap.quickTo(preview, 'y', { duration: 0.13, ease: 'power3.out' }),
+  });
   document.querySelectorAll('[data-insight-row]').forEach((row) => {
     const preview = row.querySelector('[data-insight-preview]');
     if (!(preview instanceof HTMLElement)) return;
@@ -1343,12 +1402,13 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     // aktywny podgląd dalej płynie za kursorem. Zmiana tylko przy realnym wjeździe na inny wiersz.
     if (row && preview !== activeInsightPreview) {
       if (activeInsightPreview) {
-        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.16, ease: 'power2.in', overwrite: true });
+        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: PREVIEW_HIDE, ease: 'power2.in', overwrite: true });
       }
       activeInsightPreview = preview ?? null;
       if (activeInsightPreview) {
         gsap.set(activeInsightPreview, { x: event.clientX, y: event.clientY });
         gsap.fromTo(activeInsightPreview, { scale: 0.6, opacity: 0 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'common', overwrite: true });
+        insightFollow = buildInsightFollow(activeInsightPreview);
         runScramble(row.querySelector('[data-scramble]'));
       }
     } else if (activeInsightPreview) {
@@ -1356,10 +1416,11 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
       // (podgląd NIGDY nie wjeżdża na sekcję bąbelków).
       const bounds = insightsListEl.getBoundingClientRect();
       if (event.clientY > bounds.bottom + 6 || event.clientY < bounds.top - 6) {
-        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.15, ease: 'power2.in', overwrite: true });
+        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: PREVIEW_HIDE, ease: 'power2.in', overwrite: true });
         activeInsightPreview = null;
       } else {
-        gsap.to(activeInsightPreview, { x: event.clientX, y: event.clientY, duration: 0.13, ease: 'power3.out', overwrite: 'auto' });
+        insightFollow?.x(event.clientX);
+        insightFollow?.y(event.clientY);
       }
     }
   }, { passive: true });
@@ -1372,18 +1433,19 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
       pointerInsideInsights = true;
       if (activeInsightPreview === preview) return;
       if (activeInsightPreview) {
-        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.14, ease: 'power2.in', overwrite: true });
+        gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: PREVIEW_HIDE, ease: 'power2.in', overwrite: true });
       }
       activeInsightPreview = preview;
       gsap.set(preview, { x: event.clientX, y: event.clientY });
       gsap.fromTo(preview, { scale: 0.6, opacity: 0 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'common', overwrite: true });
+      insightFollow = buildInsightFollow(preview);
       runScramble(row.querySelector('[data-scramble]'));
     });
   });
   insightsListEl?.addEventListener('pointerleave', () => {
     pointerInsideInsights = false;
     if (activeInsightPreview) {
-      gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: 0.18, ease: 'power2.in', overwrite: true });
+      gsap.to(activeInsightPreview, { opacity: 0, scale: 0.7, duration: PREVIEW_HIDE, ease: 'power2.in', overwrite: true });
       activeInsightPreview = null;
     }
   });
@@ -1398,7 +1460,7 @@ if (window.matchMedia('(pointer: fine)').matches && !reduced) {
     activeInsightPreview = null;
     document.querySelectorAll('.insight-preview').forEach((preview) => {
       if (Number(gsap.getProperty(preview, 'opacity')) > 0.05) {
-        gsap.to(preview, { opacity: 0, scale: 0.7, duration: force ? 0.15 : 0.18, ease: 'power2.in', overwrite: true });
+        gsap.to(preview, { opacity: 0, scale: 0.7, duration: force ? 0.15 : PREVIEW_HIDE, ease: 'power2.in', overwrite: true });
       }
     });
   };

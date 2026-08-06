@@ -157,6 +157,7 @@ if (consoleRoot instanceof HTMLElement) {
   // 'agent-console-open', bo site.js zatrzymuje Lenisa na 'agent-console-open'
   // (MutationObserver) — w docku scroll strony MUSI działać.
   let isDocked = false;
+  let closeTimer = 0; // wiszące sprzątanie animowanego zamknięcia (patrz closeConsole/openConsole)
   const setDocked = (docked) => {
     isDocked = Boolean(docked) && !consoleRoot.hidden;
     consoleRoot.classList.toggle('is-docked', isDocked);
@@ -166,6 +167,14 @@ if (consoleRoot instanceof HTMLElement) {
   };
 
   const openConsole = (mode = 'chat', docked = false) => {
+    // Otwarcie w oknie animacji zamykania (300ms): anuluj wiszące sprzątanie
+    // i zdejmij is-closing — inaczej zawieszony timeout ubiłby świeżo otwartą
+    // konsolę (hidden=true + wyrwany focus) wbrew intencji użytkownika.
+    if (closeTimer) {
+      window.clearTimeout(closeTimer);
+      closeTimer = 0;
+    }
+    consoleRoot.classList.remove('is-closing');
     previousFocus = document.activeElement;
     consoleRoot.hidden = false;
     setDocked(docked);
@@ -223,23 +232,35 @@ if (consoleRoot instanceof HTMLElement) {
   };
 
   const closeConsole = () => {
+    // Animowane zamknięcie (lustro wejścia, CSS .is-closing): głos gaśnie od razu,
+    // reszta sprzątania po 300ms (0 przy reduced-motion). Guard chroni przed podwójnym
+    // wywołaniem (Escape + klik) w trakcie animacji.
+    if (consoleRoot.hidden || consoleRoot.classList.contains('is-closing')) return;
     stopVoice();
-    consoleRoot.hidden = true;
-    setDocked(false); // czyści 'agent-console-open' i 'agent-console-docked' na body
-    flowCores.forEach((core) => core.classList.remove('is-voice-open'));
-    if (fab instanceof HTMLElement) {
-      fab.removeAttribute('aria-hidden');
-      fab.removeAttribute('tabindex');
-    }
-    setConnectionStatus('gotowy');
-    if (previousFocus instanceof HTMLElement) previousFocus.focus();
+    consoleRoot.classList.add('is-closing');
+    const closeDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300;
+    closeTimer = window.setTimeout(() => {
+      closeTimer = 0;
+      consoleRoot.classList.remove('is-closing');
+      consoleRoot.hidden = true;
+      setDocked(false); // czyści 'agent-console-open' i 'agent-console-docked' na body
+      flowCores.forEach((core) => core.classList.remove('is-voice-open'));
+      if (fab instanceof HTMLElement) {
+        fab.removeAttribute('aria-hidden');
+        fab.removeAttribute('tabindex');
+      }
+      setConnectionStatus('gotowy');
+      if (previousFocus instanceof HTMLElement) previousFocus.focus();
+    }, closeDelay);
   };
 
   // FAB: od razu agent głosowy w trybie docked (panel z prawej, strona widoczna),
   // sesja startuje automatycznie (przeglądarka zapyta o mikrofon). Czat pozostaje
   // dostępny jako druga zakładka. Ewentualny klik przy otwartym docku = pełne okno.
   fab?.addEventListener('click', () => {
-    if (!consoleRoot.hidden) {
+    // W trakcie animacji zamykania hidden jest jeszcze false — klik FAB ma
+    // wtedy otwierać na nowo, nie tylko przełączać dock.
+    if (!consoleRoot.hidden && !consoleRoot.classList.contains('is-closing')) {
       setDocked(false);
       return;
     }

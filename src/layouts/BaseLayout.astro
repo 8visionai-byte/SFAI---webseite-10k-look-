@@ -1,6 +1,12 @@
 ---
 import '@fontsource-variable/instrument-sans';
 import '@fontsource/ibm-plex-mono/400.css';
+// Preload woff2 (latin + latin-ext): hero "AI, które dowozi." bez FOUT-owego skoku
+// i bez drugiego mignięcia "ó" z subsetu latin-ext; mono-labelki nad foldem analogicznie.
+import isLatin from '@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2?url';
+import isLatinExt from '@fontsource-variable/instrument-sans/files/instrument-sans-latin-ext-wght-normal.woff2?url';
+import monoLatin from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
+import monoLatinExt from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-ext-400-normal.woff2?url';
 import '../styles/global.css';
 import '../styles/subpage-motion.css';
 import Header from '../components/Header.astro';
@@ -46,6 +52,10 @@ const defaultSchema = {
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={new URL(image, Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={isLatin} />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={isLatinExt} />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={monoLatin} />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={monoLatinExt} />
     <title>{title}</title>
     <script type="application/ld+json" set:html={JSON.stringify(schema ?? defaultSchema)} />
   </head>

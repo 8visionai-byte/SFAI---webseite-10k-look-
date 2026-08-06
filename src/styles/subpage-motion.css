@@ -127,8 +127,8 @@ html.is-leaving body:has(.subpage-main) .page-transition {
 .subpage-main [data-motion-section]::before {
   position: absolute;
   top: 0;
-  right: max(20px, calc((100vw - 1540px) / 2));
-  left: max(20px, calc((100vw - 1540px) / 2));
+  right: max(20px, calc((100% - 1540px) / 2));
+  left: max(20px, calc((100% - 1540px) / 2));
   height: 1px;
   background: linear-gradient(90deg, rgba(223, 255, 63, 0.3), rgba(255, 255, 255, 0.07) 26%, transparent 80%);
   content: '';
@@ -849,8 +849,8 @@ body:has(.subpage-main) .insight-preview.is-visible img {
 }
 
 .about-impact[data-motion-section]::before {
-  right: max(20px, calc((100vw - 1540px) / 2));
-  left: max(20px, calc((100vw - 1540px) / 2));
+  right: max(20px, calc((100% - 1540px) / 2));
+  left: max(20px, calc((100% - 1540px) / 2));
 }
 
 .about-impact__shell {

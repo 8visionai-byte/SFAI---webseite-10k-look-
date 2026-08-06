@@ -229,7 +229,9 @@ const schema = {
         <div class="cinematic-scatter" aria-hidden="true">
           {cinematicScatter.map((shot) => (
             <figure class:list={['cinematic-shot', `cinematic-shot--${shot.shape}`]} data-cinematic-shot>
-              <Image src={shot.src} alt="" widths={[480, 760, 1080]} sizes="30vw" format="webp" quality={78} loading="lazy" />
+              {/* sizes=52vw: renderCinematic skaluje shoty do 2.5x (site.js), 30vw dawało
+                  rozciągnięty raster w kulminacji sekcji na 1440p/4K. Lazy poza foldem. */}
+              <Image src={shot.src} alt="" widths={[480, 760, 1080, 1440]} sizes="52vw" format="webp" quality={78} loading="lazy" />
             </figure>
           ))}
         </div>
