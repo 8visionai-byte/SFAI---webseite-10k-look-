@@ -1,0 +1,54 @@
+<!doctype html>
+<!--
+  Plakat do rolki „rozciąganie płótna” — styl oficjalnej strony https://www.simplefast.ai
+  Render: Playwright, viewport 1200×1800 → poster.png
+  Zależności (w tym folderze):
+    npm i @fontsource/plus-jakarta-sans@5.2.8 @fontsource/inter@5.2.8 @fontsource/jetbrains-mono@5.2.8
+    mark.png  ← https://www.simplefast.ai/brand/mark-t.png
+    ring.png  ← zrzut canvasu z hero simplefast.ai (pierścień „Zapytaj AI”), rozjaśniony ×1.9, nasycenie ×1.25
+-->
+<html><head><meta charset="utf-8"><style>
+@font-face{font-family:PJ;src:url(node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-800-normal.woff2);font-weight:800;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F}
+@font-face{font-family:PJ;src:url(node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-800-normal.woff2);font-weight:800;unicode-range:U+0000-00FF,U+2000-206F,U+2190-2193}
+@font-face{font-family:PJ;src:url(node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-700-normal.woff2);font-weight:700;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F}
+@font-face{font-family:PJ;src:url(node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-700-normal.woff2);font-weight:700;unicode-range:U+0000-00FF,U+2000-206F,U+2190-2193}
+@font-face{font-family:JM;src:url(node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-ext-700-normal.woff2);font-weight:700;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F}
+@font-face{font-family:JM;src:url(node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-700-normal.woff2);font-weight:700;unicode-range:U+0000-00FF,U+2000-206F,U+2190-2193}
+@font-face{font-family:IN;src:url(node_modules/@fontsource/inter/files/inter-latin-ext-600-normal.woff2);font-weight:600;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F}
+@font-face{font-family:IN;src:url(node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2);font-weight:600;unicode-range:U+0000-00FF,U+2000-206F,U+2190-2193}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:1800px;background:#05050c;overflow:hidden}
+.p{position:relative;width:1200px;height:1800px;color:#e4e4f0;font-family:IN;
+ background:radial-gradient(60% 30% at 50% 28%,rgba(228,56,255,.16),transparent 70%),radial-gradient(70% 25% at 50% 70%,rgba(0,123,255,.10),transparent 70%),#05050c}
+.p:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.35) 1px,transparent 1.5px);background-size:97px 89px;opacity:.25}
+.frame{position:absolute;inset:26px;border-radius:44px;border:2px solid rgba(112,176,255,.35);box-shadow:0 0 30px rgba(228,56,255,.18) inset}
+.logo{position:absolute;top:72px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:22px}
+.logo img{width:118px;height:118px}
+.logo b{font-family:PJ;font-weight:700;font-size:84px;letter-spacing:-.02em;color:#fff}
+.logo b i{font-style:normal;background:linear-gradient(90deg,#70b0ff,#e438ff 50%,#29ff77);-webkit-background-clip:text;color:transparent}
+.lab{position:absolute;top:232px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:24px;font-family:JM;font-weight:700;font-size:26px;letter-spacing:.28em;color:#9a9ac0;text-transform:uppercase}
+.lab:before,.lab:after{content:"";width:120px;height:2px;background:linear-gradient(90deg,transparent,#7a7a9e)}
+.lab:after{transform:scaleX(-1)}
+.ring{position:absolute;top:262px;left:50%;width:560px;height:560px;transform:translateX(-50%)}
+.ring>img{width:100%;height:100%;-webkit-mask-image:radial-gradient(closest-side,#000 78%,transparent 100%);mix-blend-mode:screen}
+.ring .core{position:absolute;left:50%;top:50%;width:230px;height:230px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#160b22 0%,#0b0714 70%);border:3px solid rgba(255,0,229,.55);box-shadow:0 0 40px rgba(255,0,229,.45),0 0 0 18px rgba(255,0,229,.08),0 0 0 36px rgba(255,0,229,.05);display:flex;align-items:center;justify-content:center}
+.ring .core img{width:170px;height:170px}
+.q{position:absolute;top:850px;left:70px;right:70px;text-align:center;font-family:PJ;font-weight:700;font-size:70px;line-height:1.1;color:#fff;letter-spacing:-.01em}
+h1{position:absolute;top:1040px;left:50px;right:50px;text-align:center;font-family:PJ;font-weight:800;font-size:132px;line-height:1.0;letter-spacing:-.02em;
+ background:linear-gradient(90deg,#007bff 0%,#9b5cff 48%,#e438ff 62%,#63f000 100%);-webkit-background-clip:text;color:transparent}
+.chips{position:absolute;top:1468px;left:0;right:0;display:flex;justify-content:center;gap:22px}
+.chip{font-family:JM;font-weight:700;font-size:27px;letter-spacing:.12em;text-transform:uppercase;padding:14px 24px;border-radius:14px;border:2px solid;background:rgba(255,255,255,.03)}
+.c1{color:#00d8ff;border-color:rgba(0,216,255,.7);box-shadow:0 0 18px rgba(0,216,255,.35)}
+.c2{color:#ff00e5;border-color:rgba(255,0,229,.7);box-shadow:0 0 18px rgba(255,0,229,.35)}
+.c3{color:#29ff77;border-color:rgba(41,255,119,.7);box-shadow:0 0 18px rgba(41,255,119,.35)}
+.cta{position:absolute;top:1590px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:26px;background:#00f0ff;color:#05050c;border-radius:999px;padding:26px 64px;font-family:PJ;font-weight:800;font-size:92px;letter-spacing:-.02em;box-shadow:0 0 0 3px rgba(0,240,255,.55),0 0 60px rgba(0,240,255,.6)}
+.cta svg{width:74px;height:74px}
+</style></head><body><div class="p"><div class="frame"></div>
+<div class="logo"><img src="mark.png" alt=""><b>SimpleFast<i>.ai</i></b></div>
+<div class="lab">Zewnętrzny dział AI dla firm</div>
+<div class="ring"><img src="ring.png" alt=""><div class="core"><img src="mark.png" alt=""></div></div>
+<div class="q">Szukasz firmy do wdrożenia<br>AI w firmie?</div>
+<h1>Wynajmij nas<br>jako zewnętrzny<br>dział AI</h1>
+<div class="chips"><span class="chip c1">Chatboty AI</span><span class="chip c2">Voiceboty</span><span class="chip c3">Automatyzacje</span></div>
+<div class="cta">simplefast.ai<svg viewBox="0 0 24 24"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="#05050c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div></body></html>
