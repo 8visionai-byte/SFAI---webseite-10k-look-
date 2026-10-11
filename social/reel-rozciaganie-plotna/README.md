@@ -1,4 +1,30 @@
-# Rolka: rozciąganie płótna reklamowego (drone reveal) — v2
+# Rolka: rozciąganie płótna reklamowego (drone reveal)
+
+## v3 (aktualna): 19,1 s, nalot drona + ruch uliczny
+
+- **Finał MP4** (1080×1920, 24 fps, AAC, -13 LUFS): https://d2ol7oe51mr4n9.cloudfront.net/user_310akJlk1DZj68uM7PeydmU57ss/4e0ea5fb-65e3-4e66-8071-b8862734e28f.mp4
+- **Scena:** bulwar w złotej godzinie, po obu stronach 3-pasmowe jezdnie z jadącymi autami, taksówkami i autobusami.
+- **Ujęcia** (Kling 3.0 pro, start/end frame):
+  1. **0–5 s, nalot:** dron leci nisko wzdłuż bulwaru (kadr ukośny) i przechodzi w widok z góry nad ekipą ze złożonym pasem.
+  2. **5–14 s, rozciąganie:** dwa rzędy ludzi odchodzą na boki i rozciągają płótno, auta jadą cały czas.
+  3. **14–19 s, wznoszenie:** dron podnosi się, plakat maleje na tle miasta.
+- **Klatki kluczowe:** GPT Image 2.5 high 2K.
+  - A: kadr ukośny
+  - B: złożony pas
+  - C: plakat rozciągnięty (tekst 1:1)
+  - D: wysoki pułap
+- **Audio:** Mixkit „Uplifting Bass” od 7,35 s, drop w 7,0 s (otwarcie płótna), ambient miasta. Miks: OpenMontage `audio_mixer`.
+- **Koszt v3:** 56 kr. (4 obrazy = 11, Kling 2×10 s + 2×5 s = 45).
+
+### Prompty ruchu v3
+
+- **Nalot:** „Cinematic FPV-smooth drone flight at golden hour: the drone flies fast forward along the city boulevard, rising and tilting the camera down until it hovers directly above … Busy traffic flows continuously on both roads …”
+- **Rozciąganie:** „Top-down aerial drone shot hovering high above a city boulevard at golden hour. On both roads the traffic flows continuously … the people walk backwards outward in sync … pulling the canvas open sideways …”
+- **Wznoszenie:** „Top-down aerial drone shot at golden hour: the drone smoothly rises straight up, revealing more of the city … Traffic flows continuously …”
+
+---
+
+## v2 (poprzednia)
 
 Pionowa rolka 9:16, 10,8 s. Widok z drona na bulwar w złotej godzinie. Wąski, złożony pas płótna trzymają dwa rzędy ludzi. Ludzie odchodzą na boki i rozciągają płótno, odsłaniając gigantyczny plakat SimpleFast.ai.
 
